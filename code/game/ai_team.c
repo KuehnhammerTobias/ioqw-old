@@ -1267,7 +1267,7 @@ void Bot1FCTFOrders_FlagAtCenter(bot_state_t *bs) {
 					ClientName(teammates[1], name, sizeof(name));
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, teammates[1]);
-					BotSayVoiceTeamOrder(bs, teammates[0], VOICECHAT_DEFEND);
+					BotSayVoiceTeamOrder(bs, teammates[1], VOICECHAT_DEFEND);
 					// the other will get the flag
 					ClientName(teammates[2], name, sizeof(name));
 					BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
@@ -1771,17 +1771,17 @@ void Bot1FCTFOrders_TeamHasFlag(bot_state_t *bs) {
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, other);
 					BotSayVoiceTeamOrder(bs, other, VOICECHAT_DEFEND);
+					// tell the one furthest from the base not carrying the flag to accompany the flag carrier
+					if (teammates[2] != bs->flagcarrier) {
+						other = teammates[2];
+					} else {
+						other = teammates[1];
+					}
+
+					ClientName(other, name, sizeof(name));
 					// if we have a flag carrier
 					if (bs->flagcarrier != -1) {
 						ClientName(bs->flagcarrier, carriername, sizeof(carriername));
-						// tell the one furthest from the base not carrying the flag to accompany the flag carrier
-						if (teammates[2] != bs->flagcarrier) {
-							other = teammates[2];
-						} else {
-							other = teammates[1];
-						}
-
-						ClientName(other, name, sizeof(name));
 
 						if (bs->flagcarrier == bs->client) {
 							BotAI_BotInitialChat(bs, "cmd_accompanyme", name, NULL);
@@ -2119,7 +2119,7 @@ void Bot1FCTFOrders_EnemyHasFlag(bot_state_t *bs) {
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, teammates[0]);
 					BotSayVoiceTeamOrder(bs, teammates[0], VOICECHAT_DEFEND);
-					// the others should go for the enemy flag
+					// the others should go for the flag
 					ClientName(teammates[1], name, sizeof(name));
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, teammates[1]);
@@ -2366,7 +2366,7 @@ void Bot1FCTFOrders_EnemyDroppedFlag(bot_state_t *bs) {
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, teammates[0]);
 					BotSayVoiceTeamOrder(bs, teammates[0], VOICECHAT_DEFEND);
-					// the others should go for the enemy flag
+					// the others should go for the flag
 					ClientName(teammates[1], name, sizeof(name));
 					BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
 					BotSayTeamOrder(bs, teammates[1]);
@@ -2714,7 +2714,7 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 					}
 
 					BotSayTeamOrder(bs, other);
-					// tell the one furthest from the the base not carrying the flag to get the enemy flag
+					// tell the one furthest from the the base not carrying the flag to return the flag
 					if (teammates[2] != bs->flagcarrier) {
 						other = teammates[2];
 					} else {
@@ -2729,12 +2729,13 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 				}
 				default:
 				{
+					// 40% defend the base
 					defenders = (int)(float)numteammates * 0.4 + 0.5;
 
 					if (defenders > 4) {
 						defenders = 4;
 					}
-
+					// 50% get the flag
 					attackers = (int)(float)numteammates * 0.5 + 0.5;
 
 					if (attackers > 5) {
@@ -3093,7 +3094,7 @@ void BotCTFOrders_TeamFlagNotAtBase(bot_state_t *bs) {
 					BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
 					BotSayTeamOrder(bs, teammates[0]);
 					BotSayVoiceTeamOrder(bs, teammates[0], VOICECHAT_DEFEND);
-					// the other two get the flag
+					// the others should go for the enemy flag
 					ClientName(teammates[1], name, sizeof(name));
 					BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
 					BotSayTeamOrder(bs, teammates[1]);
@@ -3107,13 +3108,13 @@ void BotCTFOrders_TeamFlagNotAtBase(bot_state_t *bs) {
 				}
 				default:
 				{
-					// keep some people near the base for when the flag is returned
+					// 30% defend the base (keep some people near the base for when the flag is returned)
 					defenders = (int)(float)numteammates * 0.3 + 0.5;
 
 					if (defenders > 3) {
 						defenders = 3;
 					}
-
+					// 60% get the flag
 					attackers = (int)(float)numteammates * 0.6 + 0.5;
 
 					if (attackers > 6) {
@@ -3184,13 +3185,13 @@ void BotCTFOrders_TeamFlagNotAtBase(bot_state_t *bs) {
 				}
 				default:
 				{
-					// keep some people near the base for when the flag is returned
+					// 20% defend the base (keep some people near the base for when the flag is returned)
 					defenders = (int)(float)numteammates * 0.2 + 0.5;
 
 					if (defenders > 2) {
 						defenders = 2;
 					}
-
+					// 70% get the flag
 					attackers = (int)(float)numteammates * 0.7 + 0.5;
 
 					if (attackers > 7) {
