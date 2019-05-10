@@ -203,11 +203,11 @@ static void BotImport_Trace(bsp_trace_t *bsptrace, vec3_t start, vec3_t mins, ve
 
 /*
 =======================================================================================================================================
-BotImport_EntitiesTrace
+BotImport_TraceEntities
 =======================================================================================================================================
 */
-static void BotImport_EntitiesTrace(bsp_trace_t *bsptrace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask) {
-	SV_ClipToEntities(bsptrace, start, mins, maxs, end, passent, contentmask, qfalse);
+static void BotImport_TraceEntities(bsp_trace_t *bsptrace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask) {
+	SV_TraceEntities(bsptrace, start, mins, maxs, end, passent, contentmask, qfalse);
 }
 
 /*
@@ -561,7 +561,7 @@ void SV_BotInitBotLib(void) {
 	botlib_import.MilliSeconds = Sys_Milliseconds;
 	botlib_import.Print = BotImport_Print;
 	botlib_import.Trace = BotImport_Trace;
-	botlib_import.EntitiesTrace = BotImport_EntitiesTrace;
+	botlib_import.TraceEntities = BotImport_TraceEntities;
 	botlib_import.EntityTrace = BotImport_EntityTrace;
 	botlib_import.PointContents = BotImport_PointContents;
 	botlib_import.inPVS = BotImport_inPVS;

@@ -137,7 +137,7 @@ typedef struct botlib_import_s {
 	// trace a bbox through the world
 	void (*Trace)(bsp_trace_t *trace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask);
 	// trace a bbox against entities
-	void (*EntitiesTrace)(bsp_trace_t *trace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask);
+	void (*TraceEntities)(bsp_trace_t *trace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask);
 	// trace a bbox against a specific entity
 	void (*EntityTrace)(bsp_trace_t *trace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int entnum, int contentmask);
 	// retrieve the contents at the given point

@@ -431,11 +431,11 @@ void trap_TraceCapsule(trace_t *results, const vec3_t start, const vec3_t mins, 
 
 /*
 =======================================================================================================================================
-trap_ClipToEntities
+trap_TraceEntities
 =======================================================================================================================================
 */
-void trap_ClipToEntities(trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask) {
-	syscall(G_CLIPTOENTITIES, results, start, mins, maxs, end, passEntityNum, contentmask);
+void trap_TraceEntities(trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask) {
+	syscall(G_TRACEENTITIES, results, start, mins, maxs, end, passEntityNum, contentmask);
 }
 
 /*

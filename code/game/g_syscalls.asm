@@ -53,7 +53,7 @@ equ trap_GetServerinfo						-109
 equ trap_SetBrushModel						-110
 equ trap_Trace								-111
 equ trap_TraceCapsule						-112
-equ trap_ClipToEntities						-113
+equ trap_TraceEntities						-113
 equ trap_PointContents						-114
 equ trap_InPVS								-115
 equ trap_InPVSIgnorePortals					-116

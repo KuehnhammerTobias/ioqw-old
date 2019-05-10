@@ -152,7 +152,7 @@ typedef enum {
 	// sets mins and maxs based on the brushmodel name
 	G_TRACE,					// (trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
 	G_TRACECAPSULE,				// (trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
-	G_CLIPTOENTITIES,			// (trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
+	G_TRACEENTITIES,			// (trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
 	// collision detection against all linked entities
 	G_POINT_CONTENTS,			// (const vec3_t point, int passEntityNum);
 	// point contents against all linked entities

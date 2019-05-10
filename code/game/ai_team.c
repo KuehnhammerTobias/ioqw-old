@@ -2722,7 +2722,7 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 					}
 
 					ClientName(other, name, sizeof(name));
-					BotAI_BotInitialChat(bs, "cmd_returnflag", name, NULL);
+					BotAI_BotInitialChat(bs, "cmd_returnflag", name, NULL); // Tobias CHECK: was "cmd_getflag" (but VOICECHAT_RETURNFLAG)!
 					BotSayTeamOrder(bs, other);
 					BotSayVoiceTeamOrder(bs, other, VOICECHAT_RETURNFLAG);
 					break;
@@ -2909,7 +2909,7 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
 						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
 						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
-						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG); // Tobias CHECK: was VOICECHAT_RETURNFLAG (but "cmd_getflag")!
 					}
 
 					break;

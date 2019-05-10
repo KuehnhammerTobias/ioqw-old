@@ -48,7 +48,7 @@ qboolean G_BounceMissile(gentity_t *ent, trace_t *trace) {
 	if ((trace->surfaceFlags & SURF_MATERIAL_MASK) == MAT_SAND_GR_COL_01 || (trace->surfaceFlags & SURF_MATERIAL_MASK) == MAT_SAND_GR_COL_02 || (trace->surfaceFlags & SURF_MATERIAL_MASK) == MAT_SAND_GR_COL_03 || (trace->surfaceFlags & SURF_MATERIAL_MASK) == MAT_SAND_GR_COL_04) {
 		ent->s.pos.trDelta[2] *= 0.65f;
 	}
-// Tobias: end
+// Tobias END
 	contents = trap_PointContents(ent->r.currentOrigin, -1);
 
 	if (contents & (CONTENTS_WATER|CONTENTS_SLIME|CONTENTS_LAVA)) {

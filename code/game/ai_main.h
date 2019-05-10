@@ -71,7 +71,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 // global team strategies
 #define CTFS_MAX_DEFENSIVE	1
 #define CTFS_DEFENSIVE		2
-#define CTFS_AGGRESSIVE		3
+#define CTFS_AGGRESSIVE		3 // was 1
 #define CTFS_MAX_AGGRESSIVE	4
 // copied from the aas file header
 #define PRESENCE_NONE	1

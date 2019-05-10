@@ -128,7 +128,7 @@ BotAI_TraceEntities
 =======================================================================================================================================
 */
 void BotAI_TraceEntities(bsp_trace_t *bsptrace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask) {
-	trap_ClipToEntities(bsptrace, start, mins, maxs, end, passent, contentmask);
+	trap_TraceEntities(bsptrace, start, mins, maxs, end, passent, contentmask);
 }
 
 /*

@@ -23,7 +23,7 @@ Ioid3-qw is licensed under a [modified version of the GNU GPLv3](COPYING.txt#L62
 
   * Aspect correct widescreen.
   * High resolution font support (TrueType).
-  * Enhanced model loading (incl. sub-models).
+  * Enhanced model loading (incl. submodels).
   * Dynamic skin support.
   * Bullet marks on doors and moving platforms.
   * Gibs and bullet shells ride on moving platforms.
@@ -46,7 +46,7 @@ Ioid3-qw is licensed under a [modified version of the GNU GPLv3](COPYING.txt#L62
 ## Current differences to Spearmint:
 
   * Splitscreen support is still missing due to some rendering issues.
-  * Spearmint's gamepad/joystck support is missing.
+  * Spearmint's gamepad/joystick support is missing.
   * Lot of bot AI code is still compiled into the engine, like it was by default.
   * The default code sctructure is kept alive, engine and game modules aren't seperated, so Ioid3-qw is less modding friendly.
 
