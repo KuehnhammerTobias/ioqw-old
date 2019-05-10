@@ -75,19 +75,19 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define SURF_LADDER				0x00000008
 #define SURF_NOIMPACT			0x00000010 // don't make missile explosions
 #define SURF_NOMARKS			0x00000020 // don't leave missile marks
-//#define SURF_FLESH				0x00000040 // make flesh sounds and effects // Tobias: replaced by MAT_*
+//#define SURF_FLESH				0x00000040 // make flesh sounds and effects // Tobias NOTE: replaced by MAT_*
 #define SURF_NODRAW				0x00000080 // don't generate a drawsurface at all
 #define SURF_HINT				0x00000100 // make a primary bsp splitter
 #define SURF_SKIP				0x00000200 // completely ignore, allowing non-closed brushes
 #define SURF_NOLIGHTMAP			0x00000400 // surface doesn't need a lightmap
 #define SURF_POINTLIGHT			0x00000800 // generate lighting info at vertexes
-//#define SURF_METALSTEPS			0x00001000 // clanking footsteps // Tobias: replaced by MAT_*
+//#define SURF_METALSTEPS			0x00001000 // clanking footsteps // Tobias NOTE: replaced by MAT_*
 #define SURF_NOSTEPS			0x00002000 // no footstep sounds
 #define SURF_NONSOLID			0x00004000 // don't collide against curves with this set
 #define SURF_LIGHTFILTER		0x00008000 // act as a light filter during q3map -light
 #define SURF_ALPHASHADOW		0x00010000 // do per-pixel light shadow casting in q3map
 #define SURF_NODLIGHT			0x00020000 // don't dlight even if solid (solid lava, skies)
-//#define SURF_DUST				0x00040000 // leave a dust trail when walking on this surface // Tobias: replaced by MAT_*
+//#define SURF_DUST				0x00040000 // leave a dust trail when walking on this surface // Tobias NOTE: replaced by MAT_*
 
 #define SURF_MATERIAL_MASK		0x0FF00000
 
