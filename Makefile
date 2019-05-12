@@ -1719,11 +1719,11 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_glsl.o \
   $(B)/renderergl2/tr_image.o \
   $(B)/renderergl2/tr_image_bmp.o \
+  $(B)/renderergl2/tr_image_dds.o \
   $(B)/renderergl2/tr_image_jpg.o \
   $(B)/renderergl2/tr_image_pcx.o \
   $(B)/renderergl2/tr_image_png.o \
   $(B)/renderergl2/tr_image_tga.o \
-  $(B)/renderergl2/tr_image_dds.o \
   $(B)/renderergl2/tr_init.o \
   $(B)/renderergl2/tr_light.o \
   $(B)/renderergl2/tr_main.o \
@@ -1791,11 +1791,11 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_glsl.o \
   $(B)/renderergl1/tr_image.o \
   $(B)/renderergl1/tr_image_bmp.o \
+  $(B)/renderergl1/tr_image_dds.o \
   $(B)/renderergl1/tr_image_jpg.o \
   $(B)/renderergl1/tr_image_pcx.o \
   $(B)/renderergl1/tr_image_png.o \
   $(B)/renderergl1/tr_image_tga.o \
-  $(B)/renderergl1/tr_image_dds.o \
   $(B)/renderergl1/tr_init.o \
   $(B)/renderergl1/tr_light.o \
   $(B)/renderergl1/tr_main.o \
@@ -1923,11 +1923,9 @@ ifneq ($(USE_INTERNAL_FREETYPE),0)
     $(B)/renderergl1/ftlcdfil.o \
     $(B)/renderergl1/ftstroke.o \
     $(B)/renderergl1/ftsystem.o \
-	\
     $(B)/renderergl1/ftbzip2.o \
     $(B)/renderergl1/ftgzip.o \
     $(B)/renderergl1/ftlzw.o \
-	\
     $(B)/renderergl1/autofit.o \
     $(B)/renderergl1/bdf.o \
     $(B)/renderergl1/cff.o \
@@ -2375,7 +2373,6 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/bg_tracemap.o \
   $(B)/$(BASEGAME)/cgame/cg_atmospheric.o \
   $(B)/$(BASEGAME)/cgame/cg_consolecmds.o \
-  $(B)/$(BASEGAME)/cgame/cg_newdraw.o \
   $(B)/$(BASEGAME)/cgame/cg_draw.o \
   $(B)/$(BASEGAME)/cgame/cg_drawtools.o \
   $(B)/$(BASEGAME)/cgame/cg_effects.o \
@@ -2384,6 +2381,7 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_info.o \
   $(B)/$(BASEGAME)/cgame/cg_localents.o \
   $(B)/$(BASEGAME)/cgame/cg_marks.o \
+  $(B)/$(BASEGAME)/cgame/cg_newdraw.o \
   $(B)/$(BASEGAME)/cgame/cg_particles.o \
   $(B)/$(BASEGAME)/cgame/cg_players.o \
   $(B)/$(BASEGAME)/cgame/cg_polybus.o \
