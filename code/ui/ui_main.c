@@ -3978,9 +3978,9 @@ static void UI_RunMenuScript(char **args) {
 					}
 				}
 			}
-// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for connected players, and also displays the wrong HUD(Free for all HUD in team gametypes and vice versa, etc.)!
-//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 		} else if (Q_stricmp(name, "StartServerIngame") == 0) {
+// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
+//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 			int i, delay, clients, oldclients;
 			float skill;
 
@@ -3992,9 +3992,9 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cvar_Set("g_redTeam", UI_Cvar_VariableString("ui_opponentName"));
 			trap_Cvar_Set("g_blueTeam", UI_Cvar_VariableString("ui_teamName"));
 			trap_Cmd_ExecuteText(EXEC_APPEND, va("map %s\n", uiInfo.mapList[ui_currentNetMap.integer].mapLoadName));
-			// Tobias FIXME: this script will add bots and doesn't check if there are already enough bots, so we must kick already connected bots, otherwise bots are added to the existing ones continuously with each new map(FIXME?).
-			// Tobias NOTE: we must kick bots before executing the map command otherwise bots become 'invisible'(FIXME?).
-			// Tobias FIXME: unfortunately kicking bots AFTER map loading spawns some extra skulls again, https:// github.com / ioquake / ioq3 / commit / f7c3276fe803388bd613ab6bf6ad8e0a6647b740#diff - 08c7587b3da3e294c50c64c1024339d7
+			// Tobias FIXME: this script will add bots and doesn't check if there are already enough bots, so we must kick already connected bots, otherwise bots are added to the existing ones continuously with each new map (FIXME?).
+			// Tobias NOTE: we must kick bots before executing the map command otherwise bots become 'invisible' (FIXME?).
+			// Tobias FIXME: unfortunately kicking bots AFTER map loading spawns some extra skulls again, https://github.com/ioquake/ioq3/commit/f7c3276fe803388bd613ab6bf6ad8e0a6647b740#diff-08c7587b3da3e294c50c64c1024339d7
 			trap_Cmd_ExecuteText(EXEC_APPEND, "kickbots\n");
 			// set max clients based on spots
 			oldclients = trap_Cvar_VariableValue("sv_maxClients");
