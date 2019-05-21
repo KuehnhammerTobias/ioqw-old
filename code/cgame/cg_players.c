@@ -2607,6 +2607,8 @@ void CG_Player(centity_t *cent) {
 
 	CG_AddRefEntityWithPowerups(&torso, &cent->currentState);
 
+	torso.shaderRGBA[3] = 255; // leave powerup entity alpha alone
+
 	t = cg.time - ci->medkitUsageTime;
 
 	if (ci->medkitUsageTime && t < 500) {
