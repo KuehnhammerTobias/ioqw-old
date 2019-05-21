@@ -1236,7 +1236,7 @@ int CG_NewParticleArea(int num);
 void CG_Player(centity_t *cent);
 void CG_ResetPlayerEntity(centity_t *cent);
 void CG_AddRefEntityWithPowerups(refEntity_t *ent, entityState_t *state);
-qhandle_t CG_AddSkinToFrame(const cgSkin_t *skin);
+qhandle_t CG_AddSkinToFrame(const cgSkin_t *skin, entityState_t *state);
 qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append);
 void CG_NewClientInfo(int clientNum);
 sfxHandle_t CG_CustomSound(int clientNum, const char *soundName);

@@ -778,7 +778,7 @@ void UI_DrawPlayer(float x, float y, float w, float h, playerInfo_t *pi, int tim
 	renderfx = RF_LIGHTING_ORIGIN|RF_NOSHADOW;
 	// add the legs
 	legs.hModel = pi->legsModel;
-	legs.customSkin = UI_AddSkinToFrame(&pi->modelSkin);
+	legs.customSkin = UI_AddSkinToFrame(&pi->modelSkin, NULL);
 
 	VectorCopy(origin, legs.origin);
 	VectorCopy(origin, legs.lightingOrigin);
@@ -974,13 +974,30 @@ static qboolean UI_FindClientHeadFile(char *filename, int length, const char *te
 UI_AddSkinToFrame
 =======================================================================================================================================
 */
-qhandle_t UI_AddSkinToFrame(const cgSkin_t *skin) {
+qhandle_t UI_AddSkinToFrame(const cgSkin_t *skin, entityState_t *state) {
+	qhandle_t surfaces[MAX_CG_SKIN_SURFACES];
+	int i, index;
+	float skinFraction;
 
-	if (!skin || !skin->numSurfaces) {
+	if (!skin || !skin->numMeshes) {
 		return 0;
 	}
 
-	return trap_R_AddSkinToFrame(skin->numSurfaces, skin->surfaces);
+	skinFraction = state ? state->skinFraction : 0.0f;
+
+	for (i = 0; i < skin->numMeshes; i++) {
+		if (skinFraction >= 1.0f) {
+			index = skin->meshes[i].numShaders - 1;
+		} else if (skinFraction <= 0.0f) {
+			index = 0;
+		} else { // > 0 && < 1
+			index = skinFraction * skin->meshes[i].numShaders;
+		}
+
+		surfaces[i] = skin->meshes[i].surfaces[index];
+	}
+
+	return trap_R_AddSkinToFrame(skin->numMeshes, surfaces);
 }
 
 /*
@@ -1016,12 +1033,12 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	}
 
 	if (!append) {
-		skin->numSurfaces = 0;
+		skin->numMeshes = 0;
 	}
 
-	initialSurfaces = skin->numSurfaces;
-	totalSurfaces = skin->numSurfaces;
-	// load the file
+	initialSurfaces = skin->numMeshes;
+	totalSurfaces = skin->numMeshes;
+	// load the fille
 	len = trap_FS_FOpenFile(name, &f, FS_READ);
 
 	if (len <= 0) {
@@ -1035,7 +1052,9 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	}
 
 	trap_FS_Read(text, len, f);
+
 	text[len] = 0;
+
 	trap_FS_FCloseFile(f);
 	// parse the text
 	text_p = text;
@@ -1043,6 +1062,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	while (text_p && *text_p) {
 		// get surface name
 		token = COM_ParseExt2(&text_p, qtrue, ',');
+
 		Q_strncpyz(surfName, token, sizeof(surfName));
 
 		if (!token[0]) {
@@ -1062,15 +1082,28 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 			SkipRestOfLine(&text_p);
 			continue;
 		}
-		// parse the shader name
-		token = COM_ParseExt2(&text_p, qfalse, ',');
-		Q_strncpyz(shaderName, token, sizeof(shaderName));
 
-		if (skin->numSurfaces < MAX_CG_SKIN_SURFACES) {
-			hShader = trap_R_RegisterShaderEx(shaderName, LIGHTMAP_NONE, qtrue);
+		if (skin->numMeshes < MAX_CG_SKIN_SURFACES) {
+			int numShaders;
 
-			skin->surfaces[skin->numSurfaces] = trap_R_AllocSkinSurface(surfName, hShader);
-			skin->numSurfaces++;
+			for (numShaders = 0; numShaders < MAX_CG_SKIN_SURFACE_SHADERS; numShaders++) {
+				if (*text_p == ',') {
+					text_p++;
+				}
+				// parse the shader name
+				token = COM_ParseExt2(&text_p, qfalse, ',');
+				Q_strncpyz(shaderName, token, sizeof(shaderName));
+
+				if (!token[0]) {
+					break;
+				}
+
+				hShader = trap_R_RegisterShaderEx(shaderName, LIGHTMAP_NONE, qtrue);
+				skin->meshes[skin->numMeshes].surfaces[numShaders] = trap_R_AllocSkinSurface(surfName, hShader);
+			}
+
+			skin->meshes[skin->numMeshes].numShaders = numShaders;
+			skin->numMeshes++;
 		}
 
 		totalSurfaces++;
@@ -1080,7 +1113,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 		Com_Printf("WARNING: Ignoring excess surfaces(found %d, max is %d)in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
 	}
 	// failed to load surfaces
-	if (!skin->numSurfaces) {
+	if (!skin->numMeshes) {
 		return qfalse;
 	}
 

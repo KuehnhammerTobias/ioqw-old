@@ -1118,6 +1118,7 @@ typedef struct entityState_s {
 	int groundEntityNum; // ENTITYNUM_NONE = in air
 	int modelindex;
 	int modelindex2;
+	float skinFraction;	// 0 = full health, 1 = dead
 	int constantLight;	// r + (g << 8) + (b << 16) + (intensity << 24)
 	int dl_intensity;	// used for coronas
 	int frame;

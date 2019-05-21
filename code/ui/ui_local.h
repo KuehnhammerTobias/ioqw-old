@@ -463,7 +463,7 @@ char *UI_GetBotInfoByName(const char *name);
 int UI_GetNumBots(void);
 void UI_LoadBots(void);
 char *UI_GetBotNameByNumber(int num);
-qhandle_t UI_AddSkinToFrame(const cgSkin_t *skin);
+qhandle_t UI_AddSkinToFrame(const cgSkin_t *skin, entityState_t *state);
 qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append);
 
 /*

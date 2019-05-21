@@ -303,7 +303,7 @@ static void CG_DrawField(int x, int y, int width, int value) {
 CG_Draw3DModelEx
 =======================================================================================================================================
 */
-void CG_Draw3DModelEx(float x, float y, float w, float h, qhandle_t model, cgSkin_t *skin, vec3_t origin, vec3_t angles, const byte *rgba) {
+void CG_Draw3DModelEx(float x, float y, float w, float h, qhandle_t model, cgSkin_t *skin, vec3_t origin, vec3_t angles, const byte *rgba, entityState_t *state) {
 	refdef_t refdef;
 	refEntity_t ent;
 
@@ -320,7 +320,7 @@ void CG_Draw3DModelEx(float x, float y, float w, float h, qhandle_t model, cgSki
 	VectorCopy(origin, ent.origin);
 
 	ent.hModel = model;
-	ent.customSkin = CG_AddSkinToFrame(skin);
+	ent.customSkin = CG_AddSkinToFrame(skin, state);
 	ent.renderfx = RF_NOSHADOW; // no stencil shadows
 
 	if (rgba) {
@@ -350,7 +350,7 @@ CG_Draw3DModel
 =======================================================================================================================================
 */
 void CG_Draw3DModel(float x, float y, float w, float h, qhandle_t model, cgSkin_t *skin, vec3_t origin, vec3_t angles) {
-	CG_Draw3DModelEx(x, y, w, h, model, skin, origin, angles, NULL);
+	CG_Draw3DModelEx(x, y, w, h, model, skin, origin, angles, NULL, NULL);
 }
 
 /*
@@ -375,7 +375,7 @@ void CG_DrawHealthModel(float x, float y, float w, float h, qhandle_t model, cgS
 	VectorCopy(origin, ent.origin);
 
 	ent.hModel = model;
-	ent.customSkin = CG_AddSkinToFrame(skin);
+	ent.customSkin = CG_AddSkinToFrame(skin, NULL);
 	ent.renderfx = RF_NOSHADOW; // no stencil shadows
 
 	if (rgba) {
@@ -420,6 +420,8 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum, vec3_t headA
 	float len;
 	vec3_t origin;
 	vec3_t mins, maxs;
+	entityState_t *entityState;
+	byte color[4];
 
 	ci = &cgs.clientinfo[clientNum];
 
@@ -439,7 +441,15 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum, vec3_t headA
 		origin[0] = len / 0.268; // len / tan(fov / 2)
 		// allow per-model tweaking
 		VectorAdd(origin, ci->headOffset, origin);
-		CG_Draw3DModelEx(x, y, w, h, ci->headModel, &ci->modelSkin, origin, headAngles, ci->c1RGBA);
+		// TODO: use prediction entity state for local players?
+		entityState = &cg_entities[clientNum].currentState;
+
+		color[0] = ci->c1RGBA[0];
+		color[1] = ci->c1RGBA[1];
+		color[2] = ci->c1RGBA[2];
+		color[3] = entityState->skinFraction * 255;
+
+		CG_Draw3DModelEx(x, y, w, h, ci->headModel, &ci->modelSkin, origin, headAngles, color, entityState);
 	} else if (cg_drawIcons.integer) {
 		CG_DrawPic(x, y, w, h, ci->modelIcon);
 	}
@@ -2701,7 +2711,7 @@ void CG_DrawMiscGamemodels(void) {
 		}
 
 		ent.hModel = cgs.miscGameModels[i].model;
-		ent.customSkin = CG_AddSkinToFrame(&cgs.miscGameModels[i].skin);
+		ent.customSkin = CG_AddSkinToFrame(&cgs.miscGameModels[i].skin, NULL);
 
 		trap_R_AddRefEntityToScene(&ent);
 

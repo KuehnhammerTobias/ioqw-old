@@ -578,13 +578,30 @@ static qboolean CG_FindClientHeadFile(char *filename, int length, clientInfo_t *
 CG_AddSkinToFrame
 =======================================================================================================================================
 */
-qhandle_t CG_AddSkinToFrame(const cgSkin_t *skin) {
+qhandle_t CG_AddSkinToFrame(const cgSkin_t *skin, entityState_t *state) {
+	qhandle_t surfaces[MAX_CG_SKIN_SURFACES];
+	int i, index;
+	float skinFraction;
 
-	if (!skin || !skin->numSurfaces) {
+	if (!skin || !skin->numMeshes) {
 		return 0;
 	}
 
-	return trap_R_AddSkinToFrame(skin->numSurfaces, skin->surfaces);
+	skinFraction = state ? state->skinFraction : 0.0f;
+
+	for (i = 0; i < skin->numMeshes; i++) {
+		if (skinFraction >= 1.0f) {
+			index = skin->meshes[i].numShaders - 1;
+		} else if (skinFraction <= 0.0f) {
+			index = 0;
+		} else { // > 0 && < 1
+			index = skinFraction * skin->meshes[i].numShaders;
+		}
+
+		surfaces[i] = skin->meshes[i].surfaces[index];
+	}
+
+	return trap_R_AddSkinToFrame(skin->numMeshes, surfaces);
 }
 
 /*
@@ -620,11 +637,11 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	}
 
 	if (!append) {
-		skin->numSurfaces = 0;
+		skin->numMeshes = 0;
 	}
 
-	initialSurfaces = skin->numSurfaces;
-	totalSurfaces = skin->numSurfaces;
+	initialSurfaces = skin->numMeshes;
+	totalSurfaces = skin->numMeshes;
 	// load the file
 	len = trap_FS_FOpenFile(name, &f, FS_READ);
 
@@ -669,20 +686,33 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 			SkipRestOfLine(&text_p);
 			continue;
 		}
-		// parse the shader name
-		token = COM_ParseExt2(&text_p, qfalse, ',');
 
-		Q_strncpyz(shaderName, token, sizeof(shaderName));
+		if (skin->numMeshes < MAX_CG_SKIN_SURFACES) {
+			int numShaders;
 
-		if (skin->numSurfaces < MAX_CG_SKIN_SURFACES) {
-			hShader = trap_R_RegisterShaderEx(shaderName, LIGHTMAP_NONE, qtrue);
-			// for compatibility with quake3 skins, don't render missing shaders listed in skins
-			if (!hShader) {
-				hShader = cgs.media.nodrawShader;
+			for (numShaders = 0; numShaders < MAX_CG_SKIN_SURFACE_SHADERS; numShaders++) {
+				if (*text_p == ',') {
+					text_p++;
+				}
+				// parse the shader name
+				token = COM_ParseExt2(&text_p, qfalse, ',');
+				Q_strncpyz(shaderName, token, sizeof(shaderName));
+
+				if (!token[0]) {
+					break;
+				}
+
+				hShader = trap_R_RegisterShaderEx(shaderName, LIGHTMAP_NONE, qtrue);
+				// for compatibility with quake3 skins, don't render missing shaders listed in skins
+				if (!hShader) {
+					hShader = cgs.media.nodrawShader;
+				}
+
+				skin->meshes[skin->numMeshes].surfaces[numShaders] = trap_R_AllocSkinSurface(surfName, hShader);
 			}
 
-			skin->surfaces[skin->numSurfaces] = trap_R_AllocSkinSurface(surfName, hShader);
-			skin->numSurfaces++;
+			skin->meshes[skin->numMeshes].numShaders = numShaders;
+			skin->numMeshes++;
 		}
 
 		totalSurfaces++;
@@ -692,7 +722,7 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 		CG_Printf("WARNING: Ignoring excess surfaces (found %d, max is %d) in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
 	}
 	// failed to load surfaces
-	if (!skin->numSurfaces) {
+	if (!skin->numMeshes) {
 		return qfalse;
 	}
 
@@ -1908,7 +1938,7 @@ static void CG_PlayerFlag(centity_t *cent, const cgSkin_t *skin, refEntity_t *to
 	memset(&flag, 0, sizeof(flag));
 
 	flag.hModel = cgs.media.flagFlapModel;
-	flag.customSkin = CG_AddSkinToFrame(skin);
+	flag.customSkin = CG_AddSkinToFrame(skin, &cent->currentState);
 
 	VectorCopy(torso->lightingOrigin, flag.lightingOrigin);
 
@@ -2538,7 +2568,7 @@ void CG_Player(centity_t *cent) {
 	}
 	// add the legs
 	legs.hModel = ci->legsModel;
-	legs.customSkin = CG_AddSkinToFrame(&ci->modelSkin);
+	legs.customSkin = CG_AddSkinToFrame(&ci->modelSkin, &cent->currentState);
 
 	VectorCopy(cent->lerpOrigin, legs.origin);
 	VectorCopy(cent->lerpOrigin, legs.lightingOrigin);
@@ -2548,6 +2578,9 @@ void CG_Player(centity_t *cent) {
 
 	VectorCopy(legs.origin, legs.oldorigin); // don't positionally lerp at all
 	Byte4Copy(ci->c1RGBA, legs.shaderRGBA);
+
+	legs.shaderRGBA[3] = cent->currentState.skinFraction * 255;
+
 	CG_AddRefEntityWithPowerups(&legs, &cent->currentState);
 	// if the model failed, allow the default nullmodel to be displayed
 	if (!legs.hModel) {
@@ -2569,6 +2602,9 @@ void CG_Player(centity_t *cent) {
 	torso.renderfx = renderfx;
 
 	Byte4Copy(ci->c1RGBA, torso.shaderRGBA);
+
+	torso.shaderRGBA[3] = cent->currentState.skinFraction * 255;
+
 	CG_AddRefEntityWithPowerups(&torso, &cent->currentState);
 
 	t = cg.time - ci->medkitUsageTime;
@@ -2794,6 +2830,9 @@ void CG_Player(centity_t *cent) {
 	head.renderfx = renderfx;
 
 	Byte4Copy(ci->c1RGBA, head.shaderRGBA);
+
+	head.shaderRGBA[3] = cent->currentState.skinFraction * 255;
+
 	CG_AddRefEntityWithPowerups(&head, &cent->currentState);
 	CG_AddBreathPuffs(cent, &head);
 	CG_DustTrail(cent);

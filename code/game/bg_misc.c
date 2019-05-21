@@ -1363,6 +1363,14 @@ void BG_PlayerStateToEntityState(playerState_t *ps, entityState_t *s, qboolean s
 		}
 	}
 
+	if (ps->stats[STAT_HEALTH] <= 0) {
+		s->skinFraction = 1.0f;
+	} else if (ps->stats[STAT_HEALTH] >= 100) {
+		s->skinFraction = 0.0f;
+	} else {
+		s->skinFraction = 1.0f - ((float)ps->stats[STAT_HEALTH] * 0.01);
+	}
+
 	s->loopSound = ps->loopSound;
 	s->tokens = ps->tokens;
 	s->team = ps->persistant[PERS_TEAM];
@@ -1444,6 +1452,14 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t *ps, entityState_t *s,
 		if (ps->powerups[i]) {
 			s->powerups |= 1 << i;
 		}
+	}
+
+	if (ps->stats[STAT_HEALTH] <= 0) {
+		s->skinFraction = 1.0f;
+	} else if (ps->stats[STAT_HEALTH] >= 100) {
+		s->skinFraction = 0.0f;
+	} else {
+		s->skinFraction = 1.0f - ((float)ps->stats[STAT_HEALTH] * 0.01);
 	}
 
 	s->loopSound = ps->loopSound;

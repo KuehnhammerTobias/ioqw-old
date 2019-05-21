@@ -477,9 +477,15 @@ typedef struct animation_s {
 #define ANIM_TOGGLEBIT 128
 // skin surfaces array shouldn't be dynamically allocated because players reuse the same skin structure when changing models
 #define MAX_CG_SKIN_SURFACES 100
+#define MAX_CG_SKIN_SURFACE_SHADERS 10
 typedef struct {
-	int numSurfaces;
-	qhandle_t surfaces[MAX_CG_SKIN_SURFACES];
+	qhandle_t surfaces[MAX_CG_SKIN_SURFACE_SHADERS]; // allocated skin surfaces (mesh name + shader)
+	int numShaders;
+} cgSkinMesh_t;
+
+typedef struct {
+	int numMeshes;
+	cgSkinMesh_t meshes[MAX_CG_SKIN_SURFACES];
 } cgSkin_t;
 
 #define DEFAULT_PLAYER_NAME "UnnamedPlayer"

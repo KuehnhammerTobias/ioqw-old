@@ -1638,7 +1638,11 @@ bot_moveresult_t BotTravel_WaterJump(bot_movestate_t *ms, aas_reachability_t *re
 	EA_MoveForward(ms->client);
 	// move up if close to the actual out of water jump spot
 	if (dist < 40) {
-		EA_MoveUp(ms->client);
+		if (ms->moveflags & MFL_ONGROUND) {
+			EA_Jump(ms->client);
+		} else {
+			EA_MoveUp(ms->client);
+		}
 	}
 	// set the ideal view angles
 	VectorToAngles(dir, result.ideal_viewangles);
@@ -3649,8 +3653,8 @@ int BotSetupMoveAI(void) {
 	BotSetBrushModelTypes();
 
 	sv_gravity = LibVar("sv_gravity", "800");
-	sv_maxstep = LibVar("sv_step", "18");
-	sv_maxbarrier = LibVar("sv_maxbarrier", "42");
+	sv_maxstep = LibVar("sv_maxstep", "19");
+	sv_maxbarrier = LibVar("sv_maxbarrier", "43");
 
 	weapindex_rocketlauncher = LibVar("weapindex_rocketlauncher", "9");
 	weapindex_bfg10k = LibVar("weapindex_bfg10k", "13");

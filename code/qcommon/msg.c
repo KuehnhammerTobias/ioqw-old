@@ -1022,6 +1022,7 @@ netField_t entityStateFields[] = {
 	{NETF(groundEntityNum), GENTITYNUM_BITS},
 	{NETF(modelindex), MODELINDEX_BITS},
 	{NETF(modelindex2), MODELINDEX_BITS},
+	{NETF(skinFraction), 0},
 	{NETF(constantLight), 32},
 	{NETF(dl_intensity), 32},
 	{NETF(density), 10},
