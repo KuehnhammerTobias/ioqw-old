@@ -1836,59 +1836,42 @@ PM_Animate
 */
 static void PM_Animate(void) {
 
-	switch (pm->cmd.buttons) {
-		case BUTTON_GESTURE:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_GESTURE);
-				pm->ps->torsoTimer = TIMER_GESTURE;
-				PM_AddEvent(EV_TAUNT);
-			}
-
-			break;
-		case BUTTON_AFFIRMATIVE:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_AFFIRMATIVE);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		case BUTTON_NEGATIVE:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_NEGATIVE);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		case BUTTON_GETFLAG:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_GETFLAG);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		case BUTTON_GUARDBASE:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_GUARDBASE);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		case BUTTON_FOLLOWME:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_FOLLOWME);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		case BUTTON_PATROL:
-			if (pm->ps->torsoTimer == 0) {
-				PM_StartTorsoAnim(TORSO_PATROL);
-				pm->ps->torsoTimer = 600; // TIMER_GESTURE;
-			}
-
-			break;
-		default:
-			break;
+	if (pm->cmd.buttons & BUTTON_GESTURE) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_GESTURE);
+			pm->ps->torsoTimer = TIMER_GESTURE;
+			PM_AddEvent(EV_TAUNT);
+		}
+	} else if (pm->cmd.buttons & BUTTON_AFFIRMATIVE) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_AFFIRMATIVE);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
+	} else if (pm->cmd.buttons & BUTTON_NEGATIVE) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_NEGATIVE);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
+	} else if (pm->cmd.buttons & BUTTON_GETFLAG) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_GETFLAG);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
+	} else if (pm->cmd.buttons & BUTTON_GUARDBASE) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_GUARDBASE);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
+	} else if (pm->cmd.buttons & BUTTON_FOLLOWME) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_FOLLOWME);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
+	} else if (pm->cmd.buttons & BUTTON_PATROL) {
+		if (pm->ps->torsoTimer == 0) {
+			PM_StartTorsoAnim(TORSO_PATROL);
+			pm->ps->torsoTimer = 600; // TIMER_GESTURE;
+		}
 	}
 }
 
