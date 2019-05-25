@@ -1126,6 +1126,7 @@ static void PM_CrashLand(void) {
 	float vel, acc;
 	float t;
 	float a, b, c, den;
+	int stunTime;
 
 	// decide which landing animation to use
 	if (pm->ps->pm_flags & PMF_BACKWARDS_JUMP) {
@@ -1151,6 +1152,7 @@ static void PM_CrashLand(void) {
 	t = (-b - sqrt(den)) / (2 * a);
 	delta = vel + t * acc;
 	delta = delta * delta * 0.0001;
+	stunTime = 0;
 	// ducking while falling doubles damage
 	if (pm->ps->pm_flags & PMF_DUCKED) {
 		delta *= 2;
@@ -1161,31 +1163,90 @@ static void PM_CrashLand(void) {
 	}
 	// reduce falling damage if there is standing water
 	if (pm->waterlevel == 2) {
-		delta *= 0.25;
-	}
-
-	if (pm->waterlevel == 1) {
-		delta *= 0.5;
+		delta *= 0.85;
 	}
 
 	if (delta < 1) {
 		return;
 	}
-	// create a local entity event to play the sound
-	// SURF_NODAMAGE is used for bounce pads where you don't ever want to take damage or play a crunch sound
+	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
-		if (delta > 60) {
-			PM_AddEvent(EV_FALL_FAR);
-		} else if (delta > 40) {
+		// create a local entity event to play the sound
+		if (delta > 77) {
+			PM_AddEvent(EV_FALL_DIE);
+			stunTime = 1000;
+		} else if (delta > 67) {
+			PM_AddEvent(EV_FALL_DMG_50);
+			stunTime = 1000;
+		} else if (delta > 58) {
 			// this is a pain grunt, so don't play it if dead
 			if (pm->ps->stats[STAT_HEALTH] > 0) {
-				PM_AddEvent(EV_FALL_MEDIUM);
+				PM_AddEvent(EV_FALL_DMG_25);
 			}
+
+			stunTime = 250;
+		} else if (delta > 48 ) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_15);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 38.75) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_10);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 28) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_5);
+			}
+
+			stunTime = 1000;
 		} else if (delta > 7) {
 			PM_AddEvent(EV_FALL_SHORT);
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
+	// Tobias NOTE: this simulates the old behavior, assuming old maps use SURF_NODAMAGE if needed
+	} else {
+		if (delta > 60) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_10);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 40) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_5);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 7) {
+			PM_AddEvent(EV_FALL_SHORT);
+		} else {
+			PM_AddEvent(PM_FootstepForSurface());
+		}
+	// Tobias END
+	}
+	// when landing from launch ramps don't stop so abruptly
+	if (VectorLength(pm->ps->velocity) > 400) {
+		stunTime = 0;
+	}
+
+	if (bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
+		stunTime = 0;
+	}
+	// when falling damage happens, velocity is cleared, but this needs to happen in pmove, not g_active (prediction will be wrong, otherwise)!
+	if (stunTime) {
+		pm->ps->pm_time = stunTime;
+		pm->ps->pm_flags |= PMF_TIME_KNOCKBACK;
+		VectorClear(pm->ps->velocity);
 	}
 	// start footstep cycle over
 	pm->ps->bobCycle = 0;

@@ -6860,9 +6860,13 @@ void BotCheckEvents(bot_state_t *bs, entityState_t *state) {
 			break;
 		}
 		case EV_SWIM:
+		case EV_FALL_DIE:
+		case EV_FALL_DMG_50:
+		case EV_FALL_DMG_25:
+		case EV_FALL_DMG_15:
+		case EV_FALL_DMG_10:
+		case EV_FALL_DMG_5:
 		case EV_FALL_SHORT:
-		case EV_FALL_MEDIUM:
-		case EV_FALL_FAR:
 		case EV_STEP_4:
 		case EV_STEP_8:
 		case EV_STEP_12:

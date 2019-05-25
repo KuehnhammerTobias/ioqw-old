@@ -546,8 +546,12 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 			case EV_FIRE_WEAPON:
 				FireWeapon(ent);
 				break;
-			case EV_FALL_MEDIUM:
-			case EV_FALL_FAR:
+			case EV_FALL_DIE:
+			case EV_FALL_DMG_50:
+			case EV_FALL_DMG_25:
+			case EV_FALL_DMG_15:
+			case EV_FALL_DMG_10:
+			case EV_FALL_DMG_5:
 				if (ent->s.eType != ET_PLAYER) {
 					break; // not in the player model
 				}
@@ -556,10 +560,20 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 					break;
 				}
 
-				if (event == EV_FALL_FAR) {
+				if (event == EV_FALL_DIE) {
+					damage = 200;
+				} else if (event == EV_FALL_DMG_50) {
+					damage = 50;
+				} else if (event == EV_FALL_DMG_25) {
+					damage = 25;
+				} else if (event == EV_FALL_DMG_15) {
+					damage = 15;
+				} else if (event == EV_FALL_DMG_10) {
 					damage = 10;
-				} else {
+				} else if (event == EV_FALL_DMG_5) {
 					damage = 5;
+				} else {
+					damage = 1; // never used
 				}
 
 				ent->pain_debounce_time = level.time + 200; // no normal pain sound

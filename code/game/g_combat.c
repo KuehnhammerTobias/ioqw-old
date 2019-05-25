@@ -587,7 +587,7 @@ void PlayerDie(gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int d
 	// never gib in a nodrop
 	contents = trap_PointContents(self->r.currentOrigin, -1);
 
-	if ((self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
+	if ((self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer && meansOfDeath != MOD_FALLING) || meansOfDeath == MOD_SUICIDE) {
 		// gib death
 		GibEntity(self, killer);
 	} else {

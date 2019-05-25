@@ -35,8 +35,14 @@ char *cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {
 	"*dd3.wav",
 	// drown
 	"*dr1.wav",
+	// fall death
+	"*df1.wav",
 	// falling far
 	"*ff1.wav",
+	"*ff2.wav",
+	"*ff3.wav",
+	"*ff4.wav",
+	"*ff5.wav",
 	// fall into void
 	"*fv1.wav",
 	// gasp

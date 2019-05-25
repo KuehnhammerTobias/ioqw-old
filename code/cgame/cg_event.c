@@ -802,21 +802,43 @@ void CG_EntityEvent(centity_t *cent, vec3_t position) {
 
 			CG_GibPlayer(cent->lerpOrigin);
 			break;
-		case EV_FALL_SHORT:
-			DEBUGNAME("EV_FALL_SHORT");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.landSound, 64);
+		case EV_FALL_DIE:
+			DEBUGNAME("EV_FALL_DIE");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*df1.wav"), 64);
+
+			cent->pe.painTime = cg.time; // don't play a pain sound right after this
+			break;
+		case EV_FALL_DMG_50:
+			DEBUGNAME("EV_FALL_DMG_50");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*ff5.wav"), 64);
+
+			cent->pe.painTime = cg.time; // don't play a pain sound right after this
 
 			if (clientNum == cg.predictedPlayerState.clientNum) {
 				// smooth landing z changes
-				cg.landChange = -8;
+				cg.landChange = -24;
 				cg.landTime = cg.time;
 			}
 
 			break;
-		case EV_FALL_MEDIUM:
-			DEBUGNAME("EV_FALL_MEDIUM");
-			// use normal pain sound
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*pd1.wav"), 64);
+		case EV_FALL_DMG_25:
+			DEBUGNAME("EV_FALL_DMG_25");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*ff4.wav"), 64);
+
+			cent->pe.painTime = cg.time; // don't play a pain sound right after this
+
+			if (clientNum == cg.predictedPlayerState.clientNum) {
+				// smooth landing z changes
+				cg.landChange = -24;
+				cg.landTime = cg.time;
+			}
+
+			break;
+		case EV_FALL_DMG_15:
+			DEBUGNAME("EV_FALL_DMG_15");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*ff3.wav"), 64);
+
+			cent->pe.painTime = cg.time; // don't play a pain sound right after this
 
 			if (clientNum == cg.predictedPlayerState.clientNum) {
 				// smooth landing z changes
@@ -825,15 +847,41 @@ void CG_EntityEvent(centity_t *cent, vec3_t position) {
 			}
 
 			break;
-		case EV_FALL_FAR:
-			DEBUGNAME("EV_FALL_FAR");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*ff1.wav"), 64);
+		case EV_FALL_DMG_10:
+			DEBUGNAME("EV_FALL_DMG_10");
+			// use normal pain sound
+			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*ff2.wav"), 64);
 
 			cent->pe.painTime = cg.time; // don't play a pain sound right after this
 
 			if (clientNum == cg.predictedPlayerState.clientNum) {
 				// smooth landing z changes
-				cg.landChange = -24;
+				cg.landChange = -16;
+				cg.landTime = cg.time;
+			}
+
+			break;
+		case EV_FALL_DMG_5:
+			DEBUGNAME("EV_FALL_DMG_5");
+			// use normal pain sound
+			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*ff1.wav"), 64);
+
+			cent->pe.painTime = cg.time; // don't play a pain sound right after this
+
+			if (clientNum == cg.predictedPlayerState.clientNum) {
+				// smooth landing z changes
+				cg.landChange = -16;
+				cg.landTime = cg.time;
+			}
+
+			break;
+		case EV_FALL_SHORT:
+			DEBUGNAME("EV_FALL_SHORT");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.landSound, 64);
+
+			if (clientNum == cg.predictedPlayerState.clientNum) {
+				// smooth landing z changes
+				cg.landChange = -8;
 				cg.landTime = cg.time;
 			}
 

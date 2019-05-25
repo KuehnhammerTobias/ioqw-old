@@ -301,9 +301,13 @@ typedef enum {
 	EV_DEATH3,
 	EV_OBITUARY,
 	EV_GIB_PLAYER,			// gib a previously living player
+	EV_FALL_DIE,
+	EV_FALL_DMG_50,
+	EV_FALL_DMG_25,
+	EV_FALL_DMG_15,
+	EV_FALL_DMG_10,
+	EV_FALL_DMG_5,
 	EV_FALL_SHORT,
-	EV_FALL_MEDIUM,
-	EV_FALL_FAR,
 	EV_JUMP,
 	EV_JUMP_PAD,			// boing sound at origin, jump sound on player
 	EV_PLAYER_TELEPORT_IN,
