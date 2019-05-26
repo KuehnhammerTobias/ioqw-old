@@ -531,7 +531,10 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 	int i;
 	int event;
 	gclient_t *client;
-	int damage;
+	gentity_t *victim;
+	trace_t tr;
+	vec3_t start, stop;
+	int damage, goombaDmg, kb_time;
 
 	client = ent->client;
 
@@ -560,24 +563,88 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 					break;
 				}
 
-				if (event == EV_FALL_DIE) {
-					damage = 200;
-				} else if (event == EV_FALL_DMG_50) {
-					damage = 50;
-				} else if (event == EV_FALL_DMG_25) {
-					damage = 25;
-				} else if (event == EV_FALL_DMG_15) {
-					damage = 15;
-				} else if (event == EV_FALL_DMG_10) {
-					damage = 10;
-				} else if (event == EV_FALL_DMG_5) {
-					damage = 5;
-				} else {
-					damage = 1; // never used
+				kb_time = 0;
+				victim = &level.gentities[ent->s.groundEntityNum];
+				// groundEntityNum won't be set to the entity number of a wounded player if you landed on one, trace to see if we're on a wounded player
+				if (!victim->client) {
+					VectorCopy(ent->r.currentOrigin, start);
+					VectorCopy(ent->r.currentOrigin, stop);
+					stop[2] -= 4;
+					trap_Trace(&tr, start, NULL, NULL, stop, ent->s.number, MASK_SHOT);
+					victim = &level.gentities[tr.entityNum];
 				}
 
-				ent->pain_debounce_time = level.time + 200; // no normal pain sound
-				G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
+				switch (event) {
+					case EV_FALL_DIE:
+						damage = 200;
+						break;
+					case EV_FALL_DMG_50:
+						damage = 50;
+						kb_time = 1000;
+						break;
+					case EV_FALL_DMG_25:
+						damage = 25;
+						kb_time = 500;
+						break;
+					case EV_FALL_DMG_15:
+						damage = 15;
+						kb_time = 250;
+						break;
+					case EV_FALL_DMG_10:
+						damage = 10;
+						kb_time = 100;
+						break;
+					case EV_FALL_DMG_5:
+						damage = 5;
+						kb_time = 50;
+						break;
+					default:
+						damage = 1; // never used
+						kb_time = 0;
+						break;
+				}
+
+				if (!victim || !victim->client || !victim->takedamage) {
+					if (damage) {
+						if (kb_time) {
+							ent->client->ps.pm_time = kb_time;
+						}
+						// no normal pain sound
+						ent->pain_debounce_time = level.time + 200;
+						G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
+					}
+		
+					return;
+				}
+				// do goomba damage to victim
+				if (!damage) {
+					damage = 5;
+				}
+
+				if (kb_time) {
+					victim->client->ps.pm_time = kb_time;
+					victim->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
+				}
+				// no normal pain sound
+				victim->pain_debounce_time = level.time + 200;
+				// do goomba damage
+				goombaDmg = damage;
+
+				if (damage > 50) {
+					goombaDmg = 50;
+				}
+
+				G_Damage(victim, ent, ent, NULL, NULL, goombaDmg, 0, MOD_GOOMBA);
+
+				if (damage > 5) {
+					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/world/debris1.wav"));
+					// faller has a soft landing
+					damage *= 0.95f;
+					G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
+				} else {
+					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/player/land_hurt.wav"));
+				}
+
 				break;
 			case EV_USE_ITEM1: // medkit
 				ent->health = 100;

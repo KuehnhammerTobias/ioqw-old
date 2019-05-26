@@ -320,6 +320,16 @@ static void CG_Obituary(entityState_t *ent) {
 				message = "tried to invade";
 				message2 = "'s personal space";
 				break;
+			case MOD_GOOMBA:
+				if (attackergender == GENDER_FEMALE) {
+					message = "was crushed by";
+					message2 = "'s butt";
+				} else {
+					message = "experienced death from above from";
+					message2 = "";
+				}
+
+				break;
 			default:
 				message = "was killed by";
 				break;

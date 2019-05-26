@@ -305,6 +305,7 @@ char *modNames[] = {
 	"MOD_SLIME",
 	"MOD_LAVA",
 	"MOD_FALLING",
+	"MOD_GOOMBA",
 	"MOD_TRIGGER_HURT",
 	"MOD_CRUSH",
 	"MOD_TARGET_LASER",
