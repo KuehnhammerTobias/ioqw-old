@@ -83,12 +83,10 @@ static void CG_Obituary(entityState_t *ent) {
 	int target, attacker;
 	char *message;
 	char *message2;
-	const char *targetInfo;
-	const char *attackerInfo;
 	char targetName[32];
 	char attackerName[32];
-	gender_t gender;
-	clientInfo_t *ci;
+	gender_t targetgender, attackergender;
+	clientInfo_t *ci, *ca;
 
 	target = ent->otherEntityNum;
 	attacker = ent->otherEntityNum2;
@@ -100,23 +98,22 @@ static void CG_Obituary(entityState_t *ent) {
 
 	ci = &cgs.clientinfo[target];
 
-	if (attacker < 0 || attacker >= MAX_CLIENTS) {
-		attacker = ENTITYNUM_WORLD;
-		attackerInfo = NULL;
-	} else {
-		attackerInfo = CG_ConfigString(CS_PLAYERS + attacker);
-	}
-
-	targetInfo = CG_ConfigString(CS_PLAYERS + target);
-
-	if (!targetInfo) {
+	if (!ci) {
 		return;
 	}
 
-	Q_strncpyz(targetName, Info_ValueForKey(targetInfo, "n"), sizeof(targetName) - 2);
+	if (attacker < 0 || attacker >= MAX_CLIENTS) {
+		ca = NULL;
+		attacker = ENTITYNUM_WORLD;
+	} else {
+		ca = &cgs.clientinfo[attacker];
+	}
+
+	Q_strncpyz(targetName, ci->name, sizeof(targetName) - 2);
 	strcat(targetName, S_COLOR_WHITE);
 
-	gender = ci->gender;
+	targetgender = ci->gender;
+	attackergender = ca->gender;
 	message2 = "";
 	// check for single client messages
 	switch (mod) {
@@ -152,9 +149,9 @@ static void CG_Obituary(entityState_t *ent) {
 	if (attacker == target) {
 		switch (mod) {
 			case MOD_PROXIMITY_MINE:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "found her prox mine";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "found its prox mine";
 				} else {
 					message = "found his prox mine";
@@ -162,9 +159,9 @@ static void CG_Obituary(entityState_t *ent) {
 
 				break;
 			case MOD_GRENADE_SPLASH:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "tripped on her own grenade";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "tripped on its own grenade";
 				} else {
 					message = "tripped on his own grenade";
@@ -172,9 +169,9 @@ static void CG_Obituary(entityState_t *ent) {
 
 				break;
 			case MOD_NAPALM_SPLASH:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "set herself alight";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "set itself alight";
 				} else {
 					message = "set himself alight";
@@ -182,9 +179,9 @@ static void CG_Obituary(entityState_t *ent) {
 
 				break;
 			case MOD_ROCKET_SPLASH:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "blew herself up";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "blew itself up";
 				} else {
 					message = "blew himself up";
@@ -192,9 +189,9 @@ static void CG_Obituary(entityState_t *ent) {
 
 				break;
 			case MOD_PLASMA_SPLASH:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "melted herself";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "melted itself";
 				} else {
 					message = "melted himself";
@@ -208,9 +205,9 @@ static void CG_Obituary(entityState_t *ent) {
 				message = "goes out with a bang";
 				break;
 			default:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE) {
 					message = "killed herself";
-				} else if (gender == GENDER_NEUTER) {
+				} else if (targetgender == GENDER_NEUTER) {
 					message = "killed itself";
 				} else {
 					message = "killed himself";
@@ -240,11 +237,11 @@ static void CG_Obituary(entityState_t *ent) {
 		// print the text message as well
 	}
 	// check for double client messages
-	if (!attackerInfo) {
+	if (!ca) {
 		attacker = ENTITYNUM_WORLD;
 		strcpy(attackerName, "Noname");
 	} else {
-		Q_strncpyz(attackerName, Info_ValueForKey(attackerInfo, "n"), sizeof(attackerName) - 2);
+		Q_strncpyz(attackerName, ca->name, sizeof(attackerName) - 2);
 		strcat(attackerName, S_COLOR_WHITE);
 		// check for kill messages about the current clientNum
 		if (target == cg.snap->ps.clientNum) {
@@ -255,7 +252,7 @@ static void CG_Obituary(entityState_t *ent) {
 	if (attacker != ENTITYNUM_WORLD) {
 		switch (mod) {
 			case MOD_GAUNTLET:
-				if (gender == GENDER_FEMALE) {
+				if (targetgender == GENDER_FEMALE && attackergender == GENDER_FEMALE) {
 					message = "was fisted by";
 				} else {
 					message = "was pummeled by";
