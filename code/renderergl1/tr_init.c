@@ -36,6 +36,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 glconfig_t  glConfig;
 glRefConfig_t glRefConfig;
 
+qboolean    haveClampToEdge = qfalse;
+
 glstate_t	glState;
 
 static void GfxInfo_f( void );
@@ -117,7 +119,10 @@ cvar_t  *r_arb_vertex_array_object;
 cvar_t  *r_ext_direct_state_access;
 
 cvar_t  *r_cameraExposure;
-
+cvar_t  *r_bloom;
+cvar_t  *r_bloomAlpha;
+cvar_t  *r_bloomRamp;
+cvar_t  *r_bloomBlur;
 cvar_t  *r_externalGLSL;
 
 cvar_t  *r_hdr;
@@ -1242,7 +1247,10 @@ void R_Register( void )
 	r_forceAutoExposureMax = ri.Cvar_Get( "r_forceAutoExposureMax", "2.0", CVAR_CHEAT );
 
 	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "1", CVAR_CHEAT );
-
+	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
+	r_bloomAlpha = ri.Cvar_Get( "r_bloomAlpha", "1", CVAR_ARCHIVE );
+	r_bloomRamp = ri.Cvar_Get( "r_bloomRamp", "1", CVAR_ARCHIVE );
+	r_bloomBlur = ri.Cvar_Get( "r_bloomBlur", "0.5", CVAR_ARCHIVE );
 	r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_ARCHIVE );
 	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_ARCHIVE );
 
@@ -1584,6 +1592,9 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 		Com_Memset( &glConfig, 0, sizeof( glConfig ) );
 		Com_Memset( &glRefConfig, 0, sizeof( glRefConfig ) );
+
+		haveClampToEdge = qfalse;
+
 		Com_Memset( &glState, 0, sizeof( glState ) );
 	}
 

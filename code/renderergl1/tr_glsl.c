@@ -32,6 +32,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #include "tr_dsa.h"
 
+extern const char *fallbackShader_bloom_vp;
+extern const char *fallbackShader_bloom_fp;
 extern const char *fallbackShader_bokeh_vp;
 extern const char *fallbackShader_bokeh_fp;
 extern const char *fallbackShader_calclevels4x_vp;
@@ -155,6 +157,9 @@ static uniformInfo_t uniformsInfo[] =
 	{ "u_PrimaryLightRadius",  GLSL_FLOAT },
 
 	{ "u_CubeMapInfo", GLSL_VEC4 },
+
+	{ "u_BloomAlpha",	GLSL_FLOAT },
+	{ "u_BloomRamp",	GLSL_FLOAT },
 
 	{ "u_AlphaTest", GLSL_INT },
 
@@ -1350,6 +1355,26 @@ void GLSL_InitGPUShaders(void)
 	GLSL_FinishGPUShader(&tr.down4xShader);
 
 	numEtcShaders++;
+
+
+	attribs = ATTR_POSITION | ATTR_TEXCOORD;
+	extradefines[0] = '\0';
+
+	if (!GLSL_InitGPUShader(&tr.bloomShader, "bloom", attribs, qtrue, extradefines, qtrue, fallbackShader_bloom_vp, fallbackShader_bloom_fp))
+	{
+		ri.Error(ERR_FATAL, "Could not load bloom shader!");
+	}
+
+	GLSL_InitUniforms(&tr.bloomShader);
+
+	GLSL_SetUniformInt(&tr.bloomShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMALPHA, r_bloomAlpha->value);
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMRAMP, r_bloomRamp->value);
+
+	GLSL_FinishGPUShader(&tr.bloomShader);
+
+	numEtcShaders++;
+
 
 
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;

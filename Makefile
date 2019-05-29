@@ -1819,6 +1819,8 @@ Q3ROBJ = \
   $(B)/renderergl1/sdl_glimp.o
 
 Q3R1STRINGOBJ = \
+  $(B)/renderergl1/glsl/bloom_fp.o \
+  $(B)/renderergl1/glsl/bloom_vp.o \
   $(B)/renderergl1/glsl/bokeh_fp.o \
   $(B)/renderergl1/glsl/bokeh_vp.o \
   $(B)/renderergl1/glsl/calclevels4x_fp.o \

@@ -755,6 +755,9 @@ typedef enum
 
 	UNIFORM_CUBEMAPINFO,
 
+	UNIFORM_BLOOMALPHA,
+	UNIFORM_BLOOMRAMP,
+
 	UNIFORM_ALPHATEST,
 
 	UNIFORM_BONEMATRIX,
@@ -1750,6 +1753,7 @@ typedef struct {
 	shaderProgram_t shadowmapShader[SHADOWMAPDEF_COUNT];
 	shaderProgram_t pshadowShader;
 	shaderProgram_t down4xShader;
+	shaderProgram_t bloomShader;
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
 	shaderProgram_t calclevels4xShader[2];
@@ -1965,7 +1969,10 @@ extern  cvar_t  *r_cameraExposure;
 
 extern  cvar_t  *r_depthPrepass;
 extern  cvar_t  *r_ssao;
-
+extern  cvar_t  *r_bloom;
+extern  cvar_t  *r_bloomAlpha;
+extern  cvar_t  *r_bloomRamp;
+extern  cvar_t  *r_bloomBlur;
 extern  cvar_t  *r_normalMapping;
 extern  cvar_t  *r_specularMapping;
 extern  cvar_t  *r_deluxeMapping;

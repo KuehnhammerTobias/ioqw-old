@@ -1644,6 +1644,8 @@ const void *RB_PostProcess(const void *data)
 	else
 		RB_GaussianBlur(backEnd.refdef.blurFactor);
 
+	if (r_bloom->integer)
+		RB_Bloom(NULL, srcBox, NULL, dstBox);
 #if 0
 	if (0)
 	{

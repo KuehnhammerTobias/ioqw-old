@@ -492,3 +492,58 @@ void RB_GaussianBlur(float blur)
 		FBO_Blit(tr.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }
+
+static void RB_BloomBlur(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, float blur)
+{
+	vec4_t color;
+	int i;
+	
+	blur *= 10.0f;
+
+	if (blur < 0.004f)
+		return;
+
+	if (!glRefConfig.framebufferObject)
+		return;
+
+	VectorSet4(color, 0.5f, 0.5f, 0.5f, 1);
+
+	for (i = 0; i < 2; i++)
+	{
+		vec2_t blurTexScale;
+		float subblur;
+
+		subblur = (blur - 1.0f) / 2.0f * (float)(i + 1);
+
+		blurTexScale[0] =
+		blurTexScale[1] = subblur;
+
+		color[0] =
+		color[1] =
+		color[2] = 1.0f;
+		if (i != 0)
+			color[3] = 1.0f;
+		else
+			color[3] = 0.5f;
+
+		FBO_Blit(tr.screenScratchFbo, NULL, blurTexScale, tr.screenScratchFbo, NULL, &tr.bokehShader, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+	}
+}
+
+void RB_Bloom(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox)
+{
+	if(!glRefConfig.framebufferObject)
+		return;
+
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMALPHA, r_bloomAlpha->value);
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMRAMP, r_bloomRamp->value);
+	// copy screen
+	FBO_FastBlit(src, srcBox, tr.screenScratchFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	// step it
+	FBO_Blit(tr.screenScratchFbo, srcBox, NULL, tr.screenScratchFbo, srcBox, &tr.bloomShader, NULL, 0);
+	// blur it
+	RB_BloomBlur(tr.screenScratchFbo, NULL, tr.screenScratchFbo, NULL, r_bloomBlur->value);
+	// additive blit to screen
+	FBO_Blit(tr.screenScratchFbo, srcBox, NULL, dst, dstBox, NULL, NULL, GLS_SRCBLEND_ONE | GLS_DSTBLEND_SRC_ALPHA);
+}
+
