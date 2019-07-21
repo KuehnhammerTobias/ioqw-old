@@ -1222,15 +1222,7 @@ int BotLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) {
 		}
 	}
 
-	if (BotGetLongTermGoal(bs, tfl, retreat, goal)) {
-		if (bs->ltgtype != 0) {
-			memcpy(&bs->teamgoal, goal, sizeof(bot_goal_t));
-		}
-
-		return qtrue;
-	}
-
-	return qfalse;
+	return BotGetLongTermGoal(bs, tfl, retreat, goal);
 }
 
 /*
@@ -2082,10 +2074,6 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 			trap_EA_Gesture(bs->client);
 		}
 	}
-	// get the current long term goal
-	if (!BotLongTermGoal(bs, bs->tfl, qfalse, &goal)) {
-		return qtrue;
-	}
 	// check for nearby goals periodicly
 	if (bs->check_time < FloatTime()) {
 		bs->check_time = FloatTime() + 0.05;
@@ -2109,6 +2097,10 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 			AIEnter_Seek_NBG(bs, "ltg seek: nbg");
 			return qfalse;
 		}
+	}
+	// get the current long term goal after checking for NBG's
+	if (!BotLongTermGoal(bs, bs->tfl, qfalse, &goal)) {
+		return qtrue;
 	}
 	// if the bot should wait
 	if (BotCanWait(bs, &goal)) {
@@ -2606,11 +2598,6 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 			return qfalse;
 		}
 	}
-	// get the current long term goal while retreating
-	if (!BotLongTermGoal(bs, bs->tfl, qtrue, &goal)) {
-		AIEnter_Battle_SuicidalFight(bs, "battle retreat: no way out");
-		return qfalse;
-	}
 	// check for nearby goals periodicly
 	if (bs->check_time < FloatTime()) {
 		bs->check_time = FloatTime() + 0.05;
@@ -2628,6 +2615,11 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 			AIEnter_Battle_NBG(bs, "battle retreat: nbg");
 			return qfalse;
 		}
+	}
+	// get the current long term goal while retreating after checking for NBG's
+	if (!BotLongTermGoal(bs, bs->tfl, qtrue, &goal)) {
+		AIEnter_Battle_SuicidalFight(bs, "battle retreat: no way out");
+		return qfalse;
 	}
 	// if the bot should wait
 	if (BotCanWait(bs, &goal)) {
