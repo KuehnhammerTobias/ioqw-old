@@ -193,9 +193,17 @@ static void CG_ParseWarmup(void) {
 
 	} else if (warmup > 0 && cg.warmup <= 0) {
 		if (cgs.gametype > GT_TOURNAMENT && cgs.gametype <= GT_HARVESTER) {
-			trap_S_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
+			if (cg.soundPlaying != cgs.media.countPrepareTeamSound) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.countPrepareTeamSound);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
 		} else {
-			trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
+			if (cg.soundPlaying != cgs.media.countPrepareSound) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.countPrepareSound);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
 		}
 	}
 
@@ -313,7 +321,12 @@ static void CG_ConfigStringModified(void) {
 		cgs.voteModified = qtrue;
 	} else if (num == CS_VOTE_STRING) {
 		Q_strncpyz(cgs.voteString, str, sizeof(cgs.voteString));
-		CG_AddBufferedAnnouncerSound(cgs.media.voteNow);
+
+		if (cg.soundPlaying != cgs.media.voteNow) {
+			CG_AddBufferedAnnouncerSound(-1);
+			CG_AddBufferedAnnouncerSound(cgs.media.voteNow);
+			cg.soundTime = cg.time + 1; // play in next frame
+		}
 	} else if (num >= CS_TEAMVOTE_TIME && num <= CS_TEAMVOTE_TIME + 1) {
 		cgs.teamVoteTime[num - CS_TEAMVOTE_TIME] = atoi(str);
 		cgs.teamVoteModified[num - CS_TEAMVOTE_TIME] = qtrue;
@@ -325,7 +338,12 @@ static void CG_ConfigStringModified(void) {
 		cgs.teamVoteModified[num - CS_TEAMVOTE_NO] = qtrue;
 	} else if (num >= CS_TEAMVOTE_STRING && num <= CS_TEAMVOTE_STRING + 1) {
 		Q_strncpyz(cgs.teamVoteString[num - CS_TEAMVOTE_STRING], str, sizeof(cgs.teamVoteString[0]));
-		CG_AddBufferedAnnouncerSound(cgs.media.voteNow);
+
+		if (cg.soundPlaying != cgs.media.voteNow) {
+			CG_AddBufferedAnnouncerSound(-1);
+			CG_AddBufferedAnnouncerSound(cgs.media.voteNow);
+			cg.soundTime = cg.time + 1; // play in next frame
+		}
 	} else if (num == CS_INTERMISSION) {
 		cg.intermissionStarted = atoi(str);
 	} else if (num >= CS_MODELS && num < CS_MODELS + MAX_MODELS) {
@@ -1035,9 +1053,17 @@ static void CG_ServerCommand(void) {
 		cmd = CG_Argv(1); // yes, this is obviously a hack, but so is the way we hear about votes passing or failing
 
 		if (!Q_stricmpn(cmd, "vote failed", 11) || !Q_stricmpn(cmd, "team vote failed", 16)) {
-			CG_AddBufferedAnnouncerSound(cgs.media.voteFailed);
+			if (cg.soundPlaying != cgs.media.voteFailed) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.voteFailed);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
 		} else if (!Q_stricmpn(cmd, "vote passed", 11) || !Q_stricmpn(cmd, "team vote passed", 16)) {
-			CG_AddBufferedAnnouncerSound(cgs.media.votePassed);
+			if (cg.soundPlaying != cgs.media.votePassed) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.votePassed);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
 		}
 
 		return;

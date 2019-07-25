@@ -575,6 +575,7 @@ typedef struct {
 	int soundBufferOut;
 	int soundTime;
 	qhandle_t soundBuffer[MAX_SOUNDBUFFER];
+	qhandle_t soundPlaying;
 	// for voice chat buffer
 	int voiceChatTime;
 	int voiceChatBufferIn;

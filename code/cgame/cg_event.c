@@ -1524,8 +1524,13 @@ void CG_EntityEvent(centity_t *cent, vec3_t position) {
 				if (index < 1 || index >= bg_numItems) {
 					break;
 				}
-				// powerup pickups are global
-				trap_S_StartLocalSound(cgs.media.itemPickupSounds[index], CHAN_AUTO);
+				// powerup pickups aren't global if an announcer sound is already playing
+				if (cg.soundPlaying) {
+					trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.pickupSound, 52);
+				// otherwise they are global
+				} else {
+					CG_AddBufferedAnnouncerSound(cgs.media.itemPickupSounds[index]);
+				}
 				// show icon and name on status bar
 				if (es->number == cg.snap->ps.clientNum) {
 					CG_ItemPickup(index);
