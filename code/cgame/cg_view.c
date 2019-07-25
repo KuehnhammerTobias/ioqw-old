@@ -799,10 +799,10 @@ static void CG_PowerupTimerSounds(void) {
 
 /*
 =======================================================================================================================================
-CG_AddBufferedSound
+CG_AddBufferedAnnouncerSound
 =======================================================================================================================================
 */
-void CG_AddBufferedSound(sfxHandle_t sfx) {
+void CG_AddBufferedAnnouncerSound(sfxHandle_t sfx) {
 
 	if (!sfx) {
 		return;
@@ -822,19 +822,19 @@ void CG_AddBufferedSound(sfxHandle_t sfx) {
 
 /*
 =======================================================================================================================================
-CG_HasBufferedSound
+CG_HasBufferedAnnouncerSound
 =======================================================================================================================================
 */
-qboolean CG_HasBufferedSound(void) {
+qboolean CG_HasBufferedAnnouncerSound(void) {
 	return (cg.soundBufferOut != cg.soundBufferIn && cg.soundBuffer[cg.soundBufferOut]);
 }
 
 /*
 =======================================================================================================================================
-CG_PlayBufferedSounds
+CG_PlayBufferedAnnouncerSounds
 =======================================================================================================================================
 */
-static void CG_PlayBufferedSounds(void) {
+static void CG_PlayBufferedAnnouncerSounds(void) {
 
 	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
 		// NOTE: do we need this?
@@ -845,7 +845,7 @@ static void CG_PlayBufferedSounds(void) {
 		return;
 	}
 
-	if (cg.soundTime < cg.time && CG_HasBufferedSound()) {
+	if (cg.soundTime < cg.time && CG_HasBufferedAnnouncerSound()) {
 		trap_S_StartLocalSound(cg.soundBuffer[cg.soundBufferOut], CHAN_ANNOUNCER);
 		cg.soundBuffer[cg.soundBufferOut] = 0;
 		cg.soundBufferOut = (cg.soundBufferOut + 1) % MAX_SOUNDBUFFER;
@@ -1016,8 +1016,8 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, qboolean demoP
 	if (!cg.renderingThirdPerson) {
 		CG_DamageBlendBlob();
 	}
-	// add buffered sounds
-	CG_PlayBufferedSounds();
+	// play buffered announcer sounds
+	CG_PlayBufferedAnnouncerSounds();
 	// play buffered voice chats
 	CG_PlayBufferedVoiceChats();
 	// finish up the rest of the refdef

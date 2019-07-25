@@ -335,7 +335,7 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 	// check for flag pickup
 	if (cgs.gametype > GT_TEAM) {
 		if ((ps->powerups[PW_REDFLAG] != ops->powerups[PW_REDFLAG] && ps->powerups[PW_REDFLAG]) || (ps->powerups[PW_BLUEFLAG] != ops->powerups[PW_BLUEFLAG] && ps->powerups[PW_BLUEFLAG]) || (ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG])) {
-			CG_AddBufferedSound(cgs.media.youHaveFlagSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.youHaveFlagSound);
 		}
 	}
 	// lead changes
@@ -344,11 +344,11 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 		if (ps->persistant[PERS_RANK] != ops->persistant[PERS_RANK]) {
 			if (cgs.gametype < GT_TEAM) {
 				if (ps->persistant[PERS_RANK] == 0) {
-					CG_AddBufferedSound(cgs.media.takenLeadSound);
+					CG_AddBufferedAnnouncerSound(cgs.media.takenLeadSound);
 				} else if (ps->persistant[PERS_RANK] == RANK_TIED_FLAG) {
-					CG_AddBufferedSound(cgs.media.tiedLeadSound);
+					CG_AddBufferedAnnouncerSound(cgs.media.tiedLeadSound);
 				} else if ((ops->persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
-					CG_AddBufferedSound(cgs.media.lostLeadSound);
+					CG_AddBufferedAnnouncerSound(cgs.media.lostLeadSound);
 				}
 			}
 		}
@@ -363,13 +363,13 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 
 		if (!(cg.fraglimitWarnings & 4) && highScore == (cgs.fraglimit - 1)) {
 			cg.fraglimitWarnings |= 1|2|4;
-			CG_AddBufferedSound(cgs.media.oneFragSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.oneFragSound);
 		} else if (cgs.fraglimit > 2 && !(cg.fraglimitWarnings & 2) && highScore == (cgs.fraglimit - 2)) {
 			cg.fraglimitWarnings |= 1|2;
-			CG_AddBufferedSound(cgs.media.twoFragSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.twoFragSound);
 		} else if (cgs.fraglimit > 3 && !(cg.fraglimitWarnings & 1) && highScore == (cgs.fraglimit - 3)) {
 			cg.fraglimitWarnings |= 1;
-			CG_AddBufferedSound(cgs.media.threeFragSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.threeFragSound);
 		}
 	}
 	// timelimit warnings
@@ -380,17 +380,17 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 
 		if (!(cg.timelimitWarnings & 4) && msec > (cgs.timelimit * 60 + 2) * 1000) {
 			cg.timelimitWarnings |= 1|2|4;
-			CG_AddBufferedSound(cgs.media.suddenDeathSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.suddenDeathSound);
 		} else if (!(cg.timelimitWarnings & 2) && msec > (cgs.timelimit - 1) * 60 * 1000) {
 			cg.timelimitWarnings |= 1|2;
-			CG_AddBufferedSound(cgs.media.oneMinuteSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.oneMinuteSound);
 		} else if (cgs.timelimit > 5 && !(cg.timelimitWarnings & 1) && msec > (cgs.timelimit - 5) * 60 * 1000) {
 			cg.timelimitWarnings |= 1;
-			CG_AddBufferedSound(cgs.media.fiveMinuteSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.fiveMinuteSound);
 		}
 	}
 	// reward sounds will only play if no other announcer sounds will be played
-	if (CG_HasBufferedSound()) {
+	if (CG_HasBufferedAnnouncerSound()) {
 		return;
 	}
 	// if any of the player event bits changed
@@ -406,34 +406,34 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 	// reward excellent sound
 	if (ps->persistant[PERS_EXCELLENT_COUNT] != ops->persistant[PERS_EXCELLENT_COUNT]) {
 		if (ps->persistant[PERS_EXCELLENT_COUNT] == 1) {
-			CG_AddBufferedSound(cgs.media.firstExcellentSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.firstExcellentSound);
 		}
 		
-		CG_AddBufferedSound(cgs.media.excellentSound);
+		CG_AddBufferedAnnouncerSound(cgs.media.excellentSound);
 	}
 	// reward impressive sound
 	if (ps->persistant[PERS_IMPRESSIVE_COUNT] != ops->persistant[PERS_IMPRESSIVE_COUNT]) {
 		if (ps->persistant[PERS_IMPRESSIVE_COUNT] == 1) {
-			CG_AddBufferedSound(cgs.media.firstImpressiveSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.firstImpressiveSound);
 		} else {
-			CG_AddBufferedSound(cgs.media.impressiveSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.impressiveSound);
 		}
 	}
 	// reward gauntlet sound
 	if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] != ops->persistant[PERS_GAUNTLET_FRAG_COUNT]) {
 		if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] == 1) {
-			CG_AddBufferedSound(cgs.media.firstHumiliationSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.firstHumiliationSound);
 		} else {
-			CG_AddBufferedSound(cgs.media.humiliationSound);
+			CG_AddBufferedAnnouncerSound(cgs.media.humiliationSound);
 		}
 	}
 	// reward defend sound
 	if (ps->persistant[PERS_DEFEND_COUNT] != ops->persistant[PERS_DEFEND_COUNT]) {
-		CG_AddBufferedSound(cgs.media.defendSound);
+		CG_AddBufferedAnnouncerSound(cgs.media.defendSound);
 	}
 	// reward assist sound
 	if (ps->persistant[PERS_ASSIST_COUNT] != ops->persistant[PERS_ASSIST_COUNT]) {
-		CG_AddBufferedSound(cgs.media.assistSound);
+		CG_AddBufferedAnnouncerSound(cgs.media.assistSound);
 	}
 }
 
