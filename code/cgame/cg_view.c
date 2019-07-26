@@ -836,12 +836,14 @@ CG_PlayBufferedAnnouncerSounds
 */
 static void CG_PlayBufferedAnnouncerSounds(void) {
 
+	// clear all buffered sounds
 	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
-		// NOTE: do we need this?
+		// Tobias NOTE: do we need this?
 		cg.soundTime = 0;
 		cg.soundBufferIn = 0;
 		cg.soundBufferOut = 0;
 		cg.soundBuffer[cg.soundBufferOut] = 0;
+		// Tobias END
 		return;
 	}
 

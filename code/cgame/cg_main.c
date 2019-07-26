@@ -725,8 +725,8 @@ static void CG_RegisterSounds(void) {
 		}
 	}
 
-	cgs.media.winnerSound = trap_S_RegisterSound("sound/feedback/voc_youwin.wav", qfalse);
-	cgs.media.loserSound = trap_S_RegisterSound("sound/feedback/voc_youlose.wav", qfalse);
+	cgs.media.winnerSound = trap_S_RegisterSound("snd/v/voc_youwin.wav", qfalse);
+	cgs.media.loserSound = trap_S_RegisterSound("snd/v/voc_youlose.wav", qfalse);
 	// only register the items that the server says we need
 	Q_strncpyz(items, CG_ConfigString(CS_ITEMS), sizeof(items));
 

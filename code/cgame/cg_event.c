@@ -666,9 +666,9 @@ void CG_EntityEvent(centity_t *cent, vec3_t position) {
 						break;
 					case GTS_RED_RETURN: // CTF: blue flag returned, 1FCTF: never used
 						if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED) {
-							trap_S_StartLocalSound(cgs.media.returnYourTeamSound, CHAN_LOCAL_SOUND);
-						} else {
 							trap_S_StartLocalSound(cgs.media.returnOpponentSound, CHAN_LOCAL_SOUND);
+						} else {
+							trap_S_StartLocalSound(cgs.media.returnYourTeamSound, CHAN_LOCAL_SOUND);
 						}
 
 						CG_AddBufferedAnnouncerSound(cgs.media.blueFlagReturnedSound);
@@ -679,9 +679,9 @@ void CG_EntityEvent(centity_t *cent, vec3_t position) {
 							CG_AddBufferedAnnouncerSound(cgs.media.neutralFlagReturnedSound);
 						} else {
 							if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE) {
-								trap_S_StartLocalSound(cgs.media.returnYourTeamSound, CHAN_LOCAL_SOUND);
-							} else {
 								trap_S_StartLocalSound(cgs.media.returnOpponentSound, CHAN_LOCAL_SOUND);
+							} else {
+								trap_S_StartLocalSound(cgs.media.returnYourTeamSound, CHAN_LOCAL_SOUND);
 							}
 
 							CG_AddBufferedAnnouncerSound(cgs.media.redFlagReturnedSound);
