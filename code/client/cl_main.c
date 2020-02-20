@@ -1351,11 +1351,11 @@ void CL_Disconnect(qboolean showMainMenu) {
 
 	clc.state = CA_DISCONNECTED;
 	// allow cheats locally
-	Cvar_Set("sv_cheats", "1");
+	Cvar_Set("sv_cheats", "0");
 	// not connected to a pure server anymore
 	cl_connectedToPureServer = qfalse;
 #ifdef USE_VOIP
-	// not connected to voip server anymore.
+	// not connected to voip server anymore
 	clc.voipEnabled = qfalse;
 #endif
 	// stop recording any video

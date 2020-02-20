@@ -1762,10 +1762,14 @@ CG_DrawTeamSpectators
 =======================================================================================================================================
 */
 static void CG_DrawTeamSpectators(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader) {
-	char *text = cg.spectatorList;
-	float textWidth = MAX(rect->w, CG_Text_Width(text, scale, 0));
-	int now = trap_Milliseconds();
-	int delta = now - cg.spectatorTime;
+	char *text;
+	float textWidth;
+	int now, delta;
+
+	text = cg.spectatorList;
+	textWidth = MAX(rect->w, CG_Text_Width(text, scale, 0));
+	now = trap_Milliseconds();
+	delta = now - cg.spectatorTime;
 
 	CG_SetClipRegion(rect->x, rect->y, rect->w, rect->h);
 	CG_Text_Paint(rect->x - cg.spectatorOffset, rect->y + rect->h - 3, scale, color, text, 0, 0, 0);
@@ -1789,11 +1793,12 @@ CG_DrawMedal
 =======================================================================================================================================
 */
 void CG_DrawMedal(int ownerDraw, rectDef_t *rect, float scale, vec4_t color, qhandle_t shader) {
-	score_t *score = &cg.scores[cg.selectedScore];
+	score_t *score;
 	float value = 0;
 	char *text = NULL;
 
 	color[3] = 0.25;
+	score = &cg.scores[cg.selectedScore];
 
 	switch (ownerDraw) {
 		case CG_ACCURACY:

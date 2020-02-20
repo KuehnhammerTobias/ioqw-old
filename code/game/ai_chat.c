@@ -471,6 +471,10 @@ int BotChat_EnterGame(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -485,8 +489,10 @@ int BotChat_EnterGame(bot_state_t *bs) {
 
 	rnd = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_ENTEREXITGAME, 0, 1);
 
-	if (random() > rnd) {
-		return qfalse;
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {
@@ -513,6 +519,10 @@ int BotChat_ExitGame(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -527,8 +537,10 @@ int BotChat_ExitGame(bot_state_t *bs) {
 
 	rnd = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_ENTEREXITGAME, 0, 1);
 
-	if (random() > rnd) {
-		return qfalse;
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {
@@ -551,6 +563,10 @@ int BotChat_StartLevel(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (BotIsObserver(bs)) {
 		return qfalse;
 	}
@@ -570,8 +586,10 @@ int BotChat_StartLevel(bot_state_t *bs) {
 
 	rnd = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_STARTENDLEVEL, 0, 1);
 
-	if (random() > rnd) {
-		return qfalse;
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {
@@ -593,6 +611,10 @@ BotChat_EndLevel
 int BotChat_EndLevel(bot_state_t *bs) {
 	char name[32];
 	float rnd;
+
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
 
 	if (BotIsObserver(bs)) {
 		return qfalse;
@@ -616,8 +638,10 @@ int BotChat_EndLevel(bot_state_t *bs) {
 
 	rnd = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_STARTENDLEVEL, 0, 1);
 
-	if (random() > rnd) {
-		return qfalse;
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {
@@ -646,6 +670,10 @@ int BotChat_Death(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -655,9 +683,11 @@ int BotChat_Death(bot_state_t *bs) {
 	if (gametype == GT_TOURNAMENT) {
 		return qfalse;
 	}
-
-	if (random() > rnd) {
-		return qfalse;
+	// if fast chatting is off
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {
@@ -733,6 +763,10 @@ int BotChat_Kill(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -742,9 +776,11 @@ int BotChat_Kill(bot_state_t *bs) {
 	if (gametype == GT_TOURNAMENT) {
 		return qfalse;
 	}
-
-	if (random() > rnd) {
-		return qfalse;
+	// if fast chat is off
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (bs->lastkilledplayer == bs->client) {
@@ -811,6 +847,10 @@ int BotChat_EnemySuicide(bot_state_t *bs) {
 	char name[32];
 	float rnd;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -828,9 +868,11 @@ int BotChat_EnemySuicide(bot_state_t *bs) {
 	if (gametype == GT_TOURNAMENT) {
 		return qfalse;
 	}
-
-	if (random() > rnd) {
-		return qfalse;
+	// if fast chat is off
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 	}
 
 	if (!BotValidChatPosition(bs)) {
@@ -883,6 +925,10 @@ int BotChat_HitNoDeath(bot_state_t *bs) {
 		return qfalse;
 	}
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -900,9 +946,11 @@ int BotChat_HitNoDeath(bot_state_t *bs) {
 	if (gametype == GT_TOURNAMENT) {
 		return qfalse;
 	}
-
-	if (random() > rnd * 0.5) {
-		return qfalse;
+	// if fast chat is off
+	if (!bot_fastchat.integer) {
+		if (random() > rnd * 0.5) {
+			return qfalse;
+		}
 	}
 
 	if (!BotValidChatPosition(bs)) {
@@ -947,6 +995,10 @@ int BotChat_HitNoKill(bot_state_t *bs) {
 	float rnd;
 	aas_entityinfo_t entinfo;
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) {
 		return qfalse;
 	}
@@ -964,9 +1016,11 @@ int BotChat_HitNoKill(bot_state_t *bs) {
 	if (gametype == GT_TOURNAMENT) {
 		return qfalse;
 	}
-
-	if (random() > rnd * 0.5) {
-		return qfalse;
+	// if fast chat is off
+	if (!bot_fastchat.integer) {
+		if (random() > rnd * 0.5) {
+			return qfalse;
+		}
 	}
 
 	if (!BotValidChatPosition(bs)) {
@@ -1010,6 +1064,10 @@ int BotChat_Random(bot_state_t *bs) {
 	float rnd;
 	char name[32];
 
+	if (bot_nochat.integer) {
+		return qfalse;
+	}
+
 	if (BotIsObserver(bs)) {
 		return qfalse;
 	}
@@ -1032,12 +1090,14 @@ int BotChat_Random(bot_state_t *bs) {
 		return qfalse;
 	}
 
-	if (random() > rnd) {
-		return qfalse;
-	}
+	if (!bot_fastchat.integer) {
+		if (random() > rnd) {
+			return qfalse;
+		}
 
-	if (random() > 0.25) {
-		return qfalse;
+		if (random() > 0.25) {
+			return qfalse;
+		}
 	}
 
 	if (BotNumActivePlayers() <= 1) {

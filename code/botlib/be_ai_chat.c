@@ -1021,6 +1021,7 @@ bot_randomlist_t *BotLoadRandomStrings(char *filename) {
 	token_t token;
 	bot_randomlist_t *randomlist, *lastrandom, *random;
 	bot_randomstring_t *randomstring;
+	size_t len;
 #ifdef DEBUG
 	int starttime = Sys_MilliSeconds();
 #endif // DEBUG
@@ -1046,8 +1047,6 @@ bot_randomlist_t *BotLoadRandomStrings(char *filename) {
 		lastrandom = NULL; // last
 
 		while (PC_ReadToken(source, &token)) {
-			size_t len;
-
 			if (token.type != TT_NAME) {
 				SourceError(source, "unknown random %s", token.string);
 				FreeSource(source);
@@ -3153,8 +3152,11 @@ int BotSetupChatAI(void) {
 	randomstrings = BotLoadRandomStrings(file);
 	file = LibVarString("matchfile", "match.c");
 	matchtemplates = BotLoadMatchTemplates(file);
-	file = LibVarString("rchatfile", "rchat.c");
-	replychats = BotLoadReplyChat(file);
+
+	if (!LibVarValue("nochat", "0")) {
+		file = LibVarString("rchatfile", "rchat.c");
+		replychats = BotLoadReplyChat(file);
+	}
 
 	InitConsoleMessageHeap();
 #ifdef DEBUG

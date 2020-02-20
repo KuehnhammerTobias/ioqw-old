@@ -311,7 +311,7 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage) {
 	float mass, knockback, points;
 	vec3_t rocketoffset = {8, 8, -8};
 	vec3_t botmins = {-16, -16, -24};
-	vec3_t botmaxs = {16, 16, 32};
+	vec3_t botmaxs = {16, 16, 56};
 	bsp_trace_t bsptrace;
 
 	// look down (90 degrees)

@@ -279,11 +279,12 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t *fram
 	int e, i;
 	sharedEntity_t *ent;
 	svEntity_t *svEnt;
-	int l;
+	int l, h;
 	int clientarea, clientcluster;
 	int leafnum;
 	byte *clientpvs;
 	byte *bitvector;
+	vec3_t dir;
 
 	// during an error shutdown message we may need to transmit the shutdown message after the server has shutdown, so
 	// specfically check for it
@@ -343,8 +344,6 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t *fram
 		}
 		// limit based on distance
 		if (ent->r.cullDistance) {
-			vec3_t dir;
-
 			VectorSubtract(ent->s.origin, origin, dir);
 
 			if (VectorLengthSquared(dir) > (float)ent->r.cullDistance * ent->r.cullDistance) {
@@ -417,7 +416,6 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t *fram
 			// master needs to be added, but not this dummy ent
 			continue;
 		} else if (ent->r.svFlags & SVF_VISDUMMY_MULTIPLE) {
-			int h;
 			sharedEntity_t *ment = NULL;
 			svEntity_t *master = NULL;
 
@@ -463,8 +461,6 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t *fram
 		// if it's a portal entity, add everything visible from its camera position
 		if (ent->r.svFlags & SVF_PORTAL) {
 			if (ent->r.portalCullDistance) {
-				vec3_t dir;
-
 				VectorSubtract(ent->s.origin, origin, dir);
 
 				if (VectorLengthSquared(dir) > (float)ent->r.portalCullDistance * ent->r.portalCullDistance) {

@@ -532,7 +532,7 @@ static int CM_FindPlane(float *p1, float *p2, float *p3) {
 	}
 	// add a new plane
 	if (numPlanes == MAX_PATCH_PLANES) {
-		Com_Error(ERR_DROP, "MAX_PATCH_PLANES");
+		Com_Error(ERR_DROP, "CM_FindPlane: MAX_PATCH_PLANES");
 	}
 
 	Vector4Copy(plane, planes[numPlanes].plane);

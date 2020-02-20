@@ -116,8 +116,8 @@ int CG_SpawnBubbles(localEntity_t **bubbles, vec3_t origin, float baseSize, int 
 
 		le->leFlags = LEF_PUFF_DONT_SCALE;
 		le->leType = LE_BUBBLE;
-		le->endTime = cg.time + 8000 + random() * 250;
 		le->startTime = cg.time;
+		le->endTime = cg.time + 8000 + random() * 250;
 		le->lifeRate = 1.0 / (le->endTime - le->startTime);
 
 		re = &le->refEntity;

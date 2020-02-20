@@ -573,7 +573,9 @@ CG_DrawStatusBarFlag
 =======================================================================================================================================
 */
 static void CG_DrawStatusBarFlag(float x, int team) {
-	int iconSize = ICON_SIZE * cg_statusScale.value;
+	int iconSize;
+
+	iconSize = ICON_SIZE * cg_statusScale.value;
 
 	CG_DrawFlagModel(x + (1.0f - cg_statusScale.value) * ICON_SIZE * 0.5f, 480 - iconSize, iconSize, iconSize, team, qfalse);
 }
@@ -915,8 +917,7 @@ static float CG_DrawTeamOverlay(float y, qboolean right, qboolean upper) {
 	char st[16];
 	clientInfo_t *ci;
 	gitem_t *item;
-	int ret_y, count;
-	int team;
+	int ret_y, count, team;
 
 	if (!cg_drawTeamOverlay.integer) {
 		return y;
@@ -2651,14 +2652,14 @@ void CG_DrawMiscGamemodels(void) {
 	int i, j, drawn;
 	refEntity_t ent;
 
-	drawn = 0;
-
 	memset(&ent, 0, sizeof(ent));
 
 	ent.reType = RT_MODEL;
 	ent.nonNormalizedAxes = qtrue;
-	// ydnar: static gamemodels don't project shadows
+	// static gamemodels don't project shadows
 	ent.renderfx = RF_NOSHADOW;
+
+	drawn = 0;
 
 	for (i = 0; i < cg.numMiscGameModels; i++) {
 		if (cgs.miscGameModels[i].radius) {

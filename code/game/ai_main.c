@@ -1567,6 +1567,9 @@ int BotAIStartFrame(int time) {
 
 	G_CheckBotSpawn();
 
+	trap_Cvar_Update(&bot_rocketjump);
+	trap_Cvar_Update(&bot_fastchat);
+	trap_Cvar_Update(&bot_nochat);
 	trap_Cvar_Update(&bot_testrchat);
 	trap_Cvar_Update(&bot_thinktime);
 	trap_Cvar_Update(&bot_memorydump);
@@ -1798,6 +1801,12 @@ int BotInitLibrary(void) {
 	trap_BotLibVarSet("bot_developer", bot_developer.string);
 	trap_Cvar_VariableStringBuffer("logfile", buf, sizeof(buf));
 	trap_BotLibVarSet("log", buf);
+	// no chatting
+	trap_Cvar_VariableStringBuffer("bot_nochat", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("nochat", buf);
+	}
 	// visualize jump pads
 	trap_Cvar_VariableStringBuffer("bot_visualizejumppads", buf, sizeof(buf));
 

@@ -99,31 +99,31 @@ tryagain:
 			MAKERGB(pi->flashDlightColor, 1.0f, 1.0f, 1.0f);
 			break;
 		case WP_MACHINEGUN:
-			MAKERGB(pi->flashDlightColor, 1.0f, 0.75f, 0);
+			MAKERGB(pi->flashDlightColor, 0.85f, 0.6f, 0.2f);
 			break;
 		case WP_CHAINGUN:
-			MAKERGB(pi->flashDlightColor, 1.0f, 0.8f, 0.2f);
+			MAKERGB(pi->flashDlightColor, 0.7f, 0.6f, 0.3f);
 			break;
 		case WP_SHOTGUN:
-			MAKERGB(pi->flashDlightColor, 1.0f, 0.7f, 0);
+			MAKERGB(pi->flashDlightColor, 0.85f, 0.6f, 0);
 			break;
 		case WP_NAILGUN:
-			MAKERGB(pi->flashDlightColor, 1, 0.7f, 0);
+			MAKERGB(pi->flashDlightColor, 1, 0.75f, 0);
 			break;
 		case WP_ROCKETLAUNCHER:
-			MAKERGB(pi->flashDlightColor, 1.0f, 0.75f, 0);
+			MAKERGB(pi->flashDlightColor, 1, 0.7f, 0.4f);
 			break;
 		case WP_BEAMGUN:
-			MAKERGB(pi->flashDlightColor, 0.45f, 0.7f, 1.0f);
+			MAKERGB(pi->flashDlightColor, 1.0f, 0.85f, 1.0f);
 			break;
 		case WP_RAILGUN:
-			MAKERGB(pi->flashDlightColor, 1.0f, 0, 0.7f);
+			MAKERGB(pi->flashDlightColor, 1, 0.5f, 0);
 			break;
 		case WP_PLASMAGUN:
-			MAKERGB(pi->flashDlightColor, 0.7f, 0.8f, 1.0f);
+			MAKERGB(pi->flashDlightColor, 0.6f, 1.0f, 1.0f);
 			break;
 		case WP_BFG:
-			MAKERGB(pi->flashDlightColor, 0.65f, 1.0f, 0.7f);
+			MAKERGB(pi->flashDlightColor, 0.7f, 1.0f, 0.7f);
 			break;
 		default:
 			MAKERGB(pi->flashDlightColor, 0, 0, 0);
@@ -716,7 +716,7 @@ void UI_DrawPlayer(float x, float y, float w, float h, playerInfo_t *pi, int tim
 	vec3_t origin;
 	int renderfx;
 	vec3_t mins = {-16, -16, -24};
-	vec3_t maxs = {16, 16, 32};
+	vec3_t maxs = {16, 16, 56};
 	float len;
 	float xx;
 
@@ -1038,7 +1038,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 
 	initialSurfaces = skin->numMeshes;
 	totalSurfaces = skin->numMeshes;
-	// load the fille
+	// load the file
 	len = trap_FS_FOpenFile(name, &f, FS_READ);
 
 	if (len <= 0) {
@@ -1077,7 +1077,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 			SkipRestOfLine(&text_p);
 			continue;
 		}
-		// skip RTCW / ET skin settings
+		// skip RTCW/ET skin settings
 		if (!Q_stricmpn(token, "md3_", 4) || !Q_stricmp(token, "playerscale")) {
 			SkipRestOfLine(&text_p);
 			continue;
@@ -1092,9 +1092,11 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 				}
 				// parse the shader name
 				token = COM_ParseExt2(&text_p, qfalse, ',');
+
 				Q_strncpyz(shaderName, token, sizeof(shaderName));
 
 				if (!token[0]) {
+					// end of line
 					break;
 				}
 
@@ -1110,7 +1112,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	}
 
 	if (totalSurfaces > MAX_CG_SKIN_SURFACES) {
-		Com_Printf("WARNING: Ignoring excess surfaces(found %d, max is %d)in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
+		Com_Printf("WARNING: Ignoring excess surfaces (found %d, max is %d) in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
 	}
 	// failed to load surfaces
 	if (!skin->numMeshes) {

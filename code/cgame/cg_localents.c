@@ -234,14 +234,13 @@ CG_AddFragment
 =======================================================================================================================================
 */
 void CG_AddFragment(localEntity_t *le) {
-	vec3_t newOrigin, angles;
-	trace_t trace;
+	vec3_t newOrigin, origin, angles, dir;
+	trace_t trace, tr; // Tobias NOTE: simplify?
+	float oldZ, dist;
+	int t, oldTime;
 
 	if (le->pos.trType == TR_STATIONARY) {
 		// sink into the ground if near the removal time
-		int t;
-		float oldZ;
-
 		CG_AdjustPositionForMover(le->refEntity.origin, le->groundEntityNum, le->pos.trTime, cg.time, le->refEntity.origin, le->angles.trBase, le->angles.trBase);
 		AnglesToAxis(le->angles.trBase, le->refEntity.axis);
 
@@ -303,14 +302,9 @@ void CG_AddFragment(localEntity_t *le) {
 	}
 	// fragment inside mover, find the direction/origin of impact
 	if (trace.allsolid && cg_entities[trace.entityNum].currentState.eType == ET_MOVER) {
-		vec3_t origin, angles, dir;
-		float dist;
-		int oldTime;
-		trace_t tr;
-
 		// get last location
 		if (cg.time == le->pos.trTime) {
-			// fragment was added this frame. no good way to fix this.
+			// fragment was added this frame, no good way to fix this
 			CG_FreeLocalEntity(le);
 			return;
 		} else {
@@ -557,16 +551,13 @@ CG_AddExplosion
 */
 static void CG_AddExplosion(localEntity_t *le) {
 	refEntity_t *ent;
+	float light, radius, intensity;
 
 	ent = &le->refEntity;
 	// add the entity
 	trap_R_AddRefEntityToScene(ent);
 	// add the dlight
 	if (le->light) {
-		float light;
-		float radius;
-		float intensity;
-
 		light = (float)(cg.time - le->startTime) / (le->endTime - le->startTime);
 
 		if (light < 0.5) {
@@ -594,7 +585,7 @@ CG_AddSpriteExplosion
 */
 static void CG_AddSpriteExplosion(localEntity_t *le) {
 	refEntity_t re;
-	float c;
+	float c, light, radius, intensity;
 
 	re = le->refEntity;
 	c = (le->endTime - cg.time) / (float)(le->endTime - le->startTime);
@@ -613,10 +604,6 @@ static void CG_AddSpriteExplosion(localEntity_t *le) {
 	trap_R_AddRefEntityToScene(&re);
 	// add the dlight
 	if (le->light) {
-		float light;
-		float radius;
-		float intensity;
-
 		light = (float)(cg.time - le->startTime) / (le->endTime - le->startTime);
 
 		if (light < 0.5) {

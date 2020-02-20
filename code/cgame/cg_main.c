@@ -295,8 +295,8 @@ static cvarTable_t cvarTable[] = {
 	{&cg_paused, "cl_paused", "0", CVAR_ROM},
 	{&cg_blood, "com_blood", "1", CVAR_ARCHIVE},
 	{&cg_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO},
-	{&cg_enableDust, "cg_enableDust", "0", 0},
-	{&cg_enableBreath, "cg_enableBreath", "0", 0},
+	{&cg_enableDust, "cg_enableDust", "1", 0},
+	{&cg_enableBreath, "cg_enableBreath", "1", 0},
 	{&cg_obeliskRespawnDelay, "g_obeliskRespawnDelay", "10", CVAR_SYSTEMINFO},
 	{&cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE|CVAR_SYSTEMINFO},
 	{&cg_blueTeamName, "g_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE|CVAR_SYSTEMINFO},
@@ -326,7 +326,7 @@ static cvarTable_t cvarTable[] = {
 //	{&cg_pmove_fixed, "cg_pmove_fixed", "0", CVAR_USERINFO|CVAR_ARCHIVE}
 	{&cg_coronafardist, "cg_coronafardist", "1536", CVAR_ARCHIVE},
 	{&cg_coronas, "cg_coronas", "1", CVAR_ARCHIVE},
-	{&cg_fadeExplosions, "cg_fadeExplosions", "0", CVAR_ARCHIVE},
+	{&cg_fadeExplosions, "cg_fadeExplosions", "1", CVAR_ARCHIVE},
 	{&cg_skybox, "cg_skybox", "1", CVAR_ARCHIVE},
 	{&cg_atmosphericEffects, "cg_atmosphericEffects", "1", CVAR_ARCHIVE}
 };
@@ -525,11 +525,9 @@ CG_SetupDlightstyles
 =======================================================================================================================================
 */
 void CG_SetupDlightstyles(void) {
-	int i, j;
-	char *str;
-	char *token;
-	int entnum;
 	centity_t *cent;
+	int i, j, entnum;
+	char *str, *token;
 
 	cg.lightstylesInited = qtrue;
 
@@ -1155,7 +1153,7 @@ static void CG_RegisterGraphics(void) {
 		}
 	}
 	// can be used by HUD so always load it
-	CG_RegisterItemVisuals(3 /*item_health_large*/);
+	CG_RegisterItemVisuals(3/*item_health_large*/);
 	// wall marks
 	cgs.media.bulletMarkShader = trap_R_RegisterShader("gfx/damage/bullet_mrk");
 	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
@@ -1168,7 +1166,7 @@ static void CG_RegisterGraphics(void) {
 	cgs.numInlineModels = trap_CM_NumInlineModels();
 
 	if (cgs.numInlineModels > MAX_SUBMODELS) {
-		CG_Error("MAX_SUBMODELS(%d)exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
+		CG_Error("MAX_SUBMODELS (%d) exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
 	}
 
 	for (i = 1; i < cgs.numInlineModels; i++) {
@@ -2097,8 +2095,8 @@ void CG_HudMenuHacks(void) {
 	if (menu && !menu->forceScreenPlacement) {
 		Menu_SetScreenPlacement(menu, PLACE_LEFT, PLACE_TOP);
 	}
-	// make vertical power up area stick to the left or right side in widescreen
-	// Team Arena has it on the right side but also handle custom huds that use left side
+	// make vertical power up area stick to the left or right side in widescreen. Team Arena has it on the right side but also handle
+	// custom huds that use left side
 	menu = Menus_FindByName("powerup area");
 
 	if (menu && !menu->forceScreenPlacement) {

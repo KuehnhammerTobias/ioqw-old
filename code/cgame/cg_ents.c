@@ -121,14 +121,8 @@ CG_AddLightstyle
 =======================================================================================================================================
 */
 void CG_AddLightstyle(centity_t *cent) {
-	float lightval;
-	int cl;
-	int r, g, b;
-	int stringlength;
-	float offset;
-	//int offsetwhole;
-	int otime;
-	int lastch, nextch;
+	int cl, r, g, b, stringlength, otime, lastch, nextch;
+	float lightval, offset;
 
 	if (!cent->dl_stylestring[0]) {
 		return;
@@ -139,7 +133,8 @@ void CG_AddLightstyle(centity_t *cent) {
 	// it's been a long time since you were updated, lets assume a reset
 	if (otime > 2 * LS_FRAMETIME) {
 		otime = 0;
-		cent->dl_frame = cent->dl_oldframe = 0;
+		cent->dl_frame = 0;
+		cent->dl_oldframe = 0;
 		cent->dl_backlerp = 0;
 	}
 
@@ -169,7 +164,7 @@ void CG_AddLightstyle(centity_t *cent) {
 	lastch = cent->dl_stylestring[cent->dl_oldframe] - 'a';
 	nextch = cent->dl_stylestring[cent->dl_frame] - 'a';
 	lightval = (lastch * (1.0 - cent->dl_backlerp)) + (nextch * cent->dl_backlerp);
-	// ydnar: dlight values go from 0 - 1.5ish
+	// dlight values go from 0 - 1.5ish
 #if 0
 	lightval = (lightval * (1000.0f / 24.0f)) - 200.0f; // they want 'm' as the "middle" value as 300
 	lightval = MAX(0.0f, lightval);
@@ -181,13 +176,13 @@ void CG_AddLightstyle(centity_t *cent) {
 #endif
 	cl = cent->currentState.constantLight;
 	r = cl & 255;
-	g = (cl >> 8)& 255;
-	b = (cl >> 16)& 255;
-	// ydnar: if the dlight has angles, then it is a directional global dlight
+	g = (cl >> 8) & 255;
+	b = (cl >> 16) & 255;
+	// if the dlight has angles, then it is a directional global dlight
 	if (cent->currentState.angles[0] || cent->currentState.angles[1] || cent->currentState.angles[2]) {
 		vec3_t normal;
-		// ZTM: NOTE: lightning on ET's Radar map is too bright with multiple light passes
-		// (enabled with r_dynamiclight 2 in vanilla ET, currently always done in Spearmint) so scale the light values down
+
+		// ZTM: NOTE: lightning on ET's Radar map is too bright with multiple light passes (enabled with r_dynamiclight 2 in vanilla ET, currently always done in Spearmint) so scale the light values down
 		lightval *= 0.25f;
 
 		AngleVectors(cent->currentState.angles, normal, NULL, NULL);
@@ -267,7 +262,7 @@ static void CG_General(centity_t *cent) {
 	ent.hModel = cgs.gameModels[s1->modelindex];
 	// player model
 	if (s1->number == cg.snap->ps.clientNum) {
-		ent.renderfx |= RF_ONLY_MIRROR;
+		ent.renderfx |= RF_ONLY_MIRROR; // only draw from mirrors
 	}
 	// convert angles to axis
 	AnglesToAxis(cent->lerpAngles, ent.axis);
@@ -1154,8 +1149,7 @@ Only coronas that are in your PVS are being added.
 */
 static void CG_Corona(centity_t *cent) {
 	trace_t tr;
-	int r, g, b;
-	int dli;
+	int r, g, b, dli;
 	qboolean visible, behind, toofar;
 	float dot, dist;
 	vec3_t dir;
@@ -1166,9 +1160,8 @@ static void CG_Corona(centity_t *cent) {
 
 	dli = cent->currentState.dl_intensity;
 	r = dli & 255;
-	g = (dli >> 8)& 255;
-	b = (dli >> 16)& 255;
-
+	g = (dli >> 8) & 255;
+	b = (dli >> 16) & 255;
 	visible = qfalse;
 	behind = qfalse;
 	toofar = qfalse;

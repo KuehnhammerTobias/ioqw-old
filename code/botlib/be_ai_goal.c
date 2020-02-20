@@ -1346,6 +1346,7 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {
 			areanum = gs->lastreachabilityarea;
+			//botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "(SG 1 of 3) gs->lastreachabilityarea > 0 CASE LTG: areanum: %d\n", areanum);
 		}
 	}
 	// if still in solid
@@ -1530,9 +1531,13 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
 	if (!areanum || !AAS_AreaReachability(areanum)) {
+#ifdef DEBUG
+		botimport.Print(PRT_MESSAGE, "Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
+#endif
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {
 			areanum = gs->lastreachabilityarea;
+			//botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "(SG 2 of 3) gs->lastreachabilityarea > 0 CASE NBG: areanum: %d\n", areanum);
 		}
 	}
 	// if still in solid
@@ -1636,6 +1641,11 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 					}
 				}
 			}
+#ifdef DEBUG
+			else {
+				botimport.Print(PRT_MESSAGE, "Can't reach %d\n", li->entitynum);
+			}
+#endif
 		}
 	}
 	// if no goal item found

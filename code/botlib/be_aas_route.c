@@ -148,7 +148,9 @@ AAS_TravelFlagForType_inline
 =======================================================================================================================================
 */
 static ID_INLINE int AAS_TravelFlagForType_inline(int traveltype) {
-	int tfl = 0;
+	int tfl;
+
+	tfl = 0;
 
 	if (traveltype & TRAVELFLAG_NOTTEAM1) {
 		tfl |= TFL_NOTTEAM1;

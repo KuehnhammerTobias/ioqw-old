@@ -238,7 +238,7 @@ void Target_Speaker_Multiple_Think(gentity_t *ent) {
 }
 
 /*QUAKED target_speaker (1 0 0) (-8 -8 -8) (8 8 8) LOOPED_ON LOOPED_OFF GLOBAL ACTIVATOR VIS_MULTIPLE NO_PVS
-"noise"		wav file to play
+"noise" wav file to play
 
 A global sound will play full volume throughout the level.
 Activator sounds will play on the player that activated the target.
@@ -247,7 +247,7 @@ Normal sounds play each time the target is used.
 Looped sounds will be toggled by use functions.
 Multiple identical looping sounds will just increase volume without any speed cost.
 NO_PVS - this sound will not turn off when not in the player's PVS.
-"wait" : Seconds between auto triggerings, 0 = don't auto trigger.
+"wait" seconds between auto triggerings, 0 = don't auto trigger.
 "random" wait variance, default is 0.
 "radius" radius control, 128 is default.
 */

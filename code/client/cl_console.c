@@ -466,7 +466,10 @@ void CL_ConsolePrint(char *txt) {
 	}
 
 	if (!con.initialized) {
-		con.color[0] = con.color[1] = con.color[2] = con.color[3] = 1.0f;
+		con.color[0] = 1.0f;
+		con.color[1] = 1.0f;
+		con.color[2] = 1.0f;
+		con.color[3] = 1.0f;
 		con.linewidth = -1;
 
 		Con_CheckResize();
@@ -677,10 +680,10 @@ void Con_DrawSolidConsole(float frac) {
 		SCR_DrawPic(0, 0, SCREEN_WIDTH, y, cls.consoleShader);
 	}
 
-	color[0] = 1;
-	color[1] = 1;
-	color[2] = 1;
-	color[3] = 1;
+	color[0] = 1.0f;
+	color[1] = 1.0f;
+	color[2] = 1.0f;
+	color[3] = 1.0f;
 
 	SCR_FillRect(0, y, SCREEN_WIDTH, 2, color);
 	// draw the version number

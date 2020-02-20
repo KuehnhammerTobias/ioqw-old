@@ -705,6 +705,7 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 				Q_strncpyz(shaderName, token, sizeof(shaderName));
 
 				if (!token[0]) {
+					// end of line
 					break;
 				}
 
@@ -747,6 +748,7 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	legsSkin = torsoSkin = headSkin = qfalse;
 	/*
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%slower_%s.skin", modelName, teamName, skinName);
+
 	ci->legsSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->legsSkin) {
@@ -754,6 +756,7 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%supper_%s.skin", modelName, teamName, skinName);
+
 	ci->torsoSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->torsoSkin) {
@@ -808,6 +811,7 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/lower.md3", modelName);
+
 	ci->legsModel = trap_R_RegisterModel(filename);
 
 	if (!ci->legsModel) {
@@ -816,6 +820,7 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/upper.md3", modelName);
+
 	ci->torsoModel = trap_R_RegisterModel(filename);
 
 	if (!ci->torsoModel) {
@@ -2205,6 +2210,7 @@ static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	vec3_t origin;
 
 	VectorCopy(parent->origin, origin);
+
 	origin[2] += 42;
 
 	if (cent->currentState.number == cg.snap->ps.clientNum) {
@@ -2521,23 +2527,28 @@ void CG_Player(centity_t *cent) {
 	memset(&head, 0, sizeof(head));
 	// get the rotation information
 	CG_PlayerAngles(cent, legs.axis, torso.axis, head.axis);
-// Tobias HACK: make player models (visually) bigger until we have new models...
+// Tobias HACK: make player models (visually) bigger until we have new models... this way we can test our new model specific hit boxes without looking too silly
 	if (!strcmp(ci->modelName, "razor")) {
-		VectorScale(legs.axis[0], 1.41, legs.axis[0]);
-		VectorScale(legs.axis[1], 1.41, legs.axis[1]);
-		VectorScale(legs.axis[2], 1.41, legs.axis[2]);
-		cent->lerpOrigin[2] += 10;
+		VectorScale(legs.axis[0], 1.39, legs.axis[0]);
+		VectorScale(legs.axis[1], 1.39, legs.axis[1]);
+		VectorScale(legs.axis[2], 1.39, legs.axis[2]);
+		cent->lerpOrigin[2] += 9;
 	} else if ((!strcmp(ci->modelName, "janet")) || (!strcmp(ci->modelName, "james"))) {
 		VectorScale(legs.axis[0], 1.12, legs.axis[0]);
 		VectorScale(legs.axis[1], 1.12, legs.axis[1]);
 		VectorScale(legs.axis[2], 1.12, legs.axis[2]);
 		cent->lerpOrigin[2] += 3;
-	} else if (!strcmp(ci->modelName, "mynx") || (!strcmp(ci->modelName, "major")) || (!strcmp(ci->modelName, "pi")) || (!strcmp(ci->modelName, "fritzkrieg")) || (!strcmp(ci->modelName, "morgan")) || (!strcmp(ci->modelName, "sorlag"))) {
+	} else if ((!strcmp(ci->modelName, "major")) || (!strcmp(ci->modelName, "pi")) || (!strcmp(ci->modelName, "morgan")) || (!strcmp(ci->modelName, "sorlag"))) {
 		VectorScale(legs.axis[0], 1.20, legs.axis[0]);
 		VectorScale(legs.axis[1], 1.20, legs.axis[1]);
 		VectorScale(legs.axis[2], 1.20, legs.axis[2]);
 		cent->lerpOrigin[2] += 5;
-	} else if (!strcmp(ci->modelName, "vex")) {
+	} else if ((!strcmp(ci->modelName, "fritzkrieg")) || (!strcmp(ci->modelName, "biker"))) {
+		VectorScale(legs.axis[0], 1.18, legs.axis[0]);
+		VectorScale(legs.axis[1], 1.18, legs.axis[1]);
+		VectorScale(legs.axis[2], 1.18, legs.axis[2]);
+		cent->lerpOrigin[2] += 4;
+	} else if ((!strcmp(ci->modelName, "vex")) || (!strcmp(ci->modelName, "slash"))) {
 		VectorScale(legs.axis[0], 0.97, legs.axis[0]);
 		VectorScale(legs.axis[1], 0.97, legs.axis[1]);
 		VectorScale(legs.axis[2], 0.97, legs.axis[2]);
@@ -2599,7 +2610,7 @@ void CG_Player(centity_t *cent) {
 		return;
 	}
 
-	torso.customSkin = legs.customSkin;
+	torso.customSkin = legs.customSkin; // Tobias CHECK: legs?
 
 	VectorCopy(cent->lerpOrigin, torso.lightingOrigin);
 	CG_PositionRotatedEntityOnTag(&torso, &legs, ci->legsModel, "tag_torso");
@@ -2829,7 +2840,7 @@ void CG_Player(centity_t *cent) {
 		return;
 	}
 
-	head.customSkin = legs.customSkin;
+	head.customSkin = legs.customSkin; // Tobias CHECK: legs?
 
 	VectorCopy(cent->lerpOrigin, head.lightingOrigin);
 	CG_PositionRotatedEntityOnTag(&head, &torso, ci->torsoModel, "tag_head");

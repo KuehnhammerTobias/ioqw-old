@@ -535,8 +535,8 @@ void S_Init(void) {
 
 	Com_Printf("------ Initializing Sound ------\n");
 
-	s_volume = Cvar_Get("s_volume", "1.0", CVAR_ARCHIVE);
-	s_musicVolume = Cvar_Get("s_musicvolume", "0.0", CVAR_ARCHIVE);
+	s_volume = Cvar_Get("s_volume", "1", CVAR_ARCHIVE);
+	s_musicVolume = Cvar_Get("s_musicvolume", "0", CVAR_ARCHIVE);
 	s_muted = Cvar_Get("s_muted", "0", CVAR_ROM);
 	s_doppler = Cvar_Get("s_doppler", "1", CVAR_ARCHIVE);
 	s_backend = Cvar_Get("s_backend", "", CVAR_ROM);

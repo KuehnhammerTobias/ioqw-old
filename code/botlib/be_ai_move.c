@@ -810,6 +810,7 @@ int BotGetReachabilityToGoal(vec3_t origin, int areanum, int lastgoalareanum, in
 
 	// if not in a valid area
 	if (!areanum || !goal->areanum || !AAS_AreaReachability(areanum)) {
+		//botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "(SG 3 of 3) !areanum || !goal->areanum || !AAS_AreaReachability: %d %d\n", areanum, goal->areanum);
 		return 0;
 	}
 
@@ -2333,7 +2334,7 @@ bot_moveresult_t BotTravel_Elevator(bot_movestate_t *ms, aas_reachability_t *rea
 #ifdef DEBUG_ELEVATOR
 				botimport.Print(PRT_MESSAGE, "bot moving to center\n");
 #endif // DEBUG_ELEVATOR
-				// move to the center of the plat
+				// move to the center of the elevator
 				if (dist > 100) {
 					dist = 100;
 				}

@@ -1793,7 +1793,7 @@ static const char *UI_AIFromName(const char *name) {
 			return uiInfo.characterList[j].name;
 		}
 	}
-	// name is listed in team list but not in alias or characters list.
+	// name is listed in team list but not in alias or characters list
 	Com_Printf(S_COLOR_YELLOW "WARNING: Unknown team character '%s'.\n", name);
 	return name;
 }
@@ -3964,6 +3964,10 @@ static void UI_RunMenuScript(char **args) {
 				}
 			} else {
 				for (i = 0; i < PLAYERS_NOT_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_notteam%i", i + 1));
 
 					if (bot > 1) {
@@ -3978,9 +3982,9 @@ static void UI_RunMenuScript(char **args) {
 					}
 				}
 			}
+			// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
+			//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 		} else if (Q_stricmp(name, "StartServerIngame") == 0) {
-// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
-//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 			int i, delay, clients, oldclients;
 			float skill;
 
@@ -4038,11 +4042,11 @@ static void UI_RunMenuScript(char **args) {
 			delay = 500;
 
 			if (ui_actualNetGameType.integer > GT_TOURNAMENT) {
-				// 0 - None
-				// 1 - Human
-				// 2 - Random Bot
-				// 3.. NumCharacters - Bot
 				for (i = 0; i < PLAYERS_PER_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
 
 					if (bot > 1) {
@@ -4075,6 +4079,10 @@ static void UI_RunMenuScript(char **args) {
 				}
 			} else {
 				for (i = 0; i < PLAYERS_NOT_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_notteam%i", i + 1));
 
 					if (bot > 1) {
@@ -4212,6 +4220,18 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cmd_ExecuteText(EXEC_APPEND, "disconnect\n");
 			trap_Key_SetCatcher(KEYCATCH_UI);
 			Menus_CloseAll();
+
+			if (ui_singlePlayerActive.integer) {
+				// put back all the ui overrides
+				trap_Cvar_SetValue("capturelimit", trap_Cvar_VariableValue("ui_saveCaptureLimit"));
+				trap_Cvar_SetValue("fraglimit", trap_Cvar_VariableValue("ui_saveFragLimit"));
+				trap_Cvar_SetValue("cg_drawTimer", trap_Cvar_VariableValue("ui_drawTimer"));
+				trap_Cvar_SetValue("g_doWarmup", trap_Cvar_VariableValue("ui_doWarmup"));
+				trap_Cvar_SetValue("g_Warmup", trap_Cvar_VariableValue("ui_Warmup"));
+				trap_Cvar_SetValue("sv_pure", trap_Cvar_VariableValue("ui_pure"));
+				trap_Cvar_SetValue("g_friendlyFire", trap_Cvar_VariableValue("ui_friendlyFire"));
+			}
+
 			Menus_ActivateByName("main");
 		} else if (Q_stricmp(name, "ServerSort") == 0) {
 			int sortColumn;
@@ -6269,8 +6289,8 @@ void _UI_Init(qboolean inGameLoad) {
 	uiInfo.previewMovie = -1;
 
 	if (trap_Cvar_VariableValue("ui_TeamArenaFirstRun") == 0) {
-		trap_Cvar_SetValue("s_volume", 1.0);
-		trap_Cvar_SetValue("s_musicvolume", 0.0);
+		trap_Cvar_SetValue("s_volume", 1);
+		trap_Cvar_SetValue("s_musicvolume", 0);
 		trap_Cvar_SetValue("ui_TeamArenaFirstRun", 1);
 	}
 
@@ -6909,13 +6929,14 @@ static cvarTable_t cvarTable[] = {
 	{&ui_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
 	{&ui_recordSPDemo, "ui_recordSPDemo", "0", CVAR_ARCHIVE},
 	{&ui_teamArenaFirstRun, "ui_teamArenaFirstRun", "0", CVAR_ARCHIVE},
+
 	{NULL, "g_friendlyFire", "1", CVAR_ARCHIVE},
 	{NULL, "g_allowVote", "1", CVAR_ARCHIVE},
 	{NULL, "g_teamAutoJoin", "1", CVAR_ARCHIVE},
 	{NULL, "g_teamForceBalance", "1", CVAR_ARCHIVE},
 	{NULL, "g_warmup", "10", CVAR_ARCHIVE},
-	{NULL, "fraglimit", "0", CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_NORESTART},
 	{NULL, "timelimit", "15", CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_NORESTART},
+	{NULL, "fraglimit", "0", CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_NORESTART},
 	{NULL, "capturelimit", "8", CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_NORESTART},
 	{&ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
 	{NULL, "ui_videomode", "", CVAR_ROM},

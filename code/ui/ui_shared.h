@@ -127,7 +127,6 @@ typedef enum {
 	PLACE_BOTTOM
 } screenPlacement_e;
 #endif
-
 typedef struct {
 	const char *command;
 	const char *args[MAX_SCRIPT_ARGS];

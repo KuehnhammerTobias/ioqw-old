@@ -469,7 +469,7 @@ qboolean AAS_AreaEntityCollision(int areanum, vec3_t start, vec3_t end, int pres
 		VectorCopy(bsptrace.plane.normal, trace->plane.normal);
 
 		trace->plane.dist = bsptrace.plane.dist;
-		// ZTM: FIXME: Are AAS plane type and BSP plane type the same values?
+		// ZTM: FIXME: are AAS plane type and BSP plane type the same values?
 		trace->plane.type = bsptrace.plane.type;
 		return qtrue;
 	}

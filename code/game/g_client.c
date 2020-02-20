@@ -31,7 +31,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define MAX_SPAWN_POINTS 128
 
 static vec3_t playerMins = {-15, -15, -24};
-static vec3_t playerMaxs = {15, 15, 56};
+static vec3_t playerMaxs = {15, 15, 56}; // 56 + 24 = 80 (80 * 2.5 = 200)
 
 /*QUAKED info_player_deathmatch (1 0 1) (-16 -16 -24) (16 16 56) INITIAL
 potential spawning position for deathmatch games.

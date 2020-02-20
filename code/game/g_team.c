@@ -155,8 +155,7 @@ gametype-specific scoring happens (checks capturelimit to win, e.g. capture flag
 =======================================================================================================================================
 */
 void AddTeamScore(vec3_t origin, int team, int score) {
-	int eventParm;
-	int otherTeam;
+	int eventParm, otherTeam;
 	gentity_t *te;
 
 	if (score == 0) {

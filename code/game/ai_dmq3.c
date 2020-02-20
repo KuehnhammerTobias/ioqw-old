@@ -57,6 +57,9 @@ bot_waypoint_t *botai_freewaypoints;
 // NOTE: not using a cvars which can be updated because the game should be reloaded anyway
 int gametype; // game type
 
+vmCvar_t bot_rocketjump;
+vmCvar_t bot_fastchat;
+vmCvar_t bot_nochat;
 vmCvar_t bot_testrchat;
 vmCvar_t bot_challenge;
 vmCvar_t bot_visualrange;
@@ -4121,7 +4124,7 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		if (g_entities[i].flags & FL_NOTARGET) {
 			continue;
 		}
-		// ignore enemies
+		// if on the same team
 		if (BotSameTeam(bs, i)) {
 			continue;
 		}
@@ -6516,7 +6519,7 @@ void BotCheckConsoleMessages(bot_state_t *bs) {
 		// if there's no match
 		if (!BotMatchMessage(bs, m.message)) {
 			// if it is a chat message
-			if (m.type == CMS_CHAT) {
+			if (m.type == CMS_CHAT && !bot_nochat.integer) {
 				if (!trap_BotFindMatch(m.message, &match, MTCONTEXT_REPLYCHAT)) {
 					trap_BotRemoveConsoleMessage(bs->cs, handle);
 					continue;
@@ -7355,6 +7358,9 @@ void BotSetupDeathmatchAI(void) {
 
 	gametype = trap_Cvar_VariableIntegerValue("g_gametype");
 
+	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
+	trap_Cvar_Register(&bot_fastchat, "bot_fastchat", "0", 0);
+	trap_Cvar_Register(&bot_nochat, "bot_nochat", "0", 0);
 	trap_Cvar_Register(&bot_testrchat, "bot_testrchat", "0", 0);
 	trap_Cvar_Register(&bot_challenge, "bot_challenge", "0", 0);
 	trap_Cvar_Register(&bot_visualrange, "bot_visualrange", "100000", 0);

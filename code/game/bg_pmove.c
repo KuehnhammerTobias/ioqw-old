@@ -1169,6 +1169,7 @@ static void PM_CrashLand(void) {
 	if (delta < 1) {
 		return;
 	}
+	// create a local entity event to play the sound
 	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
 		// create a local entity event to play the sound
@@ -1185,7 +1186,7 @@ static void PM_CrashLand(void) {
 			}
 
 			stunTime = 250;
-		} else if (delta > 48 ) {
+		} else if (delta > 48) {
 			// this is a pain grunt, so don't play it if dead
 			if (pm->ps->stats[STAT_HEALTH] > 0) {
 				PM_AddEvent(EV_FALL_DMG_15);
@@ -1510,7 +1511,7 @@ static void PM_CheckDuck(void) {
 	} else { // stand up if possible
 		if (pm->ps->pm_flags & PMF_DUCKED) {
 			// try to stand up
-			pm->maxs[2] = 56;
+			pm->maxs[2] = 56; // 56 + 24 = 80 (80 * 2.5 = 200)
 			pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, pm->ps->origin, pm->ps->clientNum, pm->tracemask);
 
 			if (!trace.allsolid) {
@@ -1520,10 +1521,10 @@ static void PM_CheckDuck(void) {
 	}
 
 	if (pm->ps->pm_flags & PMF_DUCKED) {
-		pm->maxs[2] = 32;
+		pm->maxs[2] = 42;
 		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
 	} else {
-		pm->maxs[2] = 56;
+		pm->maxs[2] = 56; // 56 + 24 = 80 (80 * 2.5 = 200)
 		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
 	}
 }
@@ -1590,7 +1591,7 @@ static void PM_Footsteps(void) {
 	// ducked
 	if (pm->ps->pm_flags & PMF_DUCKED) {
 		bobmove = 0.35f; // 0.65f
-
+		// (auto-)walking
 		if (pm->ps->pm_flags & PMF_BACKWARDS_RUN) {
 			PM_ContinueLegsAnim(LEGS_BACKCR);
 		} else {

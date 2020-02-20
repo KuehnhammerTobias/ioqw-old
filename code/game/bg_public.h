@@ -38,11 +38,11 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define DEFAULT_SHOTGUN_COUNT 11
 #define ITEM_RADIUS 15 // item sizes are needed for client side pickup detection
 #define BEAMGUN_RANGE 768
-#define SCORE_NOT_PRESENT -9999	// for the CS_SCORES[12] when only one player is present
+#define SCORE_NOT_PRESENT -9999 // for the CS_SCORES[12] when only one player is present
 #define VOTE_TIME 30000 // 30 seconds before vote times out
 #define MINS_Z -24
-#define DEFAULT_VIEWHEIGHT 38
-#define CROUCH_VIEWHEIGHT 22
+#define DEFAULT_VIEWHEIGHT 40 // increased from 26 to 40 factor: ~1.54
+#define CROUCH_VIEWHEIGHT 20 // increased from 12 to 20 factor: ~1.66
 #define DEAD_VIEWHEIGHT -16
 #define OBELISK_TARGET_HEIGHT 56
 #define MAX_DLIGHT_CONFIGSTRINGS 128
@@ -166,7 +166,7 @@ void Pmove(pmove_t *pmove);
 
 	player_state->stats[] indexes
 
-	NOTE: may not have more than 16.
+	NOTE: may not have more than MAX_STATS.
 
 **************************************************************************************************************************************/
 
@@ -185,7 +185,7 @@ typedef enum {
 	player_state->persistant[] indexes
 
 	These fields are the only part of player_state that isn't cleared on respawn.
-	NOTE: may not have more than 16.
+	NOTE: may not have more than MAX_PERSISTANT.
 
 **************************************************************************************************************************************/
 
@@ -222,7 +222,15 @@ typedef enum {
 #define EF_TEAMVOTED		0x00000800 // already cast a team vote
 #define EF_CONNECTION		0x00001000 // draw a connection trouble sprite
 #define EF_TALK				0x00002000 // draw a talk balloon
-// NOTE: may not have more than 16
+
+/**************************************************************************************************************************************
+
+	player_state->powerup[] indexes
+
+	NOTE: may not have more than MAX_POWERUPS.
+
+**************************************************************************************************************************************/
+
 typedef enum {
 	PW_NONE,
 	PW_QUAD,
@@ -244,6 +252,14 @@ typedef enum {
 	HI_KAMIKAZE,
 	HI_NUM_HOLDABLE
 } holdable_t;
+
+/**************************************************************************************************************************************
+
+	player_state->weapon[] indexes
+
+	NOTE: may not have more than MAX_WEAPONS.
+
+**************************************************************************************************************************************/
 
 typedef enum {
 	WP_NONE,
