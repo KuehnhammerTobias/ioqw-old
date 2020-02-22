@@ -315,7 +315,7 @@ int AAS_PointLight(vec3_t origin, int *red, int *green, int *blue);
 int AAS_TraceAreas(vec3_t start, vec3_t end, int *areas, vec3_t *points, int maxareas);
 int AAS_Reachability_WeaponJump(int area1num, int area2num);
 int BotFuzzyPointReachabilityArea(vec3_t origin);
-int BotGapDistance(vec3_t origin, vec3_t hordir, int checkdist, int entnum);
+float BotGapDistance(vec3_t origin, vec3_t velocity, vec3_t hordir, int entnum);
 void AAS_FloodAreas(vec3_t origin);
 
 /*
@@ -562,7 +562,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 	}
 
 	VectorClear(forward);
-	//BotGapDistance(origin, forward, 100, 0);
+	//BotGapDistance(origin, 0, forward, 0);
 	/*
 	if (parm0 & BUTTON_USE) {
 		botimport.Print(PRT_MESSAGE, "test rj from 703 to 716\n");

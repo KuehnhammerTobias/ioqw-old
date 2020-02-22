@@ -474,7 +474,7 @@ static qboolean PM_CheckWaterJump(void) {
 		return qfalse;
 	}
 
-	spot[2] += 16;
+	spot[2] += 18; // Tobias NOTE: this depends on viewheight
 	cont = pm->pointcontents(spot, pm->ps->clientNum);
 
 	if (cont & (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY)) {
@@ -1172,48 +1172,6 @@ static void PM_CrashLand(void) {
 	// create a local entity event to play the sound
 	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
-		// create a local entity event to play the sound
-		if (delta > 84) { // Tobias NOTE: a delta of 84 = max_fallheight of 516 units for bots, and 529 units for humans (why can humans fall higher than bots?)
-			PM_AddEvent(EV_FALL_DIE);
-			stunTime = 1000;
-		} else if (delta > 70) {
-			PM_AddEvent(EV_FALL_DMG_50);
-			stunTime = 1000;
-		} else if (delta > 58) {
-			// this is a pain grunt, so don't play it if dead
-			if (pm->ps->stats[STAT_HEALTH] > 0) {
-				PM_AddEvent(EV_FALL_DMG_25);
-			}
-
-			stunTime = 250;
-		} else if (delta > 48) {
-			// this is a pain grunt, so don't play it if dead
-			if (pm->ps->stats[STAT_HEALTH] > 0) {
-				PM_AddEvent(EV_FALL_DMG_15);
-			}
-
-			stunTime = 1000;
-		} else if (delta > 38.75) {
-			// this is a pain grunt, so don't play it if dead
-			if (pm->ps->stats[STAT_HEALTH] > 0) {
-				PM_AddEvent(EV_FALL_DMG_10);
-			}
-
-			stunTime = 1000;
-		} else if (delta > 28) {
-			// this is a pain grunt, so don't play it if dead
-			if (pm->ps->stats[STAT_HEALTH] > 0) {
-				PM_AddEvent(EV_FALL_DMG_5);
-			}
-
-			stunTime = 1000;
-		} else if (delta > 7) {
-			PM_AddEvent(EV_FALL_SHORT);
-		} else {
-			PM_AddEvent(PM_FootstepForSurface());
-		}
-	// Tobias NOTE: this simulates the old behavior, assuming old maps use SURF_NODAMAGE if needed
-	} else {
 		if (delta > 60) {
 			// this is a pain grunt, so don't play it if dead
 			if (pm->ps->stats[STAT_HEALTH] > 0) {
@@ -1233,7 +1191,6 @@ static void PM_CrashLand(void) {
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
-	// Tobias END
 	}
 	// when landing from launch ramps don't stop so abruptly
 	if (VectorLength(pm->ps->velocity) > 400) {
@@ -1511,7 +1468,7 @@ static void PM_CheckDuck(void) {
 	} else { // stand up if possible
 		if (pm->ps->pm_flags & PMF_DUCKED) {
 			// try to stand up
-			pm->maxs[2] = 56; // 56 + 24 = 80 (80 * 2.5 = 200)
+			pm->maxs[2] = 46; // 56 + 24 = 80 (80 * 2.5 = 200)
 			pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, pm->ps->origin, pm->ps->clientNum, pm->tracemask);
 
 			if (!trace.allsolid) {
@@ -1524,7 +1481,7 @@ static void PM_CheckDuck(void) {
 		pm->maxs[2] = 42;
 		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
 	} else {
-		pm->maxs[2] = 56; // 56 + 24 = 80 (80 * 2.5 = 200)
+		pm->maxs[2] = 46; // 56 + 24 = 80 (80 * 2.5 = 200)
 		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
 	}
 }

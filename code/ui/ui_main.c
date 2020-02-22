@@ -54,8 +54,8 @@ static const char *MonthAbbrev[] = {
 static const char *skillLevels[] = {
 	"I Can Win",
 	"Bring It On",
-	"Hurt Me Plenty",
 	"Hardcore",
+	"Suicide",
 	"Nightmare"
 };
 
@@ -1379,8 +1379,14 @@ static void UI_DrawTeamMember(rectDef_t *rect, float scale, vec4_t color, qboole
 	// 1 - Human
 	// 2 - Random Bot
 	// 3.. NumCharacters - Bot
-	int value = trap_Cvar_VariableValue(va(blue ? "ui_blueteam%i" : "ui_redteam%i", num));
+	int value;
 	const char *text;
+
+	if (ui_actualNetGameType.integer > GT_TEAM) {
+		value = trap_Cvar_VariableValue(va(blue ? "ui_blueteamctf%i" : "ui_redteamctf%i", num));
+	} else {
+		value = trap_Cvar_VariableValue(va(blue ? "ui_blueteamtdm%i" : "ui_redteamtdm%i", num));
+	}
 
 	if (value <= 0) {
 		text = "Closed";
@@ -2073,7 +2079,11 @@ static int UI_OwnerDrawWidth(int ownerDraw, float scale) {
 		case UI_BLUETEAM5:
 		case UI_BLUETEAM6:
 		case UI_BLUETEAM7:
-			value = trap_Cvar_VariableValue(va("ui_blueteam%i", ownerDraw - UI_BLUETEAM1 + 1));
+			if (ui_actualNetGameType.integer > GT_TEAM) {
+				value = trap_Cvar_VariableValue(va("ui_blueteamctf%i", ownerDraw - UI_BLUETEAM1 + 1));
+			} else {
+				value = trap_Cvar_VariableValue(va("ui_blueteamtdm%i", ownerDraw - UI_BLUETEAM1 + 1));
+			}
 
 			if (value <= 0) {
 				text = "Closed";
@@ -2098,7 +2108,11 @@ static int UI_OwnerDrawWidth(int ownerDraw, float scale) {
 		case UI_REDTEAM5:
 		case UI_REDTEAM6:
 		case UI_REDTEAM7:
-			value = trap_Cvar_VariableValue(va("ui_redteam%i", ownerDraw - UI_REDTEAM1 + 1));
+			if (ui_actualNetGameType.integer > GT_TEAM) {
+				value = trap_Cvar_VariableValue(va("ui_redteamctf%i", ownerDraw - UI_REDTEAM1 + 1));
+			} else {
+				value = trap_Cvar_VariableValue(va("ui_redteamtdm%i", ownerDraw - UI_REDTEAM1 + 1));
+			}
 
 			if (value <= 0) {
 				text = "Closed";
@@ -3020,9 +3034,16 @@ static qboolean UI_TeamMember_HandleKey(int flags, float *special, int key, qboo
 		// 1 - Human
 		// 2 - Random Bot
 		// 3.. NumCharacters - Bot
-		char *cvar = va(blue ? "ui_blueteam%i" : "ui_redteam%i", num);
-		int value = trap_Cvar_VariableValue(cvar);
+		char *cvar;
+		int value;
 
+		if (ui_actualNetGameType.integer > GT_TEAM) {
+			cvar = va(blue ? "ui_blueteamctf%i" : "ui_redteamctf%i", num);
+		} else {
+			cvar = va(blue ? "ui_blueteamtdm%i" : "ui_redteamtdm%i", num);
+		}
+
+		value = trap_Cvar_VariableValue(cvar);
 		value += select;
 
 		if (value >= uiInfo.characterCount + 3) {
@@ -3898,13 +3919,23 @@ static void UI_RunMenuScript(char **args) {
 
 			if (ui_actualNetGameType.integer > GT_TOURNAMENT) {
 				for (i = 0; i < PLAYERS_PER_TEAM; i++) {
-					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
+					int bot;
+
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_redteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_redteamtdm%i", i + 1));
+					}
 
 					if (bot >= 0) {
 						clients++;
 					}
 
-					bot = trap_Cvar_VariableValue(va("ui_blueteam%i", i + 1));
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamtdm%i", i + 1));
+					}
 
 					if (bot >= 0) {
 						clients++;
@@ -3936,7 +3967,13 @@ static void UI_RunMenuScript(char **args) {
 					// 1 - Human
 					// 2 - Random Bot
 					// 3.. NumCharacters - Bot
-					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
+					int bot;
+
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_redteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_redteamtdm%i", i + 1));
+					}
 
 					if (bot > 1) {
 						if (bot == 2) {
@@ -3949,7 +3986,11 @@ static void UI_RunMenuScript(char **args) {
 						trap_Cmd_ExecuteText(EXEC_APPEND, buff);
 					}
 
-					bot = trap_Cvar_VariableValue(va("ui_blueteam%i", i + 1));
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamtdm%i", i + 1));
+					}
 
 					if (bot > 1) {
 						if (bot == 2) {
@@ -4006,13 +4047,23 @@ static void UI_RunMenuScript(char **args) {
 
 			if (ui_actualNetGameType.integer > GT_TOURNAMENT) {
 				for (i = 0; i < PLAYERS_PER_TEAM; i++) {
-					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
+					int bot;
+
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_redteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_redteamtdm%i", i + 1));
+					}
 
 					if (bot >= 0) {
 						clients++;
 					}
 
-					bot = trap_Cvar_VariableValue(va("ui_blueteam%i", i + 1));
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamtdm%i", i + 1));
+					}
 
 					if (bot >= 0) {
 						clients++;
@@ -4047,7 +4098,13 @@ static void UI_RunMenuScript(char **args) {
 					// 1 - Human
 					// 2 - Random Bot
 					// 3.. NumCharacters - Bot
-					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
+					int bot;
+
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_redteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_redteamtdm%i", i + 1));
+					}
 
 					if (bot > 1) {
 						if (bot == 2) {
@@ -4062,7 +4119,11 @@ static void UI_RunMenuScript(char **args) {
 						delay += 500;
 					}
 
-					bot = trap_Cvar_VariableValue(va("ui_blueteam%i", i + 1));
+					if (ui_actualNetGameType.integer > GT_TEAM) {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamctf%i", i + 1));
+					} else {
+						bot = trap_Cvar_VariableValue(va("ui_blueteamtdm%i", i + 1));
+					}
 
 					if (bot > 1) {
 						if (bot == 2) {
@@ -6758,22 +6819,38 @@ vmCvar_t ui_brassTime;
 vmCvar_t ui_drawCrosshair;
 vmCvar_t ui_drawCrosshairNames;
 vmCvar_t ui_marks;
-vmCvar_t ui_redteam;
-vmCvar_t ui_redteam1;
-vmCvar_t ui_redteam2;
-vmCvar_t ui_redteam3;
-vmCvar_t ui_redteam4;
-vmCvar_t ui_redteam5;
-vmCvar_t ui_redteam6;
-vmCvar_t ui_redteam7;
-vmCvar_t ui_blueteam;
-vmCvar_t ui_blueteam1;
-vmCvar_t ui_blueteam2;
-vmCvar_t ui_blueteam3;
-vmCvar_t ui_blueteam4;
-vmCvar_t ui_blueteam5;
-vmCvar_t ui_blueteam6;
-vmCvar_t ui_blueteam7;
+vmCvar_t ui_redteamctf;
+vmCvar_t ui_redteamctf1;
+vmCvar_t ui_redteamctf2;
+vmCvar_t ui_redteamctf3;
+vmCvar_t ui_redteamctf4;
+vmCvar_t ui_redteamctf5;
+vmCvar_t ui_redteamctf6;
+vmCvar_t ui_redteamctf7;
+vmCvar_t ui_blueteamctf;
+vmCvar_t ui_blueteamctf1;
+vmCvar_t ui_blueteamctf2;
+vmCvar_t ui_blueteamctf3;
+vmCvar_t ui_blueteamctf4;
+vmCvar_t ui_blueteamctf5;
+vmCvar_t ui_blueteamctf6;
+vmCvar_t ui_blueteamctf7;
+vmCvar_t ui_redteamtdm;
+vmCvar_t ui_redteamtdm1;
+vmCvar_t ui_redteamtdm2;
+vmCvar_t ui_redteamtdm3;
+vmCvar_t ui_redteamtdm4;
+vmCvar_t ui_redteamtdm5;
+vmCvar_t ui_redteamtdm6;
+vmCvar_t ui_redteamtdm7;
+vmCvar_t ui_blueteamtdm;
+vmCvar_t ui_blueteamtdm1;
+vmCvar_t ui_blueteamtdm2;
+vmCvar_t ui_blueteamtdm3;
+vmCvar_t ui_blueteamtdm4;
+vmCvar_t ui_blueteamtdm5;
+vmCvar_t ui_blueteamtdm6;
+vmCvar_t ui_blueteamtdm7;
 vmCvar_t ui_notteam1;
 vmCvar_t ui_notteam2;
 vmCvar_t ui_notteam3;
@@ -6853,27 +6930,43 @@ static cvarTable_t cvarTable[] = {
 	{&ui_initialized, "ui_initialized", "0", CVAR_TEMP},
 	{&ui_opponentName, "ui_opponentName", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
 	{&ui_teamName, "ui_teamName", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
-	{&ui_redteam, "ui_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
-	{&ui_blueteam, "ui_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
 	{&ui_dedicated, "ui_dedicated", "0", CVAR_ARCHIVE},
 	{&ui_gameType, "ui_gametype", "3", CVAR_ARCHIVE},
 	{&ui_joinGameType, "ui_joinGametype", "0", CVAR_ARCHIVE},
 	{&ui_netGameType, "ui_netGametype", "3", CVAR_ARCHIVE},
 	{&ui_actualNetGameType, "ui_actualNetGametype", "3", CVAR_ARCHIVE},
-	{&ui_redteam1, "ui_redteam1", "0", CVAR_ARCHIVE},
-	{&ui_redteam2, "ui_redteam2", "0", CVAR_ARCHIVE},
-	{&ui_redteam3, "ui_redteam3", "0", CVAR_ARCHIVE},
-	{&ui_redteam4, "ui_redteam4", "0", CVAR_ARCHIVE},
-	{&ui_redteam5, "ui_redteam5", "0", CVAR_ARCHIVE},
-	{&ui_redteam6, "ui_redteam6", "0", CVAR_ARCHIVE},
-	{&ui_redteam7, "ui_redteam7", "0", CVAR_ARCHIVE},
-	{&ui_blueteam1, "ui_blueteam1", "0", CVAR_ARCHIVE},
-	{&ui_blueteam2, "ui_blueteam2", "0", CVAR_ARCHIVE},
-	{&ui_blueteam3, "ui_blueteam3", "0", CVAR_ARCHIVE},
-	{&ui_blueteam4, "ui_blueteam4", "0", CVAR_ARCHIVE},
-	{&ui_blueteam5, "ui_blueteam5", "0", CVAR_ARCHIVE},
-	{&ui_blueteam6, "ui_blueteam6", "0", CVAR_ARCHIVE},
-	{&ui_blueteam7, "ui_blueteam7", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf, "ui_redteamctf", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
+	{&ui_redteamctf1, "ui_redteamctf1", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf2, "ui_redteamctf2", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf3, "ui_redteamctf3", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf4, "ui_redteamctf4", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf5, "ui_redteamctf5", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf6, "ui_redteamctf6", "0", CVAR_ARCHIVE},
+	{&ui_redteamctf7, "ui_redteamctf7", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf, "ui_blueteamctf", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
+	{&ui_blueteamctf1, "ui_blueteamctf1", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf2, "ui_blueteamctf2", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf3, "ui_blueteamctf3", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf4, "ui_blueteamctf4", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf5, "ui_blueteamctf5", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf6, "ui_blueteamctf6", "0", CVAR_ARCHIVE},
+	{&ui_blueteamctf7, "ui_blueteamctf7", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm, "ui_redteamtdm", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
+	{&ui_redteamtdm1, "ui_redteamtdm1", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm2, "ui_redteamtdm2", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm3, "ui_redteamtdm3", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm4, "ui_redteamtdm4", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm5, "ui_redteamtdm5", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm6, "ui_redteamtdm6", "0", CVAR_ARCHIVE},
+	{&ui_redteamtdm7, "ui_redteamtdm7", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm, "ui_blueteamtdm", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
+	{&ui_blueteamtdm1, "ui_blueteamtdm1", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm2, "ui_blueteamtdm2", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm3, "ui_blueteamtdm3", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm4, "ui_blueteamtdm4", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm5, "ui_blueteamtdm5", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm6, "ui_blueteamtdm6", "0", CVAR_ARCHIVE},
+	{&ui_blueteamtdm7, "ui_blueteamtdm7", "0", CVAR_ARCHIVE},
 	{&ui_notteam1, "ui_notteam1", "0", CVAR_ARCHIVE},
 	{&ui_notteam2, "ui_notteam2", "0", CVAR_ARCHIVE},
 	{&ui_notteam3, "ui_notteam3", "0", CVAR_ARCHIVE},

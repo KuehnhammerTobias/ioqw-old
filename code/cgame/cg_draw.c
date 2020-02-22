@@ -39,6 +39,8 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
+static const char *DayAbbrev[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
 /*
 =======================================================================================================================================
 CG_Text_Width
@@ -1834,6 +1836,45 @@ static void CG_DrawLagometer(void) {
 
 /*
 =======================================================================================================================================
+CG_DrawRealTimeClock
+=======================================================================================================================================
+*/
+static void CG_DrawRealTimeClock(void) {
+	char *s;
+	int w;
+	qtime_t qtime;
+
+	if (!cg_drawClock.integer) {
+		return;
+	}
+
+	trap_RealTime(&qtime);
+
+	if (cg_drawClock.integer == 2) {
+		s = va("%02d.%02d.%02d, %s, %02d:%02d", qtime.tm_mday, 1 + qtime.tm_mon, 1900 + qtime.tm_year, DayAbbrev[qtime.tm_wday], qtime.tm_hour, qtime.tm_min);
+	} else {
+		char *pm = " am";
+		int h = qtime.tm_hour;
+
+		if (h == 0) {
+			h = 12;
+		} else if (h == 12) {
+			pm = " pm";
+		} else if (h > 12) {
+			h -= 12;
+			pm = " pm";
+		}
+
+		s = va("%02d.%02d.%02d, %s, %d:%02d%s", qtime.tm_mday, 1 + qtime.tm_mon, 1900 + qtime.tm_year, DayAbbrev[qtime.tm_wday], h, qtime.tm_min, pm);
+	}
+
+	w = CG_Text_Width(s, 0.2f, 0);
+
+	CG_Text_Paint(744 - w, 478, 0.2f, colorWhite, s, 0, 0, ITEM_TEXTSTYLE_SHADOWED); // Tobias NOTE: this is not correct because it's out of 16:9 control atm
+}
+
+/*
+=======================================================================================================================================
 
 	CENTER PRINTING
 
@@ -2595,6 +2636,7 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 	CG_DrawVote();
 	CG_DrawTeamVote();
 	CG_DrawLagometer();
+	CG_DrawRealTimeClock();
 
 	if (!cg_paused.integer) {
 		CG_DrawUpperRight(stereoFrame);

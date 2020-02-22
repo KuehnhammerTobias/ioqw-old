@@ -1247,7 +1247,7 @@ void R_Register( void )
 	r_forceAutoExposureMax = ri.Cvar_Get( "r_forceAutoExposureMax", "2.0", CVAR_CHEAT );
 
 	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "1", CVAR_CHEAT );
-	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
+	r_bloom = ri.Cvar_Get( "r_bloom", "0", CVAR_ARCHIVE );
 	r_bloomAlpha = ri.Cvar_Get( "r_bloomAlpha", "1", CVAR_ARCHIVE );
 	r_bloomRamp = ri.Cvar_Get( "r_bloomRamp", "1", CVAR_ARCHIVE );
 	r_bloomBlur = ri.Cvar_Get( "r_bloomBlur", "0.5", CVAR_ARCHIVE );
@@ -1277,7 +1277,7 @@ void R_Register( void )
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_genNormalMaps = ri.Cvar_Get( "r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_forceSun = ri.Cvar_Get( "r_forceSun", "1", CVAR_ARCHIVE );
+	r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_ARCHIVE );
 	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
 	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
 	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1314,7 +1314,7 @@ void R_Register( void )
 	//
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "2500", CVAR_ARCHIVE );
 	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
-	r_flares = ri.Cvar_Get ("r_flares", "1", CVAR_ARCHIVE );
+	r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
 	r_zfar = ri.Cvar_Get("r_zfar", "0", CVAR_CHEAT);
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
 	ri.Cvar_CheckRange( r_znear, 0.001f, 200, qfalse );

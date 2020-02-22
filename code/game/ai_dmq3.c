@@ -64,6 +64,15 @@ vmCvar_t bot_testrchat;
 vmCvar_t bot_challenge;
 vmCvar_t bot_visualrange;
 vmCvar_t bot_predictobstacles;
+// Tobias HACK: new bot test cvars for debugging
+// DEBUG
+vmCvar_t bot_equalize;
+vmCvar_t bot_equalizer_aim;
+vmCvar_t bot_equalizer_react;
+vmCvar_t bot_equalizer_fembon;
+vmCvar_t bot_equalizer_teambon;
+// DEBUGEND
+// Tobias END
 vmCvar_t g_spSkill;
 
 extern vmCvar_t bot_developer;
@@ -4587,7 +4596,144 @@ int BotEnemyCubeCarrierVisible(bot_state_t *bs) {
 
 	return -1;
 }
+// Tobias HACK
+/*
+=======================================================================================================================================
+BotEqualizeTeamScore
+=======================================================================================================================================
+*/
+qboolean BotEqualizeTeamScore(bot_state_t *bs) {
+// DEBUG
+	if (!bot_equalize.integer) {
+		return qfalse;
+	}
+// DEBUGEND
+	// if not in team deathmatch mode
+	if (gametype != GT_TEAM) {
+		return qfalse;
+	}
 
+	if (bs->enemyteamscore + bot_equalizer_teambon.value < bs->ownteamscore) { // DEBUG: bot_equalizer_teambon
+#if 0 // DEBUG
+		if (BotTeam(bs) == TEAM_RED) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "EQUALIZE for B! (%s) Blue scores: %s, Red scores: %i\n", enemyteamscore, ownteamscore);
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "EQUALIZE for R! (%s) Blue scores: %s, Red scores: %i\n", enemyteamscore, ownteamscore);
+		}
+#endif // DEBUGEND
+		return qtrue;
+	}
+
+	return qfalse;
+
+}
+/*
+=======================================================================================================================================
+BotEqualizeWeakestHumanTeamScore
+=======================================================================================================================================
+*/
+qboolean BotEqualizeWeakestHumanTeamScore(bot_state_t *bs) {
+	char buf[MAX_INFO_STRING], modelName[MAX_QPATH];
+	int i, femaleClient, maleClient, femaleScores, maleScores, referenceScores;
+	aas_entityinfo_t entinfo;
+	playerState_t ps;
+// DEBUG
+#if 0
+	char netname[MAX_NETNAME];
+#endif
+	if (!bot_equalize.integer) {
+		return qfalse;
+	}
+// DEBUGEND
+	if (!TeamPlayIsOn()) {
+		return qfalse;
+	}
+
+	femaleClient = 0;
+	maleClient = 0;
+	referenceScores = 999999;
+	femaleScores = 0;
+	maleScores = 0;
+
+	for (i = 0; i < level.maxclients; i++) {
+		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
+
+		if (i == bs->client) {
+			continue;
+		}
+
+		if (BotSameTeam(bs, i)) {
+			continue;
+		}
+		// get the entity information
+		BotEntityInfo(i, &entinfo);
+		// if this player is active
+		if (!entinfo.valid) {
+			continue;
+		}
+		// if the entity isn't the bot self
+		if (entinfo.number == bs->entitynum) {
+			continue;
+		}
+		// if no config string or no name
+		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+			continue;
+		}
+		// skip spectators
+		if (atoi(Info_ValueForKey(buf, "t")) == TEAM_SPECTATOR) {
+			continue;
+		}
+//#if 0 // DEBUG
+		// skip bots
+		if (g_entities[i].r.svFlags & SVF_BOT) {
+			continue;
+		}
+//#endif// DEBUGEND
+		if (BotAI_GetClientState(i, &ps)) {
+			ClientSkin(i, modelName, sizeof(modelName));
+
+			if (!Q_stricmp(modelName, "razor")) {
+				referenceScores = ps.persistant[PERS_SCORE];
+			}
+
+			if (!Q_stricmp(modelName, "mynx")) { // DEBUG (major)
+				femaleClient = i;
+				femaleScores = ps.persistant[PERS_SCORE] - bot_equalizer_fembon.value; // DEBUG: bot_equalizer_fembon
+			}
+
+			if (!Q_stricmp(modelName, "james")) { // DEBUG (sarge)
+				maleClient = i;
+				maleScores = ps.persistant[PERS_SCORE];
+			}
+		}
+	}
+
+	if (referenceScores <= maleScores || referenceScores <= femaleScores) {
+#if 0 // DEBUG
+		if (BotTeam(bs) == TEAM_RED) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "NO CHANGES (R is NOT FIRST). R score: %i, M score: %i, F score: %i.\n", referenceScores, maleScores, femaleScores);
+		}
+#endif // DEBUGEND
+		return qfalse;
+	}
+
+	if ((bs->enemy == femaleClient && femaleScores < maleScores) || (bs->enemy == maleClient && maleScores < femaleScores)) {
+#if 0 // DEBUG
+		if (BotTeam(bs) == TEAM_RED) {
+			if (maleScores < femaleScores) {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "EQUALIZE for M! (%s) Enemy: %s, R score: %i, M score: %i, F score: %i.\n", ClientName(bs->client, netname, sizeof(netname)), ClientName(bs->enemy, modelName, sizeof(modelName)), referenceScores, maleScores, femaleScores);
+			} else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "EQUALIZE for F! (%s) Enemy: %s, R score: %i, M score: %i, F score: %i.\n", ClientName(bs->client, netname, sizeof(netname)), ClientName(bs->enemy, modelName, sizeof(modelName)), referenceScores, maleScores, femaleScores);
+			}
+		}
+#endif // DEBUGEND
+		return qtrue;
+	}
+
+	return qfalse;
+
+}
+// Tobias END
 /*
 =======================================================================================================================================
 BotAimAtEnemy
@@ -4759,6 +4905,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	if (aim_accuracy > 1.0) {
 		aim_accuracy = 1.0;
 	}
+// Tobias HACK
+	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
+		aim_accuracy *= bot_equalizer_aim.value; // DEBUG: bot_equalizer_aim
+	}
+// Tobias END
 	// if the enemy is visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		VectorCopy(entinfo.origin, bestorigin);
@@ -5140,7 +5291,18 @@ void BotCheckAttack(bot_state_t *bs) {
 			reactiontime = 2.5f;
 		}
 	}
-
+// Tobias HACK
+	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
+		reactiontime += bot_equalizer_react.value; // DEBUG: bot_equalizer_react
+#if 0 // DEBUG
+		if (BotTeam(bs) == TEAM_RED) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "EQUALIZE for BLUE! RED score: %i, BLUE score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "EQUALIZE for RED! BLUE score: %i, RED score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+		}
+#endif // DEBUGEND
+	}
+// Tobias END
 	if (bs->enemysight_time > FloatTime() - reactiontime) {
 		return;
 	}
@@ -7365,6 +7527,15 @@ void BotSetupDeathmatchAI(void) {
 	trap_Cvar_Register(&bot_challenge, "bot_challenge", "0", 0);
 	trap_Cvar_Register(&bot_visualrange, "bot_visualrange", "100000", 0);
 	trap_Cvar_Register(&bot_predictobstacles, "bot_predictobstacles", "1", 0);
+// Tobias HACK
+// DEBUG
+	trap_Cvar_Register(&bot_equalize, "bot_equalize", "1", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_aim, "bot_equalizer_aim", "0.8", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_react, "bot_equalizer_react", "0.55", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_fembon, "bot_equalizer_fembon", "5", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_teambon, "bot_equalizer_teambon", "5", CVAR_USERINFO|CVAR_ARCHIVE); //10
+// DEBUGEND
+// Tobias END
 	trap_Cvar_Register(&g_spSkill, "g_spSkill", "3", 0);
 
 	if (gametype == GT_CTF) {

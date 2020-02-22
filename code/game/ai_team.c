@@ -497,6 +497,33 @@ void BotHarvesterOrders(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -800,6 +827,33 @@ void BotHarvesterOrders(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% go harvesting
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_harvest", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_OFFENSE);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -829,6 +883,33 @@ void BotObeliskOrders(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -1130,6 +1211,33 @@ void BotObeliskOrders(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% attack the enemy base
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_attackenemybase", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_OFFENSE);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -1159,6 +1267,33 @@ void Bot1FCTFOrders_FlagAtCenter(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -1460,6 +1595,33 @@ void Bot1FCTFOrders_FlagAtCenter(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -1481,6 +1643,33 @@ void Bot1FCTFOrders_TeamHasFlag(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -1990,6 +2179,33 @@ void Bot1FCTFOrders_TeamHasFlag(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -2011,6 +2227,33 @@ void Bot1FCTFOrders_EnemyHasFlag(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		default:
@@ -2166,6 +2409,33 @@ void Bot1FCTFOrders_EnemyHasFlag(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% try to return the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_returnflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -2187,6 +2457,33 @@ void Bot1FCTFOrders_EnemyDroppedFlag(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -2488,6 +2785,33 @@ void Bot1FCTFOrders_EnemyDroppedFlag(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -2538,6 +2862,33 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -3044,6 +3395,33 @@ void BotCTFOrders_BothFlagsNotAtBase(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -3063,6 +3441,33 @@ void BotCTFOrders_TeamFlagNotAtBase(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		default:
@@ -3218,6 +3623,33 @@ void BotCTFOrders_TeamFlagNotAtBase(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -3237,6 +3669,33 @@ void BotCTFOrders_EnemyFlagNotAtBase(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -3668,6 +4127,33 @@ void BotCTFOrders_EnemyFlagNotAtBase(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -3687,6 +4173,33 @@ void BotCTFOrders_BothFlagsAtBase(bot_state_t *bs) {
 	BotSortTeamMatesByTaskPreference(bs, teammates, numteammates);
 
 	switch (bs->ctfstrategy) {
+		// most passive strategy
+		case CTFS_ALL_DEFENSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% defend the base
+					defenders = (int)(float)numteammates;
+
+					for (i = 0; i < defenders; i++) {
+						ClientName(teammates[i], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_defendbase", name, NULL);
+						BotSayTeamOrder(bs, teammates[i]);
+						BotSayVoiceTeamOrder(bs, teammates[i], VOICECHAT_DEFEND);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 		// maximum passive strategy
 		case CTFS_MAX_DEFENSIVE:
 		{
@@ -3988,6 +4501,33 @@ void BotCTFOrders_BothFlagsAtBase(bot_state_t *bs) {
 
 			break;
 		}
+		// most aggressive strategy
+		case CTFS_ALL_AGGRESSIVE:
+		{
+			// same orders to all team mates
+			switch (numteammates) {
+				case 1:
+				{
+					break;
+				}
+				default:
+				{
+					// 100% get the flag
+					attackers = (int)(float)numteammates;
+
+					for (i = 0; i < attackers; i++) {
+						ClientName(teammates[numteammates - i - 1], name, sizeof(name));
+						BotAI_BotInitialChat(bs, "cmd_getflag", name, NULL);
+						BotSayTeamOrder(bs, teammates[numteammates - i - 1]);
+						BotSayVoiceTeamOrder(bs, teammates[numteammates - i - 1], VOICECHAT_GETFLAG);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
 	}
 }
 
@@ -4247,6 +4787,13 @@ void BotTeamAI(bot_state_t *bs) {
 		}
 		case GT_CTF:
 		{
+// Tobias DEBUG
+			if (BotTeam(bs) == TEAM_RED && bot_teamredstrategy.integer > 0) {
+				bs->ctfstrategy = bot_teamredstrategy.integer;
+			} else if (BotTeam(bs) == TEAM_BLUE && bot_teambluestrategy.integer > 0) {
+				bs->ctfstrategy = bot_teambluestrategy.integer;
+			} else {
+// Tobias END
 			// if the enemy team is leading by more than 1 point, or if the enemy team leads and time limit has expired to 60%, choose the most aggressive strategy
 			if (bs->ownteamscore + 1 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.6f)) {
 				bs->ctfstrategy = CTFS_MAX_AGGRESSIVE;
@@ -4267,6 +4814,9 @@ void BotTeamAI(bot_state_t *bs) {
 					bs->teamgiveorders_time = FloatTime();
 				}
 			}
+// Tobias DEBUG
+			}
+// Tobias END
 			// if the flag status changed or someone wants to know what to do or if the number of teammates changed
 			if (bs->flagstatuschanged || bs->forceorders || bs->numteammates != numteammates) {
 				bs->teamgiveorders_time = FloatTime();
@@ -4285,6 +4835,13 @@ void BotTeamAI(bot_state_t *bs) {
 		}
 		case GT_1FCTF:
 		{
+// Tobias DEBUG
+			if (BotTeam(bs) == TEAM_RED && bot_teamredstrategy.integer > 0) {
+				bs->ctfstrategy = bot_teamredstrategy.integer;
+			} else if (BotTeam(bs) == TEAM_BLUE && bot_teambluestrategy.integer > 0) {
+				bs->ctfstrategy = bot_teambluestrategy.integer;
+			} else {
+// Tobias END
 			// if the enemy team is leading by more than 2 points, or if the enemy team leads and time limit has expired to 70%, choose the most aggressive strategy
 			if (bs->ownteamscore + 2 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.7f)) {
 				bs->ctfstrategy = CTFS_MAX_AGGRESSIVE;
@@ -4305,6 +4862,9 @@ void BotTeamAI(bot_state_t *bs) {
 					bs->teamgiveorders_time = FloatTime();
 				}
 			}
+// Tobias DEBUG
+			}
+// Tobias END
 			// if the flag status changed or someone wants to know what to do or if the number of teammates changed
 			if (bs->flagstatuschanged || bs->forceorders || bs->numteammates != numteammates) {
 				bs->teamgiveorders_time = FloatTime();
@@ -4323,6 +4883,13 @@ void BotTeamAI(bot_state_t *bs) {
 		}
 		case GT_OBELISK:
 		{
+// Tobias DEBUG
+			if (BotTeam(bs) == TEAM_RED && bot_teamredstrategy.integer > 0) {
+				bs->ctfstrategy = bot_teamredstrategy.integer;
+			} else if (BotTeam(bs) == TEAM_BLUE && bot_teambluestrategy.integer > 0) {
+				bs->ctfstrategy = bot_teambluestrategy.integer;
+			} else {
+// Tobias END
 			// if the enemy team is leading by more than 1 point, or if the enemy team leads and time limit has expired to 50%, choose the most aggressive strategy
 			if (bs->ownteamscore + 1 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.5f)) {
 				bs->ctfstrategy = CTFS_MAX_AGGRESSIVE;
@@ -4343,6 +4910,9 @@ void BotTeamAI(bot_state_t *bs) {
 					bs->teamgiveorders_time = FloatTime();
 				}
 			}
+// Tobias DEBUG
+			}
+// Tobias END
 			// if someone wants to know what to do or if the number of teammates changed
 			if (bs->forceorders || bs->numteammates != numteammates) {
 				bs->teamgiveorders_time = FloatTime();
@@ -4360,6 +4930,13 @@ void BotTeamAI(bot_state_t *bs) {
 		}
 		case GT_HARVESTER:
 		{
+// Tobias DEBUG
+			if (BotTeam(bs) == TEAM_RED && bot_teamredstrategy.integer > 0) {
+				bs->ctfstrategy = bot_teamredstrategy.integer;
+			} else if (BotTeam(bs) == TEAM_BLUE && bot_teambluestrategy.integer > 0) {
+				bs->ctfstrategy = bot_teambluestrategy.integer;
+			} else {
+// Tobias END
 			// if the enemy team is leading by more than the half of the capturelimit points and time limit has expired to 60%, choose the most aggressive strategy
 			if (bs->ownteamscore + (g_capturelimit.integer * 0.5f) < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.6f) {
 				bs->ctfstrategy = CTFS_MAX_AGGRESSIVE;
@@ -4380,6 +4957,9 @@ void BotTeamAI(bot_state_t *bs) {
 					bs->teamgiveorders_time = FloatTime();
 				}
 			}
+// Tobias DEBUG
+			}
+// Tobias END
 			// if someone wants to know what to do or if the number of teammates changed
 			if (bs->forceorders || bs->numteammates != numteammates) {
 				bs->teamgiveorders_time = FloatTime();
