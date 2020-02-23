@@ -318,10 +318,10 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 	gentity_t *ent;
 	int flag_pw, enemy_flag_pw;
 	int otherteam;
-	gentity_t *flag, *carrier = NULL;
+	gentity_t *flag, *carrier;
 	char *c;
 	vec3_t v1, v2;
-	int team;
+	int team, tokens;
 
 	// no bonus for fragging yourself or team mates
 	if (!targ->client || !attacker->client || targ == attacker || OnSameTeam(targ, attacker)) {
@@ -330,6 +330,7 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 
 	team = targ->client->sess.sessionTeam;
 	otherteam = OtherTeam(targ->client->sess.sessionTeam);
+	carrier = NULL;
 
 	if (otherteam < 0) {
 		return; // whoever died isn't on a team
@@ -366,8 +367,7 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 	}
 	// did the attacker frag a skull carrier?
 	if (g_gametype.integer == GT_HARVESTER && targ->client->ps.tokens) {
-		int tokens = targ->client->ps.tokens;
-
+		tokens = targ->client->ps.tokens;
 		attacker->client->pers.teamState.lastfraggedcarrier = level.time;
 
 		AddScore(attacker, targ->r.currentOrigin, CTF_FRAG_CARRIER_BONUS * tokens * tokens);

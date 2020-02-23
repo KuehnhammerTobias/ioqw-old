@@ -545,8 +545,8 @@ void CG_GibPlayer(vec3_t playerOrigin) {
 	if (CG_PointContents(playerOrigin, -1) & (CONTENTS_WATER|CONTENTS_SLIME)) {
 		CG_SpawnBubbles(NULL, playerOrigin, 3, 5 + random() * 5);
 	}
-
-	if (!cg_blood.integer) {
+	// allow gibs to be turned off for speed
+	if (!cg_blood.integer || !cg_gibs.integer) {
 		return;
 	}
 
@@ -559,10 +559,6 @@ void CG_GibPlayer(vec3_t playerOrigin) {
 		CG_LaunchGib(origin, velocity, cgs.media.gibSkull);
 	} else {
 		CG_LaunchGib(origin, velocity, cgs.media.gibBrain);
-	}
-	// allow gibs to be turned off for speed
-	if (!cg_gibs.integer) {
-		return;
 	}
 
 	VectorCopy(playerOrigin, origin);

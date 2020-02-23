@@ -528,13 +528,11 @@ Events will be passed on to the clients for presentation, but any server game ef
 =======================================================================================================================================
 */
 void ClientEvents(gentity_t *ent, int oldEventSequence) {
-	int i;
-	int event;
+	int i, event, damage, goombaDmg, kb_time;
 	gclient_t *client;
 	gentity_t *victim;
 	trace_t tr;
 	vec3_t start, stop;
-	int damage, goombaDmg, kb_time;
 
 	client = ent->client;
 
@@ -569,8 +567,11 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 				if (!victim->client) {
 					VectorCopy(ent->r.currentOrigin, start);
 					VectorCopy(ent->r.currentOrigin, stop);
+
 					stop[2] -= 4;
+
 					trap_Trace(&tr, start, NULL, NULL, stop, ent->s.number, MASK_SHOT);
+
 					victim = &level.gentities[tr.entityNum];
 				}
 
@@ -611,6 +612,7 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 						}
 						// no normal pain sound
 						ent->pain_debounce_time = level.time + 200;
+
 						G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 					}
 		
@@ -640,6 +642,7 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/world/debris1.wav"));
 					// faller has a soft landing
 					damage *= 0.95f;
+
 					G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 				} else {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/player/land_hurt.wav"));

@@ -1675,8 +1675,10 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 	vec3_t legsAngles, torsoAngles, headAngles;
 	float dest;
 	static int movementOffsets[8] = {0, 22, 45, -22, 0, 22, -45, -22};
+#ifndef BASEGAME
 	vec3_t velocity;
 	float speed;
+#endif
 	int dir, clientNum;
 	clientInfo_t *ci;
 
@@ -1736,7 +1738,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 			torsoAngles[PITCH] = 0.0f;
 		}
 	}
-
+#ifndef BASEGAME
 	// --------- roll -------------
 
 	// lean towards the direction of travel
@@ -1758,7 +1760,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 		side = speed * DotProduct(velocity, axis[0]);
 		legsAngles[PITCH] += side;
 	}
-
+#endif
 	clientNum = cent->currentState.clientNum;
 
 	if (clientNum >= 0 && clientNum < MAX_CLIENTS) {

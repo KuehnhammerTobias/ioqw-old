@@ -64,14 +64,12 @@ vmCvar_t bot_testrchat;
 vmCvar_t bot_challenge;
 vmCvar_t bot_visualrange;
 vmCvar_t bot_predictobstacles;
-// Tobias HACK: new bot test cvars for debugging
-// DEBUG
+// Tobias DEBUG: new bot test cvars for debugging
 vmCvar_t bot_equalize;
 vmCvar_t bot_equalizer_aim;
 vmCvar_t bot_equalizer_react;
 vmCvar_t bot_equalizer_fembon;
 vmCvar_t bot_equalizer_teambon;
-// DEBUGEND
 // Tobias END
 vmCvar_t g_spSkill;
 

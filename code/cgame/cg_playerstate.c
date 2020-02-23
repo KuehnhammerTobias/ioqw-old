@@ -405,7 +405,7 @@ void CG_CheckLocalSounds(playerState_t *ps, playerState_t *ops) {
 		if (ps->persistant[PERS_EXCELLENT_COUNT] == 1) {
 			CG_AddBufferedAnnouncerSound(cgs.media.firstExcellentSound);
 		}
-		
+
 		CG_AddBufferedAnnouncerSound(cgs.media.excellentSound);
 	}
 	// reward impressive sound

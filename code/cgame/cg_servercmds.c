@@ -187,7 +187,6 @@ static void CG_ParseWarmup(void) {
 
 	info = CG_ConfigString(CS_WARMUP);
 	warmup = atoi(info);
-	cg.warmupCount = -1;
 
 	if (warmup == 0 && cg.warmup) {
 
@@ -208,6 +207,7 @@ static void CG_ParseWarmup(void) {
 	}
 
 	cg.warmup = warmup;
+	cg.warmupCount = -1;
 }
 
 /*
