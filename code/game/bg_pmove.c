@@ -1170,7 +1170,7 @@ static void PM_CrashLand(void) {
 		delta *= 0.85;
 	}
 	// the scout powerup also reduces falling damage
-	if(bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
+	if (bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
 		delta *= 0.9;
 	}
 
