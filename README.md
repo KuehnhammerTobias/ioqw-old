@@ -15,6 +15,7 @@ Ioid3-qw is licensed under a [modified version of the GNU GPLv3](COPYING.txt#L62
 ## Main features:
 
   * K&R (aka 1TBS/OTBS) formatted code.
+  * Bloom rendering effect.
   * Enhanced BotAI.
   * Rotating gibs.
   * Slightly faster maths.
@@ -24,7 +25,7 @@ Ioid3-qw is licensed under a [modified version of the GNU GPLv3](COPYING.txt#L62
   * Aspect correct widescreen.
   * High resolution font support (TrueType).
   * Enhanced model loading (incl. submodels).
-  * Dynamic skin support.
+  * Dynamic (damage) skin support.
   * Bullet marks on doors and moving platforms.
   * Gibs and bullet shells ride on moving platforms.
   * New shader keywords and game objects.

@@ -461,8 +461,6 @@ typedef struct {
 **************************************************************************************************************************************/
 
 #define MAX_PREDICTED_EVENTS 16
-#define MAX_SPAWN_VARS 64
-#define MAX_SPAWN_VARS_CHARS 2048
 
 typedef struct {
 	int clientFrame;				// incremented each frame

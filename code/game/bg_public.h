@@ -44,9 +44,12 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define DEFAULT_VIEWHEIGHT 40 // increased from 26 to 40 factor: ~1.54
 #define CROUCH_VIEWHEIGHT 20 // increased from 12 to 20 factor: ~1.66
 #define DEAD_VIEWHEIGHT -16
+#define STEPSIZE 18
+#define TIMER_GESTURE 2294
 #define OBELISK_TARGET_HEIGHT 56
 #define MAX_DLIGHT_CONFIGSTRINGS 128
-#define TIMER_GESTURE 2294
+#define MAX_SPAWN_VARS 64
+#define MAX_SPAWN_VARS_CHARS 4096
 
 /**************************************************************************************************************************************
 

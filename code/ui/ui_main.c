@@ -4023,9 +4023,10 @@ static void UI_RunMenuScript(char **args) {
 					}
 				}
 			}
-			// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
-			//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
+			// Tobias FIXME: this script will start a new server, add bots but doesn't check if there are already enough bots, so we must kick already connected bots, otherwise bots are added to the existing ones continuously with each new map (FIXME?).
 		} else if (Q_stricmp(name, "StartServerIngame") == 0) {
+// Tobias FIXME: 1: Changing the gametype from a team game to ffa and than back to a team game will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
+//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 			int i, delay, clients, oldclients;
 			float skill;
 
@@ -6323,13 +6324,13 @@ void _UI_Init(qboolean inGameLoad) {
 	}
 #if 0
 	if (uiInfo.inGameLoad) {
-		UI_LoadMenus("ui/ingame.txt", qtrue);
+		UI_LoadMenus("ui/menus_ingame.txt", qtrue);
 	} else {
 
 	}
 #else
 	UI_LoadMenus(menuSet, qtrue);
-	UI_LoadMenus("ui/ingame.txt", qfalse);
+	UI_LoadMenus("ui/menus_ingame.txt", qfalse);
 #endif
 	Menus_CloseAll();
 	trap_LAN_LoadCachedServers();
@@ -6819,7 +6820,8 @@ vmCvar_t ui_brassTime;
 vmCvar_t ui_drawCrosshair;
 vmCvar_t ui_drawCrosshairNames;
 vmCvar_t ui_marks;
-vmCvar_t ui_redteamctf;
+vmCvar_t ui_redteam;
+vmCvar_t ui_blueteam;
 vmCvar_t ui_redteamctf1;
 vmCvar_t ui_redteamctf2;
 vmCvar_t ui_redteamctf3;
@@ -6827,7 +6829,6 @@ vmCvar_t ui_redteamctf4;
 vmCvar_t ui_redteamctf5;
 vmCvar_t ui_redteamctf6;
 vmCvar_t ui_redteamctf7;
-vmCvar_t ui_blueteamctf;
 vmCvar_t ui_blueteamctf1;
 vmCvar_t ui_blueteamctf2;
 vmCvar_t ui_blueteamctf3;
@@ -6835,7 +6836,6 @@ vmCvar_t ui_blueteamctf4;
 vmCvar_t ui_blueteamctf5;
 vmCvar_t ui_blueteamctf6;
 vmCvar_t ui_blueteamctf7;
-vmCvar_t ui_redteamtdm;
 vmCvar_t ui_redteamtdm1;
 vmCvar_t ui_redteamtdm2;
 vmCvar_t ui_redteamtdm3;
@@ -6843,7 +6843,6 @@ vmCvar_t ui_redteamtdm4;
 vmCvar_t ui_redteamtdm5;
 vmCvar_t ui_redteamtdm6;
 vmCvar_t ui_redteamtdm7;
-vmCvar_t ui_blueteamtdm;
 vmCvar_t ui_blueteamtdm1;
 vmCvar_t ui_blueteamtdm2;
 vmCvar_t ui_blueteamtdm3;
@@ -6930,12 +6929,13 @@ static cvarTable_t cvarTable[] = {
 	{&ui_initialized, "ui_initialized", "0", CVAR_TEMP},
 	{&ui_opponentName, "ui_opponentName", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
 	{&ui_teamName, "ui_teamName", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
+	{&ui_redteam, "ui_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
+	{&ui_blueteam, "ui_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
 	{&ui_dedicated, "ui_dedicated", "0", CVAR_ARCHIVE},
 	{&ui_gameType, "ui_gametype", "3", CVAR_ARCHIVE},
 	{&ui_joinGameType, "ui_joinGametype", "0", CVAR_ARCHIVE},
 	{&ui_netGameType, "ui_netGametype", "3", CVAR_ARCHIVE},
 	{&ui_actualNetGameType, "ui_actualNetGametype", "3", CVAR_ARCHIVE},
-	{&ui_redteamctf, "ui_redteamctf", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
 	{&ui_redteamctf1, "ui_redteamctf1", "0", CVAR_ARCHIVE},
 	{&ui_redteamctf2, "ui_redteamctf2", "0", CVAR_ARCHIVE},
 	{&ui_redteamctf3, "ui_redteamctf3", "0", CVAR_ARCHIVE},
@@ -6943,7 +6943,6 @@ static cvarTable_t cvarTable[] = {
 	{&ui_redteamctf5, "ui_redteamctf5", "0", CVAR_ARCHIVE},
 	{&ui_redteamctf6, "ui_redteamctf6", "0", CVAR_ARCHIVE},
 	{&ui_redteamctf7, "ui_redteamctf7", "0", CVAR_ARCHIVE},
-	{&ui_blueteamctf, "ui_blueteamctf", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
 	{&ui_blueteamctf1, "ui_blueteamctf1", "0", CVAR_ARCHIVE},
 	{&ui_blueteamctf2, "ui_blueteamctf2", "0", CVAR_ARCHIVE},
 	{&ui_blueteamctf3, "ui_blueteamctf3", "0", CVAR_ARCHIVE},
@@ -6951,7 +6950,6 @@ static cvarTable_t cvarTable[] = {
 	{&ui_blueteamctf5, "ui_blueteamctf5", "0", CVAR_ARCHIVE},
 	{&ui_blueteamctf6, "ui_blueteamctf6", "0", CVAR_ARCHIVE},
 	{&ui_blueteamctf7, "ui_blueteamctf7", "0", CVAR_ARCHIVE},
-	{&ui_redteamtdm, "ui_redteamtdm", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE},
 	{&ui_redteamtdm1, "ui_redteamtdm1", "0", CVAR_ARCHIVE},
 	{&ui_redteamtdm2, "ui_redteamtdm2", "0", CVAR_ARCHIVE},
 	{&ui_redteamtdm3, "ui_redteamtdm3", "0", CVAR_ARCHIVE},
@@ -6959,7 +6957,6 @@ static cvarTable_t cvarTable[] = {
 	{&ui_redteamtdm5, "ui_redteamtdm5", "0", CVAR_ARCHIVE},
 	{&ui_redteamtdm6, "ui_redteamtdm6", "0", CVAR_ARCHIVE},
 	{&ui_redteamtdm7, "ui_redteamtdm7", "0", CVAR_ARCHIVE},
-	{&ui_blueteamtdm, "ui_blueteamtdm", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE},
 	{&ui_blueteamtdm1, "ui_blueteamtdm1", "0", CVAR_ARCHIVE},
 	{&ui_blueteamtdm2, "ui_blueteamtdm2", "0", CVAR_ARCHIVE},
 	{&ui_blueteamtdm3, "ui_blueteamtdm3", "0", CVAR_ARCHIVE},

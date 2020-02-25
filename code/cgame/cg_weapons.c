@@ -1717,17 +1717,15 @@ void CG_AddPlayerWeapon(refEntity_t *parent, playerState_t *ps, centity_t *cent,
 	gun.shadowPlane = parent->shadowPlane;
 	gun.renderfx = parent->renderfx;
 	// set custom shading for railgun refire rate
-	if (weaponNum == WP_RAILGUN) {
-		if (cent->pe.railFireTime + 1500 > cg.time) {
-			int scale = 255 * (cg.time - cent->pe.railFireTime) / 1500;
+	if (weaponNum == WP_RAILGUN && cent->pe.railFireTime + 1500 > cg.time) {
+		int scale = 255 * (cg.time - cent->pe.railFireTime) / 1500;
 
-			gun.shaderRGBA[0] = (ci->c1RGBA[0] * scale) >> 8;
-			gun.shaderRGBA[1] = (ci->c1RGBA[1] * scale) >> 8;
-			gun.shaderRGBA[2] = (ci->c1RGBA[2] * scale) >> 8;
-			gun.shaderRGBA[3] = 255;
-		} else {
-			Byte4Copy(ci->c1RGBA, gun.shaderRGBA);
-		}
+		gun.shaderRGBA[0] = (ci->c1RGBA[0] * scale) >> 8;
+		gun.shaderRGBA[1] = (ci->c1RGBA[1] * scale) >> 8;
+		gun.shaderRGBA[2] = (ci->c1RGBA[2] * scale) >> 8;
+		gun.shaderRGBA[3] = 255;
+	} else {
+		Byte4Copy(ci->c1RGBA, gun.shaderRGBA);
 	}
 
 	gun.hModel = weapon->weaponModel;
@@ -1817,15 +1815,7 @@ void CG_AddPlayerWeapon(refEntity_t *parent, playerState_t *ps, centity_t *cent,
 
 	AnglesToAxis(angles, flash.axis);
 	// colorize the railgun blast
-	if (weaponNum == WP_RAILGUN) {
-		clientInfo_t *ci;
-
-		ci = &cgs.clientinfo[cent->currentState.clientNum];
-		flash.shaderRGBA[0] = 255 * ci->color1[0];
-		flash.shaderRGBA[1] = 255 * ci->color1[1];
-		flash.shaderRGBA[2] = 255 * ci->color1[2];
-	}
-
+	Byte4Copy(ci->c1RGBA, flash.shaderRGBA);
 	CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "tag_flash");
 	trap_R_AddRefEntityToScene(&flash);
 

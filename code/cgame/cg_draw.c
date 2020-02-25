@@ -2584,6 +2584,8 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 	if (cg_draw2D.integer == 0) {
 		return;
 	}
+	// draw the bottom lines
+	CG_DrawRealTimeClock();
 
 	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
 		CG_DrawIntermission();
@@ -2636,7 +2638,6 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 	CG_DrawVote();
 	CG_DrawTeamVote();
 	CG_DrawLagometer();
-	CG_DrawRealTimeClock();
 
 	if (!cg_paused.integer) {
 		CG_DrawUpperRight(stereoFrame);

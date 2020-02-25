@@ -332,6 +332,10 @@ static float PM_CmdScale(usercmd_t *cmd) {
 
 	total = sqrt(cmd->forwardmove * cmd->forwardmove + cmd->rightmove * cmd->rightmove + cmd->upmove * cmd->upmove);
 	scale = (float)pm->ps->speed * max / (127.0 * total);
+	// ignore if in air
+	if (pm->ps->groundEntityNum == ENTITYNUM_NONE) {
+		return scale;
+	}
 	// ignore if spectator
 	if (pm->ps->persistant[PERS_TEAM] == TEAM_SPECTATOR) {
 		return scale;
@@ -467,14 +471,14 @@ static qboolean PM_CheckWaterJump(void) {
 	VectorNormalize(flatforward);
 	VectorMA(pm->ps->origin, 30, flatforward, spot);
 
-	spot[2] += 4;
+	spot[2] += 4; // Tobias CHECK: compensate for the new viewheight to get out of water with ease again (but why do other games not need this?), AND I think this fixes the issue with bots hanging around in water (in q3dm12 BFG room).
 	cont = pm->pointcontents(spot, pm->ps->clientNum);
 
 	if (!(cont & CONTENTS_SOLID)) {
 		return qfalse;
 	}
 
-	spot[2] += 18; // Tobias NOTE: this depends on viewheight
+	spot[2] += 18; // Tobias CHECK: compensate for the new viewheight to get out of water with ease again (but why do other games not need this?), AND I think this fixes the issue with bots hanging around in water (in q3dm12 BFG room).
 	cont = pm->pointcontents(spot, pm->ps->clientNum);
 
 	if (cont & (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY)) {
@@ -1128,6 +1132,7 @@ static void PM_CrashLand(void) {
 	float a, b, c, den;
 	int stunTime;
 
+	stunTime = 0;
 	// decide which landing animation to use
 	if (pm->ps->pm_flags & PMF_BACKWARDS_JUMP) {
 		PM_ForceLegsAnim(LEGS_LANDB);
@@ -1152,7 +1157,6 @@ static void PM_CrashLand(void) {
 	t = (-b - sqrt(den)) / (2 * a);
 	delta = vel + t * acc;
 	delta = delta * delta * 0.0001;
-	stunTime = 0;
 	// ducking while falling doubles damage
 	if (pm->ps->pm_flags & PMF_DUCKED) {
 		delta *= 2;
@@ -1164,6 +1168,10 @@ static void PM_CrashLand(void) {
 	// reduce falling damage if there is standing water
 	if (pm->waterlevel == 2) {
 		delta *= 0.85;
+	}
+	// the scout powerup also reduces falling damage
+	if(bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
+		delta *= 0.9;
 	}
 
 	if (delta < 1) {
@@ -1843,6 +1851,10 @@ static void PM_Weapon(void) {
 		case WP_BFG:
 			addTime = 200;
 			break;
+	}
+
+	if (bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_AMMOREGEN) {
+		addTime /= 1.1;
 	}
 
 	pm->ps->weaponTime += addTime;

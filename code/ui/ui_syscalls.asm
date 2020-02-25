@@ -81,7 +81,7 @@ equ trap_R_AddPolyRefEntityToScene			-310
 equ trap_R_AddPolyToScene					-311
 equ trap_R_AddPolysToScene					-312
 equ trap_R_AddPolyBufferToScene				-313
-equ trap_R_LightForPoint 					-314
+equ trap_R_LightForPoint					-314
 equ trap_R_AddLightToScene					-315
 equ trap_R_AddAdditiveLightToScene			-316
 equ trap_R_AddVertexLightToScene			-317

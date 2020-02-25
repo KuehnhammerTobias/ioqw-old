@@ -238,9 +238,6 @@ struct gclient_s {
 	char *areabits;
 };
 // this structure is cleared as each map is entered
-#define MAX_SPAWN_VARS 64
-#define MAX_SPAWN_VARS_CHARS 4096
-
 typedef struct {
 	struct gclient_s *clients;		// [maxclients]
 	struct gentity_s *gentities;
@@ -250,6 +247,8 @@ typedef struct {
 	fileHandle_t logFile;
 	// store latched cvars here that we want to get at often
 	int maxclients;
+	qboolean mapcoordsValid, tracemapLoaded;
+	vec2_t mapcoordsMins, mapcoordsMaxs;
 	int framenum;
 	int time;						// in msec
 	int previousTime;				// so movers can back up when blocked
