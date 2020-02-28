@@ -939,7 +939,7 @@ int AAS_Reachability_Swim(int area1num, int area2num) {
 						lreach->traveltime += 200;
 					}
 
-					//if (!(AAS_PointContents(start) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER))) lreach->traveltime += 500;
+					//if (!(AAS_PointContents(start) & (CONTENTS_WATER|CONTENTS_LAVA|CONTENTS_SLIME))) lreach->traveltime += 500;
 					// link the reachability
 					lreach->next = areareachability[area1num];
 					areareachability[area1num] = lreach;

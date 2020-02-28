@@ -1115,7 +1115,7 @@ float BotGapDistance(vec3_t origin, vec3_t velocity, vec3_t hordir, int entnum) 
 					break;
 				}
 				// if a gap is found slow down
-				//botimport.Print(PRT_MESSAGE, "BotGapDistance: found a gap at %i (checkdist = %i).\n", gapdist, checkdist);
+				//botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "BotGapDistance: found a gap at %i (checkdist = %i).\n", gapdist, checkdist);
 				return gapdist;
 			}
 
@@ -1348,22 +1348,27 @@ void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_mover
 	vec3_t mins, maxs, end, up = {0, 0, 1};
 	bsp_trace_t trace;
 	float currentspeed;
-
+/*
+	// Tobias NOTE: this (old) version doesn't check the bottom for blocking obstacles, whereas the new (active) one does. This means we have an
+	//              additional trace check, trace checks are expensive, so in theory we need more CPU with the newer version (though I can't notice any
+	//              performance issues even with 64 bots). If we ever will notice any issues, please reverte to the old behaviour...
 	// test for entities obstructing the bot's path
 	AAS_PresenceTypeBoundingBox(ms->presencetype, mins, maxs);
 	// if the bot can step on
 	if (fabs(DotProduct(dir, up)) < 0.7) {
 		mins[2] += sv_maxstep->value;
+		maxs[2] -= 10; // a little lower to avoid low ceiling
 	}
-	// get the current speed (keep some minimum speed for calculations?)
-	currentspeed = DotProduct(ms->velocity, dir) + 10;
-	// do a full trace to check for distant obstacles to avoid, depending on current speed
-	VectorMA(ms->origin, currentspeed * 1.25, dir, end);
-	trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-	// if not started in solid and NOT hitting the world entity
-	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE && trace.entityNum != ENTITYNUM_WORLD) {
+	// check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed)
+	VectorMA(ms->origin, 4, dir, end);
+	trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+	// if not started in solid and hitting an entity
+	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE) {
 		result->blocked = qtrue;
 		result->blockentity = trace.entityNum;
+#ifdef DEBUG
+		botimport.Print(PRT_MESSAGE, S_COLOR_RED "%d: BotCheckBlocked: Nearby obstacle!\n", ms->client);
+#endif // DEBUG
 	// if the bot is standing on something and not in an area with reachability
 	} else if (checkbottom && !AAS_AreaReachability(ms->areanum)) {
 		VectorMA(ms->origin, -4, up, end);
@@ -1373,8 +1378,59 @@ void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_mover
 			result->blocked = qtrue;
 			result->blockentity = trace.entityNum;
 			result->flags |= MOVERESULT_ONTOPOF_OBSTACLE;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "%d: BotCheckBlocked: I'm on top of an obstacle!\n", ms->client);
+#endif // DEBUG
 		}
-	// check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed).
+	// if no blocking obstacle is found, do a full trace to check for distant obstacles to avoid, depending on current speed
+	} else {
+		VectorMA(ms->origin, 400, dir, end);
+		trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+		// if not started in solid and NOT hitting the world entity
+		if (!trace.startsolid && (trace.entityNum != ENTITYNUM_WORLD && trace.entityNum != ENTITYNUM_NONE)) {
+			result->blocked = qtrue;
+			result->blockentity = trace.entityNum;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon!\n", ms->client);
+#endif // DEBUG
+		}
+	}
+	// Tobias NOTE: this new version permanently checks the bottom for blocking obstacles. This way we are able to let bots deal with blocking obstacles under
+	//              there feet (like destroyable crates, blocking bodies or corpses, etc.). Eventually add 'checktop' for crates above ladders?
+	//              THINKABOUTME: Is it really worth to waste CPU power for this permanent check?
+*/
+	// test for entities obstructing the bot's path
+	AAS_PresenceTypeBoundingBox(ms->presencetype, mins, maxs);
+	// if the bot can step on
+	if (fabs(DotProduct(dir, up)) < 0.7) {
+		mins[2] += sv_maxstep->value; // Tobias CHECK: doesn't this contradict 'checkbottom'
+	}
+	// get the current speed
+	currentspeed = DotProduct(ms->velocity, dir) + 10;
+	// if no blocking obstacle is found, do a full trace to check for distant obstacles to avoid, depending on current speed
+	VectorMA(ms->origin, currentspeed * 1.25, dir, end);
+	trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+	// if not started in solid and NOT hitting the world entity
+	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE && trace.entityNum != ENTITYNUM_WORLD) {
+		result->blocked = qtrue;
+		result->blockentity = trace.entityNum;
+#ifdef DEBUG
+		botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon! Check distance: %i.\n", ms->client, currentspeed);
+#endif // DEBUG
+	// if the bot is standing on something and not in an area with reachability
+	} else if (checkbottom && !AAS_AreaReachability(ms->areanum)) {
+		VectorMA(ms->origin, -4, up, end);
+		trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+		// if not started in solid and hitting an entity
+		if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE) {
+			result->blocked = qtrue;
+			result->blockentity = trace.entityNum;
+			result->flags |= MOVERESULT_ONTOPOF_OBSTACLE;
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "%d: BotCheckBlocked: I'm on top of an obstacle without any reachability area!\n", ms->client);
+#endif // DEBUG
+		}
+	// check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed)
 	} else {
 		VectorMA(ms->origin, 4, dir, end);
 		trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
@@ -1517,7 +1573,7 @@ BotTravel_BarrierJump
 =======================================================================================================================================
 */
 bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *reach) {
-	float hordist, dist, jumpdist, speed, currentspeed;
+	float reachhordist, dist, jumpdist, speed, currentspeed;
 	vec3_t hordir, cmdmove, end, velocity;
 	bot_moveresult_t_cleared(result);
 	aas_clientmove_t move;
@@ -1526,8 +1582,8 @@ bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
-	hordist = VectorNormalize(hordir);
-	dist = hordist;
+	reachhordist = VectorNormalize(hordir);
+	dist = reachhordist;
 
 	if (dist > 100) {
 		dist = 100;
@@ -1545,6 +1601,11 @@ bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *
 	AAS_PredictClientMovement(&move, ms->entitynum, end, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 2, 2, 0.1f, SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP, 0, qfalse);
 	// reduce the speed if the bot will fall into slime, lava or into a gap
 	if (move.stopevent & (SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP)) {
+		//if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, "hitground\n");
+		//if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, "lava\n");
+		//if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, "slime\n");
+		//if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, "gap\n");
+
 		if (ms->moveflags & MFL_WALK) {
 			speed = 200;
 		} else {
@@ -1562,7 +1623,7 @@ bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *
 		jumpdist = 0.25f;
 	}
 	// if pretty close to the barrier
-	if (hordist < (sv_maxbarrier->value + (currentspeed * 1.1)) * jumpdist) {
+	if (reachhordist < (sv_maxbarrier->value + (currentspeed * 1.1)) * jumpdist) {
 		EA_Jump(ms->client);
 	}
 	// elementary action move in direction
@@ -1703,6 +1764,10 @@ bot_moveresult_t BotFinishTravel_WaterJump(bot_movestate_t *ms, aas_reachability
 /*
 =======================================================================================================================================
 BotTravel_WalkOffLedge
+
+Tobias TODO: add crouchig over ledges
+             usual wall check
+             Scout Powerups
 =======================================================================================================================================
 */
 bot_moveresult_t BotTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachability_t *reach) {
@@ -1714,7 +1779,7 @@ bot_moveresult_t BotTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachability_t 
 	// check if the bot is blocked by anything
 	VectorSubtract(reach->start, ms->origin, dir);
 	VectorNormalize(dir);
-	BotCheckBlocked(ms, dir, qtrue, &result);
+	BotCheckBlocked(ms, dir, qtrue, &result); // Tobias NOTE: checking for blocked movement without doing a move?
 	// if the reachability start and end are practically above each other
 	VectorSubtract(reach->end, reach->start, dir);
 
@@ -1736,39 +1801,64 @@ bot_moveresult_t BotTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachability_t 
 		VectorScale(hordir, 400, cmdmove);
 		VectorCopy(ms->velocity, velocity);
 
-		AAS_PredictClientMovement(&move, ms->entitynum, reach->end, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 2, 2, 0.1f, SE_TOUCHJUMPPAD|SE_HITGROUNDDAMAGE|SE_ENTERSLIME|SE_ENTERLAVA|SE_GAP, 0, qfalse); //qtrue
-		// check for nearby gap
+		AAS_PredictClientMovement(&move, ms->entitynum, reach->end, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 2, 2, 0.1f, SE_TOUCHJUMPPAD|SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP, 0, qfalse); //qtrue
+		// check for nearby gap behind the current ledge
 		gapdist = BotGapDistance(reach->end, velocity, hordir, ms->entitynum);
-		// if there is no gap under the ledge
+		// if there is no gap under the current ledge
 		if (reachhordist < 20) {
 			// if there is a gap or a ledge behind the current ledge (like a cascade)
 			if (gapdist > 0) {
 				speed = 200 - (100 - gapdist * 0.25);
-			// if the bot wants to walk or if the bot will fall into slime, lava or onto a jumppad when running at full speed
-			} else if (move.stopevent & (SE_TOUCHJUMPPAD|SE_HITGROUNDDAMAGE|SE_ENTERSLIME|SE_ENTERLAVA|SE_GAP) || ms->moveflags & MFL_WALK) {
+			// if there is a jumpad, lava or slime under the current ledge or if the bot is walking
+			} else if (move.stopevent & (SE_TOUCHJUMPPAD|SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP) || ms->moveflags & MFL_WALK) {
 				speed = 200;
-			} else {
-				speed = 400; // Tobias NOTE: this is a default case (no gaps anywhere, no jumppads or lava etc.)
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "|_x_  1A: < 20 Predict! rhdist = %1.0f, dist = %1.0f, Gap ? (%i), speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
+				if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "hitground\n");
+				if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "slime\n");
+				if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "lava\n");
+				if (move.stopevent & SE_TOUCHJUMPPAD) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "jumppad\n");
+#endif
+			} else { // Tobias NOTE: this is the default case (no gaps anywhere, no jumppads or lava etc.)
+				speed = 400; // NEW
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "|____ 1C: NO PROBLEMS! rhdist = %1.0f, dist = %1.0f, No gap (%i), speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
+#endif
 			}
 		} else if (!AAS_HorizontalVelocityForJump(0, reach->start, reach->end, &speed)) { // Tobias NOTE: very rare, i.e.: ztn3dm2!
 			speed = 400;
-		// if there is a gap under the ledge
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "SPECIAL HorizontalVelocityForJump: rhdist = %1.0f, dist = %1.0f, Gap ? (%i), speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
+#endif
+		// if there is a gap under the current ledge
 		} else {
 			// if there is a gap or a ledge behind the current ledge (like a cascade)
 			if (gapdist > 0) {
 				speed = 400 - (300 - gapdist * 0.75);
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_RED "| _  2A: LAND + END GAP! rhdist = %1.0f, dist = %1.0f, Gap at %i, speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
+#endif
 			// if the bot wants to walk or if the bot will fall into slime, lava or onto a jumppad when running at full speed
 			} else if (move.stopevent & (SE_TOUCHJUMPPAD|SE_HITGROUNDDAMAGE|SE_ENTERSLIME|SE_ENTERLAVA|SE_GAP) || ms->moveflags & MFL_WALK) { // Tobias NOTE: the q3dm9 side jp case, if 400 then this is useless!
 				speed = 400;
 			} else {
 				speed = 400;
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "| ___ 2B: LAND GAP FOUND! rhdist = %1.0f, dist = %1.0f, No gap (%i), speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
+#endif
 			}
 		}
 	} else {
 		if (ms->moveflags & MFL_WALK) {
 			speed = 200;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, "---| ___ > 64 > 20: WALKING! dist = %1.0f, speed = %1.0f\n", dist, DotProduct(ms->velocity, hordir));
+#endif
 		} else {
 			speed = 400;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, "---| ___ > 64 > 20: RUNNING! dist = %1.0f, speed = %1.0f\n", dist, DotProduct(ms->velocity, hordir));
+#endif
 		}
 	}
 
@@ -2054,18 +2144,32 @@ bot_moveresult_t BotTravel_Jump(bot_movestate_t *ms, aas_reachability_t *reach) 
 
 		VectorNormalize(hordir);
 		BotCheckBlocked(ms, hordir, qtrue, &result);
+#ifdef DEBUG
+		currentspeed = DotProduct(ms->velocity, hordir);
+
+		if (DotProduct(dir1, dir2) < -0.8) {
+			botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "Between RE and RU: dist1 O to RE = %f, dist2 O to RU = %f, dist3 RU to RE = %f (%f, %f)\n", dist1, dist2, dist3, currentspeed, DotProduct(dir1, dir2));
+		} else {
+			botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Between RE and RU: dist1 O to RE = %f, dist2 O to RU = %f, dist3 RU to RE = %f (%f, %f)\n", dist1, dist2, dist3, currentspeed, DotProduct(dir1, dir2));
+		}
+#endif // DEBUG
 		// elementary action jump
-		if (dist1 < 24) {
+		if (dist1 < 24) { // 20 (for Railgun)
 			EA_Jump(ms->client);
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_RED "Jumped! dist1 = %f (%f)\n", dist1, currentspeed);
+#endif // DEBUG
 		} else if (dist1 < 32) {
 			EA_DelayedJump(ms->client);
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "Jump Delayed! dist1 = %f (%f)\n", dist1, currentspeed);
+#endif // DEBUG
 		}
 
 		EA_Move(ms->client, hordir, 600);
 
 		ms->jumpreach = ms->lastreachnum;
 	} else {
-		//botimport.Print(PRT_MESSAGE, "going towards run start point\n");
 		hordir[0] = runstart[0] - ms->origin[0];
 		hordir[1] = runstart[1] - ms->origin[1];
 		hordir[2] = 0;
@@ -2078,7 +2182,15 @@ bot_moveresult_t BotTravel_Jump(bot_movestate_t *ms, aas_reachability_t *reach) 
 		}
 
 		speed = 400 - (400 - 5 * dist2);
+#ifdef DEBUG
+		currentspeed = DotProduct(ms->velocity, hordir);
 
+		if (DotProduct(dir1, dir2) < -0.8) {
+			botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "Going towards RU: dist1 O to RE = %f, dist2 O to RU = %f, dist3 RU to RE = %f (%f, %f)\n", dist1, dist2, dist3, currentspeed, DotProduct(dir1, dir2));
+		} else {
+			botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Going towards RU: dist1 O to RE = %f, dist2 O to RU = %f, dist3 RU to RE = %f (%f, %f)\n", dist1, dist2, dist3, currentspeed, DotProduct(dir1, dir2));
+		}
+#endif // DEBUG
 		EA_Move(ms->client, hordir, speed);
 	}
 
