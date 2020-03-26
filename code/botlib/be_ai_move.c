@@ -1161,10 +1161,56 @@ float BotGapDistance(vec3_t origin, vec3_t velocity, vec3_t hordir, int entnum) 
 
 /*
 =======================================================================================================================================
+BotCheckBarrierCrouch
+=======================================================================================================================================
+*/
+int BotCheckBarrierCrouch(bot_movestate_t *ms, vec3_t dir, float speed) {
+	vec3_t hordir, mins, maxs, end;
+	bsp_trace_t trace;
+
+	hordir[0] = dir[0];
+	hordir[1] = dir[1];
+	hordir[2] = 0;
+	
+	VectorNormalize(hordir);
+	VectorMA(ms->origin, speed, hordir, end); // Tobias NOTE: tweak this (replaced thinktime dependency)
+	AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
+	// a stepheight higher to avoid low ceiling
+	maxs[2] += sv_maxstep->value;
+	// trace horizontally in the move direction
+	trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+	// this shouldn't happen... but we check anyway
+	if (trace.startsolid) {
+		return qfalse;
+	}
+	// if no obstacle at all
+	if (trace.fraction >= 1.0) {
+		return qfalse;
+	}
+
+	AAS_PresenceTypeBoundingBox(PRESENCE_CROUCH, mins, maxs);
+	// ignore obstacles if the bot can step on
+	mins[2] += sv_maxstep->value;
+	// trace horizontally in the move direction again
+	trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+	// again this shouldn't happen
+	if (trace.startsolid) {
+		return qfalse;
+	}
+	// if something is hit
+	if (trace.fraction < 1.0) {
+		return qfalse;
+	}
+	// there is a barrier
+	return qtrue;
+}
+
+/*
+=======================================================================================================================================
 BotCheckBarrierJump
 =======================================================================================================================================
 */
-int BotCheckBarrierJump(bot_movestate_t *ms, vec3_t dir, float speed) {
+int BotCheckBarrierJump(bot_movestate_t *ms, vec3_t dir, float speed, qboolean doMovement) {
 	vec3_t start, hordir, end;
 	aas_trace_t trace;
 
@@ -1217,10 +1263,12 @@ int BotCheckBarrierJump(bot_movestate_t *ms, vec3_t dir, float speed) {
 		return qfalse;
 	}
 	// elementary actions
-	EA_Jump(ms->client);
-	EA_Move(ms->client, hordir, speed);
+	if (doMovement) {
+		EA_Jump(ms->client);
+		EA_Move(ms->client, hordir, speed);
 
-	ms->moveflags |= MFL_BARRIERJUMP;
+		ms->moveflags |= MFL_BARRIERJUMP;
+	}
 	// there is a barrier
 	return qtrue;
 }
@@ -1258,10 +1306,6 @@ int BotWalkInDirection(bot_movestate_t *ms, vec3_t dir, float speed, int type) {
 	if (ms->moveflags & MFL_ONGROUND) {
 		// remove barrier jump flag
 		ms->moveflags &= ~MFL_BARRIERJUMP;
-		// if there is a barrier the bot can jump on
-		if (BotCheckBarrierJump(ms, dir, speed)) {
-			return qtrue;
-		}
 		// horizontal direction
 		hordir[0] = dir[0];
 		hordir[1] = dir[1];
@@ -1420,6 +1464,19 @@ void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_mover
 	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE && trace.entityNum != ENTITYNUM_WORLD) {
 		result->blocked = qtrue;
 		result->blockentity = trace.entityNum;
+
+		if (BotCheckBarrierJump(ms, dir, (sv_maxbarrier->value + currentspeed * 1.1f) * 0.2f, qfalse)) {
+			result->flags |= MOVERESULT_BARRIER_JUMP;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, "%d: BotCheckBlocked: Jump barrier dedected!\n", ms->client);
+#endif // DEBUG
+		// if there is a barrier the bot can crouch through
+		} else if (BotCheckBarrierCrouch(ms, dir, (200 + currentspeed) * 0.1f)) {
+			result->flags |= MOVERESULT_BARRIER_CROUCH;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, "%d: BotCheckBlocked: Crouch barrier dedected!\n", ms->client);
+#endif // DEBUG
+		}
 #ifdef DEBUG
 		botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon! Check distance: %f.\n", ms->client, currentspeed * 1.4);
 #endif
@@ -2564,7 +2621,7 @@ bot_moveresult_t BotTravel_Elevator(bot_movestate_t *ms, aas_reachability_t *rea
 
 			VectorNormalize(hordir);
 
-			if (!BotCheckBarrierJump(ms, hordir, 100)) {
+			if (!BotCheckBarrierJump(ms, hordir, 100, qtrue)) {
 				// elementary action move in direction
 				EA_Move(ms->client, hordir, 400);
 			}
@@ -2610,7 +2667,7 @@ bot_moveresult_t BotTravel_Elevator(bot_movestate_t *ms, aas_reachability_t *rea
 
 			speed = 360 - (360 - 6 * dist);
 			// if swimming or no barrier jump
-			if ((ms->moveflags & MFL_SWIMMING) || !BotCheckBarrierJump(ms, dir, 50)) {
+			if ((ms->moveflags & MFL_SWIMMING) || !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 				if (dist > 50) {
 					// elementary action move in direction
 					EA_Move(ms->client, dir, speed);
@@ -2650,7 +2707,7 @@ bot_moveresult_t BotTravel_Elevator(bot_movestate_t *ms, aas_reachability_t *rea
 
 			speed = 360 - (360 - 6 * dist);
 
-			if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50)) {
+			if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 				if (dist > 50) {
 					// elementary action move in direction
 					EA_Move(ms->client, dir, speed);
@@ -2700,7 +2757,7 @@ bot_moveresult_t BotTravel_Elevator(bot_movestate_t *ms, aas_reachability_t *rea
 
 		speed = 400 - (400 - 6 * dist);
 
-		if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50)) {
+		if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 			// elementary action move in direction
 			EA_Move(ms->client, dir, speed);
 		}
@@ -2839,7 +2896,7 @@ bot_moveresult_t BotTravel_FuncBobbing(bot_movestate_t *ms, aas_reachability_t *
 
 			VectorNormalize(hordir);
 
-			if (!BotCheckBarrierJump(ms, hordir, 100)) {
+			if (!BotCheckBarrierJump(ms, hordir, 100, qtrue)) {
 				// elementary action move in direction
 				EA_Move(ms->client, hordir, 400);
 			}
@@ -2888,7 +2945,7 @@ bot_moveresult_t BotTravel_FuncBobbing(bot_movestate_t *ms, aas_reachability_t *
 
 			speed = 360 - (360 - 6 * dist);
 			// if swimming or no barrier jump
-			if ((ms->moveflags & MFL_SWIMMING) || !BotCheckBarrierJump(ms, dir, 50)) {
+			if ((ms->moveflags & MFL_SWIMMING) || !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 				if (dist > 50) {
 					// elementary action move in direction
 					EA_Move(ms->client, dir, speed);
@@ -2930,7 +2987,7 @@ bot_moveresult_t BotTravel_FuncBobbing(bot_movestate_t *ms, aas_reachability_t *
 
 			speed = 360 - (360 - 6 * dist);
 
-			if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50)) {
+			if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 				if (dist > 50) {
 					// elementary action move in direction
 					EA_Move(ms->client, dir, speed);
@@ -2981,7 +3038,7 @@ bot_moveresult_t BotTravel_FuncBobbing(bot_movestate_t *ms, aas_reachability_t *
 
 		speed = 400 - (400 - 6 * dist);
 
-		if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50)) {
+		if (!(ms->moveflags & MFL_SWIMMING) && !BotCheckBarrierJump(ms, dir, 50, qtrue)) {
 			// elementary action move in direction
 			EA_Move(ms->client, dir, speed);
 		}

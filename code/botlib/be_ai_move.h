@@ -51,6 +51,8 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define MOVERESULT_ONTOPOF_OBSTACLE		0x00000040 // bot is ontop of obstacle
 #define MOVERESULT_ONTOPOF_FUNCBOB		0x00000080 // bot is ontop of a func_bobbing
 #define MOVERESULT_ONTOPOF_ELEVATOR		0x00000100 // bot is ontop of an elevator (func_plat)
+#define MOVERESULT_BARRIER_JUMP			0x00000200
+#define MOVERESULT_BARRIER_CROUCH		0x00000400
 
 #define MAX_AVOIDREACH 1
 #define MAX_AVOIDSPOTS 128
