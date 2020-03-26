@@ -1688,6 +1688,12 @@ int BotAIStartFrame(int time) {
 
 			VectorCopy(ent->r.currentOrigin, state.origin);
 
+			if (ent->r.bmodel) {
+				state.solid = SOLID_BSP;
+			} else {
+				state.solid = SOLID_BBOX;
+			}
+
 			if (i < MAX_CLIENTS) {
 				VectorCopy(ent->s.apos.trBase, state.angles);
 			} else {
@@ -1697,15 +1703,8 @@ int BotAIStartFrame(int time) {
 			VectorCopy(ent->r.mins, state.mins);
 			VectorCopy(ent->r.maxs, state.maxs);
 
-			state.type = ent->s.eType;
 			state.flags = ent->s.eFlags;
-
-			if (ent->r.bmodel) {
-				state.solid = SOLID_BSP;
-			} else {
-				state.solid = SOLID_BBOX;
-			}
-
+			state.type = ent->s.eType;
 			state.groundent = ent->s.groundEntityNum;
 			state.modelindex = ent->s.modelindex;
 			state.modelindex2 = ent->s.modelindex2;
@@ -1713,9 +1712,9 @@ int BotAIStartFrame(int time) {
 			state.event = ent->s.event;
 			state.eventParm = ent->s.eventParm;
 			state.powerups = ent->s.powerups;
+			state.weapon = ent->s.weapon;
 			state.legsAnim = ent->s.legsAnim;
 			state.torsoAnim = ent->s.torsoAnim;
-			state.weapon = ent->s.weapon;
 
 			trap_BotLibUpdateEntity(i, &state);
 		}

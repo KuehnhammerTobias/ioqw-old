@@ -1671,8 +1671,6 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "activate entity: bot dead");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -1885,8 +1883,6 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "seek nbg: bot dead");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -2035,10 +2031,6 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "seek ltg: bot dead");
 		return qfalse;
 	}
-
-	BotChat_Random(bs);
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -2047,7 +2039,7 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	if (BotCanAndWantsToRocketJump(bs)) {
 		bs->tfl |= TFL_ROCKETJUMP;
 	}
-
+	// get the team goals
 	BotTeamGoals(bs, qfalse);
 	// map specific code
 	BotMapScripts(bs);
@@ -2066,12 +2058,6 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 			// go fight
 			AIEnter_Battle_Fight(bs, "seek ltg: found enemy");
 			return qfalse;
-		}
-	}
-
-	if (bs->killedenemy_time > FloatTime() - 2) {
-		if (random() < bs->thinktime) {
-			trap_EA_Gesture(bs->client);
 		}
 	}
 	// check for nearby goals periodicly
@@ -2156,6 +2142,16 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		bs->weaponnum = moveresult.weapon;
 	}
 
+	if (bs->killedenemy_time > FloatTime() - 2) {
+		if (random() < bs->thinktime * 10) { // Tobias NOTE: tweak the randomness (with more anims)
+			if (BotValidChatPosition(bs)) { // Tobias NOTE: it still looks silly if a bot is doing a gesture while jumping into a pool for example (use our new SURF_ANIM?)
+				trap_EA_Gesture(bs->client);
+			}
+		}
+	}
+
+	BotChat_Random(bs);
+
 	return qtrue;
 }
 
@@ -2215,16 +2211,6 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "battle fight: bot dead");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
-	// if in lava or slime the bot should be able to get out
-	if (BotInLavaOrSlime(bs)) {
-		bs->tfl |= TFL_LAVA|TFL_SLIME;
-	}
-
-	if (BotCanAndWantsToRocketJump(bs)) {
-		bs->tfl |= TFL_ROCKETJUMP;
-	}
 	// if there is another better enemy
 	if (BotFindEnemy(bs, bs->enemy)) {
 #ifdef DEBUG
@@ -2238,6 +2224,14 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	}
 	// get the entity information
 	BotEntityInfo(bs->enemy, &entinfo);
+	// if the entity information is valid
+	if (!entinfo.valid) {
+		AIEnter_Seek_LTG(bs, "battle fight: enemy invalid");
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, "battle fight: entity invalid -> seek ltg\n");
+#endif
+		return qfalse;
+	}
 	// if the enemy is dead
 	if (bs->enemydeath_time) {
 		if (bs->enemydeath_time < FloatTime() - 1.0) {
@@ -2275,14 +2269,6 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	if (areanum && trap_AAS_AreaReachability(areanum)) {
 		VectorCopy(target, bs->lastenemyorigin);
 		bs->lastenemyareanum = areanum;
-	}
-	// if the bot's health decreased
-	if (bs->lastframe_health > bs->inventory[INVENTORY_HEALTH]) {
-		BotChat_HitNoDeath(bs);
-	}
-	// if the bot hit someone
-	if (bs->cur_ps.persistant[PERS_HITS] > bs->lasthitcount) {
-		BotChat_HitNoKill(bs);
 	}
 	// update the attack inventory values
 	BotUpdateBattleInventory(bs, bs->enemy);
@@ -2336,6 +2322,14 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 			AIEnter_Battle_Retreat(bs, "battle fight: wants to retreat");
 			return qtrue;
 		}
+	}
+	// if the bot's health decreased
+	if (bs->lastframe_health > bs->inventory[INVENTORY_HEALTH]) {
+		BotChat_HitNoDeath(bs);
+	}
+	// if the bot hit someone
+	if (bs->cur_ps.persistant[PERS_HITS] > bs->lasthitcount) {
+		BotChat_HitNoKill(bs);
 	}
 
 	return qtrue;
@@ -2400,8 +2394,6 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 		AIEnter_Seek_LTG(bs, "battle chase: no enemy area");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -2545,20 +2537,18 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		AIEnter_Seek_LTG(bs, "battle retreat: enemy dead");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
-	// if in lava or slime the bot should be able to get out
-	if (BotInLavaOrSlime(bs)) {
-		bs->tfl |= TFL_LAVA|TFL_SLIME;
-	}
 	// if there is another better enemy
 	if (BotFindEnemy(bs, bs->enemy)) {
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, "found new better enemy\n");
 #endif
 	}
-
+	// get the team goals
 	BotTeamGoals(bs, qtrue);
+	// if in lava or slime the bot should be able to get out
+	if (BotInLavaOrSlime(bs)) {
+		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
 	// map specific code
 	BotMapScripts(bs);
 	// update the attack inventory values
@@ -2574,6 +2564,7 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 	// update the last time the enemy was visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		bs->enemyvisible_time = FloatTime();
+
 		VectorCopy(entinfo.origin, target);
 		// if attacking an obelisk
 		if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
@@ -2712,13 +2703,19 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	}
 	// get the entity information
 	BotEntityInfo(bs->enemy, &entinfo);
+	// if the entity information is valid
+	if (!entinfo.valid) {
+		AIEnter_Seek_NBG(bs, "battle nbg: entity invalid");
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, "battle nbg: entity invalid -> seek nbg\n");
+#endif
+		return qfalse;
+	}
 	// if the entity isn't dead
 	if (EntityIsDead(&entinfo)) {
 		AIEnter_Seek_NBG(bs, "battle nbg: enemy dead");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -2764,6 +2761,10 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 			AIEnter_Battle_Fight(bs, "battle nbg: time out");
 		}
 
+		return qfalse;
+	}
+	// predict obstacles
+	if (BotAIPredictObstacles(bs, &goal)) {
 		return qfalse;
 	}
 	// move towards the goal
