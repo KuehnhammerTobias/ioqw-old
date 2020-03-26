@@ -807,16 +807,21 @@ void CG_AddBufferedAnnouncerSound(sfxHandle_t sfx) {
 	if (!sfx) {
 		return;
 	}
-	// if we are going into the intermission, don't start any voices
-	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
+	// Tobias NOTE: do we need this?
+	// clear all buffered sounds
+	if (sfx == -1) {
+		cg.soundTime = 0;
+		cg.soundBufferIn = 0;
+		cg.soundBufferOut = 0;
+		memset(cg.soundBuffer, 0, sizeof(cg.soundBuffer));
 		return;
 	}
-
+	// Tobias END
 	cg.soundBuffer[cg.soundBufferIn] = sfx;
 	cg.soundBufferIn = (cg.soundBufferIn + 1) % MAX_SOUNDBUFFER;
 
 	if (cg.soundBufferIn == cg.soundBufferOut) {
-		cg.soundBufferOut++;
+		cg.soundBufferOut = (cg.soundBufferOut + 1) % MAX_SOUNDBUFFER;
 	}
 }
 
@@ -837,12 +842,12 @@ CG_PlayBufferedAnnouncerSounds
 static void CG_PlayBufferedAnnouncerSounds(void) {
 
 	// clear all buffered sounds
-	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
+	if (cg.intermissionStarted || cg.warmupCounterShowing) {
 		// Tobias NOTE: do we need this?
 		cg.soundTime = 0;
 		cg.soundBufferIn = 0;
 		cg.soundBufferOut = 0;
-		cg.soundBuffer[cg.soundBufferOut] = 0;
+		memset(cg.soundBuffer, 0, sizeof(cg.soundBuffer));
 		// Tobias END
 		return;
 	}
@@ -993,12 +998,12 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, qboolean demoP
 		CG_DrawInformation();
 		return;
 	}
+	// let the client system know what our weapon and zoom settings are
+	trap_SetUserCmdValue(cg.weaponSelect, cg.zoomSensitivity);
 
 	if (!cg.lightstylesInited) {
 		CG_SetupDlightstyles();
 	}
-	// let the client system know what our weapon and zoom settings are
-	trap_SetUserCmdValue(cg.weaponSelect, cg.zoomSensitivity);
 	// this counter will be bumped for every valid scene we generate
 	cg.clientFrame++;
 	// update cg.predictedPlayerState

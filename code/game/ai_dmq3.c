@@ -2079,7 +2079,7 @@ qboolean BotWantsToUseKamikaze(bot_state_t *bs) {
 
 	if (gametype == GT_OBELISK) {
 		// if the bot is low on health and recently hurt
-		if (bs->inventory[INVENTORY_HEALTH] < 60 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) {
+		if (bs->inventory[INVENTORY_HEALTH] < 60 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) { // Tobias NOTE: exclude falling damage
 			return qtrue;
 		}
 		// if the bot has the ammoregen powerup
@@ -2136,7 +2136,7 @@ qboolean BotWantsToUseKamikaze(bot_state_t *bs) {
 		}
 	} else {
 		// if the bot is low on health and recently hurt
-		if (bs->inventory[INVENTORY_HEALTH] < 80 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) {
+		if (bs->inventory[INVENTORY_HEALTH] < 80 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) { // Tobias NOTE: exclude falling damage
 			return qtrue;
 		}
 	}
@@ -3805,7 +3805,7 @@ qboolean BotEntityVisible(playerState_t *ps, float fov, int ent) {
 	}
 	// get the entity information
 	BotEntityInfo(ent, &entinfo);
-	// if this player is active
+	// if the entity information is valid
 	if (!entinfo.valid) {
 		return qfalse;
 	}
@@ -4137,8 +4137,9 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy -> !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 			continue;
 		}
 		// if the entity isn't the bot self
@@ -4285,7 +4286,7 @@ int BotTeamFlagCarrierVisible(bot_state_t *bs) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4323,7 +4324,7 @@ int BotTeamFlagCarrier(bot_state_t *bs) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4357,7 +4358,7 @@ int BotEnemyFlagCarrierVisible(bot_state_t *bs) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4396,7 +4397,7 @@ void BotCountVisibleEnemies(bot_state_t *bs, int *enemies, float range) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4441,7 +4442,7 @@ void BotCountVisibleTeamMatesAndEnemies(bot_state_t *bs, int *teammates, int *en
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4500,7 +4501,7 @@ int BotCountAllTeamMates(bot_state_t *bs, float range) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4538,7 +4539,7 @@ int BotTeamCubeCarrierVisible(bot_state_t *bs) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4576,7 +4577,7 @@ int BotEnemyCubeCarrierVisible(bot_state_t *bs) {
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -4625,6 +4626,7 @@ qboolean BotEqualizeTeamScore(bot_state_t *bs) {
 	return qfalse;
 
 }
+
 /*
 =======================================================================================================================================
 BotEqualizeWeakestHumanTeamScore
@@ -4659,14 +4661,15 @@ qboolean BotEqualizeWeakestHumanTeamScore(bot_state_t *bs) {
 		if (i == bs->client) {
 			continue;
 		}
-
+		// if on the same team
 		if (BotSameTeam(bs, i)) {
 			continue;
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotEqualizeWeakestHumanTeamScore -> !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 			continue;
 		}
 		// if the entity isn't the bot self
@@ -5447,8 +5450,9 @@ void BotMapScripts(bot_state_t *bs) {
 			}
 			// get the entity information
 			BotEntityInfo(i, &entinfo);
-			// if this player is active
+			// if the entity information is valid
 			if (!entinfo.valid) {
+				//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotMapScripts -> !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 				continue;
 			}
 			// if the entity isn't the bot self
@@ -6443,7 +6447,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 		// move in a random direction in the hope to get out
 		BotRandomMove(bs, moveresult, speed);
 #ifdef OBSTACLEDEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "IN SOLID AREA!\n");
+		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: IN SOLID AREA!\n", netname);
 #endif
 		return;
 	}
@@ -6481,7 +6485,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 				// if no targetname and not a shootable door
 				if (!ent->targetname && !ent->health) {
 #ifdef OBSTACLEDEBUG
-					BotAI_Print(PRT_MESSAGE, "%s: Blocked by model %d (Door), ignoring!\n", netname, entinfo.modelindex);
+					BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Ignoring blocking model %d (Door)!\n", netname, entinfo.modelindex);
 #endif
 					return;
 				}
@@ -6489,7 +6493,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 			// buttons will operate on contact
 			if (!strcmp(ent->classname, "func_button") && (ent->moverState == MOVER_POS1)) {
 #ifdef OBSTACLEDEBUG
-				BotAI_Print(PRT_MESSAGE, "%s: Blocked by model %d (Button), ignoring!\n", netname, entinfo.modelindex);
+				BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Ignoring blocking model %d (Button)!\n", netname, entinfo.modelindex);
 #endif
 				return;
 			}
@@ -6526,7 +6530,39 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 		VectorSet(angles, 0, 360 * random(), 0);
 		AngleVectorsForward(angles, hordir);
 	}
+/*
+	//if (moveresult->flags & MOVERESULT_ONTOPOF_OBSTACLE) movetype = MOVE_JUMP;
+	//else
+	movetype = MOVE_WALK;
+	// if there's an obstacle at the bot's feet and head then the bot might be able to crouch through
+	//VectorCopy(bs->origin, start);
+	//start[2] += 18;
+	//VectorMA(start, 5, hordir, end);
+	//VectorSet(mins, -16, -16, -24);
+	//VectorSet(maxs, 16, 16, 4);
 
+	//bsptrace = AAS_Trace(start, mins, maxs, end, bs->entitynum, MASK_PLAYERSOLID);
+	//if (bsptrace.fraction >= 1) movetype = MOVE_CROUCH;
+	// get the sideward vector
+	CrossProduct(hordir, up, sideward);
+	// flip the direction
+	if (bs->flags & BFL_AVOIDRIGHT) {
+		VectorNegate(sideward, sideward);
+	}
+	// try to crouch straight forward?
+	if (movetype != MOVE_CROUCH || !trap_BotMoveInDirection(bs->ms, hordir, speed, movetype)) {
+		// perform the movement
+		if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
+			// flip the avoid direction flag
+			bs->flags ^= BFL_AVOIDRIGHT;
+			// flip the direction
+			//VectorNegate(sideward, sideward);
+			VectorMA(sideward, -1, hordir, sideward);
+			// move in the other direction
+			trap_BotMoveInDirection(bs->ms, sideward, speed, movetype);
+		}
+	}
+*/
 	movetype = MOVE_WALK;
 	// get the (right) sideward vector
 	CrossProduct(hordir, up, sideward);
@@ -6539,7 +6575,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 		// flip the direction
 		VectorNegate(sideward, sideward);
 #ifdef OBSTACLEDEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "Flipped default side because v1 = %1.1f.\n");
+		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: Flipped default side because dir2 = %1.1f.\n", netname, DotProduct(dir2, sideward));
 #endif
 	}
 	// try to crouch or jump over barrier
@@ -6549,14 +6585,14 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 			// flip the direction
 			VectorNegate(sideward, sideward);
 #ifdef OBSTACLEDEBUG
-			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "1st sidewards movement failed, flipped direction.\n");
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: 1st sidewards movement failed, flipped direction.\n", netname);
 #endif
 			// move in the other direction
 			if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
 				// move in a random direction in the hope to get out
 				BotRandomMove(bs, moveresult, speed);
 #ifdef OBSTACLEDEBUG
-				BotAI_Print(PRT_MESSAGE, S_COLOR_RED "2nd sidewards movement failed, ending up using random move.\n");
+				BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: 2nd sidewards movement failed, ending up using random move.\n", netname);
 #endif
 			}
 		}
@@ -6565,6 +6601,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 	if (!BotCTFCarryingFlag(bs) && !Bot1FCTFCarryingFlag(bs) && !BotHarvesterCarryingCubes(bs) && !activate) {
 		if (bs->notblocked_time < FloatTime() - obtrusiveness) {
 			// just reset goals and hope the bot will go into another direction?
+			// is this still needed??
 			if (bs->ainode == AINode_Seek_NBG) {
 				bs->nbg_time = 0;
 			} else if (bs->ainode == AINode_Seek_LTG) {
@@ -7528,9 +7565,9 @@ void BotSetupDeathmatchAI(void) {
 // Tobias HACK
 // DEBUG
 	trap_Cvar_Register(&bot_equalize, "bot_equalize", "1", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_aim, "bot_equalizer_aim", "0.8", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_aim, "bot_equalizer_aim", "0.75", CVAR_USERINFO|CVAR_ARCHIVE);
 	trap_Cvar_Register(&bot_equalizer_react, "bot_equalizer_react", "0.55", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_fembon, "bot_equalizer_fembon", "5", CVAR_USERINFO|CVAR_ARCHIVE);
+	trap_Cvar_Register(&bot_equalizer_fembon, "bot_equalizer_fembon", "8", CVAR_USERINFO|CVAR_ARCHIVE);
 	trap_Cvar_Register(&bot_equalizer_teambon, "bot_equalizer_teambon", "5", CVAR_USERINFO|CVAR_ARCHIVE); //10
 // DEBUGEND
 // Tobias END

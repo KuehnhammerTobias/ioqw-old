@@ -2250,12 +2250,10 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	CG_InitMarkPolys();
 	// remove the last loading update
 	cg.infoScreenText[0] = 0;
+	cg.lightstylesInited = qfalse;
 	// make sure we have update values (scores)
 	CG_SetConfigValues();
 	CG_StartMusic();
-
-	cg.lightstylesInited = qfalse;
-
 	CG_LoadingString("");
 	CG_InitTeamChat();
 	CG_ShaderStateChanged();

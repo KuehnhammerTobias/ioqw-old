@@ -394,7 +394,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			// last time the bot was NOT visible
 			bs->teammatevisible_time = FloatTime();
 		}
-		// if the entity information is valid (entity in PVS)
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -509,7 +509,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			BotCheckBlockedTeammates(bs);
 			return qfalse;
 		}
-		// if the entity information is valid (entity in PVS)
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -1164,7 +1164,7 @@ int BotLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) {
 		}
 		// get the entity information
 		BotEntityInfo(bs->lead_teammate, &entinfo);
-
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -1715,7 +1715,7 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 		// if the entity the bot shoots at moved
 		if (!VectorCompare(bs->activatestack->origin, entinfo.origin)) {
 #ifdef DEBUG
-			BotAI_Print(PRT_MESSAGE, "hit shootable button or trigger\n");
+			BotAI_Print(PRT_MESSAGE, "activate entity: hit shootable button or trigger\n");
 #endif // DEBUG
 			bs->activatestack->time = 0;
 		}
@@ -1742,7 +1742,7 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 			// if the bot touches the current goal
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
 #ifdef DEBUG
-				BotAI_Print(PRT_MESSAGE, "touched button or trigger\n");
+				BotAI_Print(PRT_MESSAGE, "activate entity: touched button or trigger\n");
 #endif // DEBUG
 				bs->activatestack->time = 0;
 			}
@@ -1769,7 +1769,7 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 			bs->activatestack->time = 0;
 		}
 	}
-
+	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, qtrue);
@@ -1932,7 +1932,7 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 		bs->nbg_time = 0;
 	}
-
+	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, qtrue);
@@ -2116,7 +2116,7 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 		bs->ltg_time = 0;
 	}
-
+	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, qtrue);
@@ -2252,6 +2252,7 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 			}
 
 			bs->ltg_time = 0;
+
 			AIEnter_Seek_LTG(bs, "battle fight: enemy dead");
 			return qfalse;
 		}

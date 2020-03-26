@@ -582,7 +582,7 @@ void BotMatch_HelpAccompany(bot_state_t *bs, bot_match_t *match) {
 	bs->teamgoal.entitynum = -1;
 	// get the entity information
 	BotEntityInfo(client, &entinfo);
-	// if info is valid (in PVS)
+	// if the entity information is valid
 	if (entinfo.valid) {
 		areanum = BotPointAreaNum(entinfo.origin);
 
@@ -811,7 +811,7 @@ void BotMatch_Camp(bot_state_t *bs, bot_match_t *match) {
 		bs->teamgoal.entitynum = -1;
 		// get the entity information
 		BotEntityInfo(client, &entinfo);
-		// if info is valid (in PVS)
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -1827,7 +1827,7 @@ void BotMatch_LeadTheWay(bot_state_t *bs, bot_match_t *match) {
 	bs->lead_teamgoal.entitynum = -1;
 	// get the entity information
 	BotEntityInfo(client, &entinfo);
-	// if info is valid (in PVS)
+	// if the entity information is valid
 	if (entinfo.valid) {
 		areanum = BotPointAreaNum(entinfo.origin);
 

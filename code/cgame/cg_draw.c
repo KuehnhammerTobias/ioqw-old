@@ -2470,6 +2470,8 @@ static void CG_DrawWarmup(void) {
 
 	sec = cg.warmup;
 
+	cg.warmupCounterShowing = qfalse;
+
 	if (!sec) {
 		return;
 	}
@@ -2531,6 +2533,10 @@ static void CG_DrawWarmup(void) {
 
 	sec = (sec - cg.time) / 1000;
 
+	if (sec < 6) {
+		cg.warmupCounterShowing = qtrue;
+	}
+
 	if (sec < 0) {
 		cg.warmup = 0;
 		sec = 0;
@@ -2550,6 +2556,14 @@ static void CG_DrawWarmup(void) {
 				break;
 			case 2:
 				trap_S_StartLocalSound(cgs.media.count3Sound, CHAN_ANNOUNCER);
+				break;
+			case 4:
+				if (cgs.gametype > GT_TOURNAMENT && cgs.gametype <= GT_HARVESTER) {
+					trap_S_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
+				} else {
+					trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
+				}
+
 				break;
 			default:
 				break;
@@ -2808,11 +2822,6 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 	}
 	// clear around the rendered view if sized down
 	CG_TileClear();
-
-	if (stereoView != STEREO_CENTER) {
-		CG_DrawCrosshair3D();
-	}
-
 	CG_DrawMiscGamemodels();
 	CG_PB_RenderPolyBuffers();
 	CG_FogView();
@@ -2820,6 +2829,10 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 	cg.refdef.skyAlpha = cg.skyAlpha;
 	// draw 3D view
 	trap_R_RenderScene(&cg.refdef);
+
+	if (stereoView != STEREO_CENTER) {
+		CG_DrawCrosshair3D();
+	}
 	// draw status bar and other floating elements
 	CG_Draw2D(stereoView);
 }

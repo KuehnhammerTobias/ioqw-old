@@ -636,7 +636,6 @@ int trap_BotNumConsoleMessages(int chatstate);
 void trap_BotInitialChat(int chatstate, char *type, int mcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
 int trap_BotNumInitialChats(int chatstate, char *type);
 int trap_BotReplyChat(int chatstate, char *message, int mcontext, int vcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
-int trap_BotChatLength(int chatstate);
 void trap_BotEnterChat(int chatstate, int client, int sendto);
 void trap_BotGetChatMessage(int chatstate, char *buf, int size);
 int trap_StringContains(char *str1, char *str2, int casesensitive);

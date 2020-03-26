@@ -444,7 +444,7 @@ void AAS_CreateReversedReachability(void) {
 		// settings of the area
 		settings = &aasworld.areasettings[i];
 
-		if (settings->numreachableareas >= 128) {
+		if (settings->numreachableareas > 128) {
 			botimport.Print(PRT_WARNING, "area %d has more than 128 reachabilities\n", i);
 		}
 		// create reversed links for the reachabilities
@@ -1337,8 +1337,8 @@ void AAS_UpdateAreaRoutingCache(aas_routingcache_t *areacache) {
 	unsigned short int t, startareatraveltimes[128]; // NOTE: not more than 128 reachabilities per area allowed
 	aas_routingupdate_t *updateliststart, *updatelistend, *curupdate, *nextupdate;
 	aas_reachability_t *reach;
-	aas_reversedreachability_t *revreach;
-	aas_reversedlink_t *revlink;
+	const aas_reversedreachability_t *revreach; // Tobias NOTE: check other places as well
+	const aas_reversedlink_t *revlink; // Tobias NOTE: check other places as well
 #ifdef ROUTING_DEBUG
 	numareacacheupdates++;
 #endif // ROUTING_DEBUG

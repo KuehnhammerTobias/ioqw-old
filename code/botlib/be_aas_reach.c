@@ -4389,7 +4389,7 @@ void AAS_Reachability_WalkOffLedge(int areanum) {
 						VectorNormalize(dir);
 						VectorAdd(v1, v2, mid);
 						VectorScale(mid, 0.5, mid);
-						VectorMA(mid, 8, dir, mid);
+						VectorMA(mid, 31, dir, mid);
 						VectorCopy(mid, testend);
 
 						testend[2] -= 1000;

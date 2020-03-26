@@ -581,6 +581,7 @@ typedef struct {
 	// warmup countdown
 	int warmup;
 	int warmupCount;
+	qboolean warmupCounterShowing;
 #ifndef BASEGAME
 	int itemPickup;
 	int itemPickupTime;

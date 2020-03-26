@@ -122,7 +122,7 @@ void BG_GenerateTracemap(const char *mapname, vec3_t mapcoordsMins, vec3_t mapco
 					end[2] = MIN_WORLD_HEIGHT + 1;
 				}
 
-				gen->trace(&tr, start, NULL, NULL, end, ENTITYNUM_NONE, (MASK_SOLID|MASK_WATER));
+				gen->trace(&tr, start, NULL, NULL, end, ENTITYNUM_NONE, MASK_SOLID|MASK_WATER);
 				tracecount++;
 
 				if (tr.startsolid) { // stuck in something, skip over it.

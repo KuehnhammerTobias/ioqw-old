@@ -201,6 +201,7 @@ int AAS_OnGround(vec3_t origin, int presencetype, int passent) {
 	aas_trace_t trace;
 	vec3_t end, up = {0, 0, 1};
 	aas_plane_t *plane;
+	float phys_maxsteepness;
 
 	VectorCopy(origin, end);
 
@@ -221,8 +222,9 @@ int AAS_OnGround(vec3_t origin, int presencetype, int passent) {
 	}
 	// check if the plane isn't too steep
 	plane = &trace.plane; //AAS_PlaneFromNum(trace.planenum);
+	phys_maxsteepness = aassettings.phys_maxsteepness;
 
-	if (DotProduct(plane->normal, up) < aassettings.phys_maxsteepness) {
+	if (DotProduct(plane->normal, up) < phys_maxsteepness) {
 		return qfalse;
 	}
 	// the bot is on the ground
@@ -308,7 +310,7 @@ Returns the Z velocity when rocket jumping at the origin.
 */
 float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage) {
 	vec3_t kvel, v, start, end, forward, right, viewangles, dir;
-	float mass, knockback, points;
+	float mass, knockback, points, phys_jumpvel;
 	vec3_t rocketoffset = {8, 8, -8};
 	vec3_t botmins = {-16, -16, -24};
 	vec3_t botmaxs = {16, 16, 56};
@@ -354,7 +356,8 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage) {
 	// damage velocity
 	VectorScale(dir, 1600.0 * (float)knockback / mass, kvel); // the rocket jump hack...
 	// rocket impact velocity + jump velocity
-	return kvel[2] + aassettings.phys_jumpvel;
+	phys_jumpvel = aassettings.phys_jumpvel;
+	return kvel[2] + phys_jumpvel;
 }
 
 /*
@@ -508,11 +511,11 @@ static qboolean AAS_ClipToBBox(aas_trace_t *trace, const vec3_t start, const vec
 		trace->startsolid = qfalse;
 		trace->fraction = frac;
 		trace->ent = 0;
-		trace->planenum = 0;
-		// ZTM: TODO: Use the plane of collision
-		trace->plane = aasworld.planes[trace->planenum];
 		trace->area = 0;
 		trace->lastarea = 0;
+		trace->planenum = 0;
+		// ZTM: TODO: use the plane of collision
+		trace->plane = aasworld.planes[trace->planenum];
 		// trace endpos
 		for (j = 0; j < 3; j++) {
 			trace->endpos[j] = start[j] + dir[j] * frac;
@@ -548,7 +551,7 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 	float phys_watergravity;
 	float phys_walkaccelerate, phys_airaccelerate, phys_swimaccelerate;
 	float phys_maxwalkvelocity, phys_maxcrouchvelocity, phys_maxswimvelocity;
-	float phys_maxstep, phys_maxsteepness, phys_jumpvel, friction;
+	float phys_maxstep, phys_maxsteepness, phys_maxbarrier, phys_jumpvel, friction;
 	float gravity, delta, maxvel, wishspeed, accelerate;
 	//float velchange, newvel;
 	//int ax;
@@ -578,6 +581,7 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 	phys_swimaccelerate = aassettings.phys_swimaccelerate;
 	phys_maxstep = aassettings.phys_maxstep;
 	phys_maxsteepness = aassettings.phys_maxsteepness;
+	phys_maxbarrier = aassettings.phys_maxbarrier;
 	phys_jumpvel = aassettings.phys_jumpvel * frametime;
 
 	Com_Memset(move, 0, sizeof(*move));
@@ -1020,12 +1024,12 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 
 			VectorCopy(start, end);
 
-			end[2] -= 48 + aassettings.phys_maxbarrier;
+			end[2] -= 48 + phys_maxbarrier;
 			gaptrace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, entnum);
 			// if solid is found the bot cannot walk any further and will not fall into a gap
 			if (!gaptrace.startsolid) {
 				// if it is a gap (lower than phys_maxbarrier height)
-				if (gaptrace.endpos[2] < org[2] - aassettings.phys_maxbarrier) {
+				if (gaptrace.endpos[2] < org[2] - phys_maxbarrier) {
 					if (!(AAS_PointContents(end) & CONTENTS_WATER)) {
 						VectorCopy(lastorg, move->endpos);
 						VectorScale(frame_test_vel, 1 / frametime, move->velocity);

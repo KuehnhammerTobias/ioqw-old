@@ -244,7 +244,6 @@ typedef struct ai_export_s {
 	void (*BotInitialChat)(int chatstate, char *type, int mcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
 	void (*BotGetChatMessage)(int chatstate, char *buf, int size);
 	int (*BotReplyChat)(int chatstate, char *message, int mcontext, int vcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
-	int (*BotChatLength)(int chatstate);
 	void (*BotEnterChat)(int chatstate, int client, int sendto);
 	int (*StringContains)(char *str1, char *str2, int casesensitive);
 	int (*BotFindMatch)(char *str, struct bot_match_s *match, unsigned long int context);

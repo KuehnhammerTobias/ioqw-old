@@ -753,7 +753,6 @@ static void Init_AI_Export(ai_export_t *ai) {
 	ai->BotInitialChat = BotInitialChat;
 	ai->BotGetChatMessage = BotGetChatMessage;
 	ai->BotReplyChat = BotReplyChat;
-	ai->BotChatLength = BotChatLength;
 	ai->BotEnterChat = BotEnterChat;
 	ai->StringContains = StringContains;
 	ai->BotFindMatch = BotFindMatch;

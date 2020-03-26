@@ -86,19 +86,19 @@ typedef struct aas_trace_s {
 } aas_trace_t;
 // entity info
 typedef struct aas_entityinfo_s {
-	int valid;				// true if updated this frame
-	int type;				// entity type
-	int flags;				// entity flags
-	float ltime;			// local time
-	float update_time;		// time between last and current update
 	int number;				// number of the entity
+	int valid;				// true if updated this frame
+	float update_time;		// time between last and current update
+	float ltime;			// local time
 	vec3_t origin;			// origin of the entity
-	vec3_t angles;			// angles of the model
 	vec3_t lastvisorigin;	// last visible origin
+	int solid;				// solid type
+	vec3_t angles;			// angles of the model
 	vec3_t mins;			// bounding box minimums
 	vec3_t maxs;			// bounding box maximums
+	int flags;				// entity flags
+	int type;				// entity type
 	int groundent;			// ground entity
-	int solid;				// solid type
 	int modelindex;			// model used
 	int modelindex2;		// weapons, CTF flags, etc.
 	int frame;				// model frame number

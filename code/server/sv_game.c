@@ -695,8 +695,6 @@ intptr_t SV_GameSystemCalls(intptr_t *args) {
 			return 0;
 		case BOTLIB_AI_REPLY_CHAT:
 			return botlib_export->ai.BotReplyChat(args[1], VMA(2), args[3], args[4], VMA(5), VMA(6), VMA(7), VMA(8), VMA(9), VMA(10), VMA(11), VMA(12));
-		case BOTLIB_AI_CHAT_LENGTH:
-			return botlib_export->ai.BotChatLength(args[1]);
 		case BOTLIB_AI_ENTER_CHAT:
 			botlib_export->ai.BotEnterChat(args[1], args[2], args[3]);
 			return 0;
