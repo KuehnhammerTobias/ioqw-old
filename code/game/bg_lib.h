@@ -35,6 +35,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define __attribute__(x)
 #endif
 #endif
+#define assert(x) // do nothing
 #ifndef NULL
 #define NULL ((void *)0)
 #endif

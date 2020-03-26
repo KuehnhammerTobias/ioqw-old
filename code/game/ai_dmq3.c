@@ -6260,8 +6260,10 @@ int BotGetActivateGoal(bot_state_t *bs, int entitynum, bot_activategoal_t *activ
 BotGoForActivateGoal
 =======================================================================================================================================
 */
-int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal) {
+int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal, bot_aienter_t aienter) {
 	aas_entityinfo_t activateinfo;
+
+	assert(aienter);
 
 	activategoal->inuse = qtrue;
 
@@ -6270,6 +6272,7 @@ int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal) {
 	}
 
 	activategoal->start_time = FloatTime();
+	activategoal->aienter = aienter;
 	// get the entity information
 	BotEntityInfo(activategoal->goal.entitynum, &activateinfo);
 	// if the entity information is valid
@@ -6529,7 +6532,7 @@ If that's not an option then try to walk around or over the entity.
 Before the bot ends in this part of the AI it should predict which doors to open, which buttons to activate etc.
 =======================================================================================================================================
 */
-void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
+void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, bot_aienter_t activatedonefunc) {
 #ifdef OBSTACLEDEBUG
 	char netname[MAX_NETNAME];
 #endif
@@ -6613,7 +6616,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 				return;
 			}
 			// if the bot wants to activate the bsp entity
-			if (activate) {
+			if (activatedonefunc != NULL) {
 				// find the bsp entity which should be activated in order to get the blocking entity out of the way
 				bspent = BotGetActivateGoal(bs, entinfo.number, &activategoal);
 
@@ -6623,7 +6626,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 					}
 					// if not already trying to activate this entity
 					if (!BotIsGoingToActivateEntity(bs, activategoal.goal.entitynum)) {
-						BotGoForActivateGoal(bs, &activategoal);
+						BotGoForActivateGoal(bs, &activategoal, activatedonefunc);
 					}
 					// if ontop of an obstacle or if the bot is not in a reachability area it'll still need some dynamic obstacle avoidance, otherwise return
 					if (!(moveresult->flags & MOVERESULT_ONTOPOF_OBSTACLE) && trap_AAS_AreaReachability(bs->areanum)) {
@@ -6716,7 +6719,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, int activate) {
 		}
 	}
 
-	if (!BotCTFCarryingFlag(bs) && !Bot1FCTFCarryingFlag(bs) && !BotHarvesterCarryingCubes(bs) && !activate) {
+	if (!BotCTFCarryingFlag(bs) && !Bot1FCTFCarryingFlag(bs) && !BotHarvesterCarryingCubes(bs) && activatedonefunc == NULL) {
 		if (bs->notblocked_time < FloatTime() - obtrusiveness) {
 			// just reset goals and hope the bot will go into another direction?
 			// is this still needed??
@@ -6737,7 +6740,7 @@ Predict the route towards the goal and check if the bot will be blocked by certa
 the bot should figure out if they can be removed by activating certain entities.
 =======================================================================================================================================
 */
-int BotAIPredictObstacles(bot_state_t *bs, bot_goal_t *goal) {
+int BotAIPredictObstacles(bot_state_t *bs, bot_goal_t *goal, bot_aienter_t activatedonefunc) {
 	int modelnum, entitynum, bspent;
 	bot_activategoal_t activategoal;
 	aas_predictroute_t route;
@@ -6775,7 +6778,7 @@ int BotAIPredictObstacles(bot_state_t *bs, bot_goal_t *goal) {
 						// if not already trying to activate this entity
 						if (!BotIsGoingToActivateEntity(bs, activategoal.goal.entitynum)) {
 							//BotAI_Print(PRT_MESSAGE, "blocked by mover model %d, entity %d ?\n", modelnum, entitynum);
-							BotGoForActivateGoal(bs, &activategoal);
+							BotGoForActivateGoal(bs, &activategoal, activatedonefunc);
 							return qtrue;
 						} else {
 							// enable any routing areas that were disabled
