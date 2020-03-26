@@ -525,7 +525,7 @@ int BotOnMover(vec3_t origin, int entnum, aas_reachability_t *reach) {
 	VectorCopy(origin, end);
 	end[2] -= 48;
 
-	trace = AAS_TraceEntities(org, boxmins, boxmaxs, end, entnum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+	trace = AAS_TraceEntities(org, boxmins, boxmaxs, end, entnum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
 
 	if (!trace.startsolid && !trace.allsolid) {
 		// NOTE: the reachability face number is the model number of the elevator
@@ -1389,81 +1389,40 @@ int BotWalkInDirection(bot_movestate_t *ms, vec3_t dir, float speed, int type) {
 /*
 =======================================================================================================================================
 BotCheckBlocked
+
+Tobias NOTE: This new version permanently checks the bottom for blocking obstacles. This way we are able to let bots deal with blocking
+obstacles under there feet (like destroyable crates, blocking bodies or corpses, etc.). Eventually add 'checktop' for crates above
+ladders?
+The old version only checks the bottom for blocking obstacles if the bot is not in an area with reachability, whereas the new one does.
+This means we have an additional trace check, trace checks are expensive, so in theory we need more CPU with the newer version (though
+I can't notice any performance issues even with 64 bots). If we ever will notice any issues, please reverte to the old behaviour...
+THINKABOUTME: Is it really worth to waste CPU power for this permanent check?
 =======================================================================================================================================
 */
 void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_moveresult_t *result) {
 	vec3_t mins, maxs, end, up = {0, 0, 1};
 	bsp_trace_t trace;
 	float currentspeed;
-/*
-	// Tobias NOTE: this (old) version doesn't check the bottom for blocking obstacles, whereas the new (active) one does. This means we have an
-	//              additional trace check, trace checks are expensive, so in theory we need more CPU with the newer version (though I can't notice any
-	//              performance issues even with 64 bots). If we ever will notice any issues, please reverte to the old behaviour...
+
 	// test for entities obstructing the bot's path
 	AAS_PresenceTypeBoundingBox(ms->presencetype, mins, maxs);
 	// if the bot can step on
-	if (fabs(DotProduct(dir, up)) < 0.7) {
-		mins[2] += sv_maxstep->value;
-		maxs[2] -= 10; // a little lower to avoid low ceiling
-	}
-	// check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed)
-	VectorMA(ms->origin, 4, dir, end);
-	trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-	// if not started in solid and hitting an entity
-	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE) {
-		result->blocked = qtrue;
-		result->blockentity = trace.entityNum;
-#ifdef DEBUG
-		botimport.Print(PRT_MESSAGE, S_COLOR_RED "%d: BotCheckBlocked: Nearby obstacle!\n", ms->client);
-#endif // DEBUG
-	// if the bot is standing on something and not in an area with reachability
-	} else if (checkbottom && !AAS_AreaReachability(ms->areanum)) {
-		VectorMA(ms->origin, -4, up, end);
-		trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-		// if not started in solid and hitting an entity
-		if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE) {
-			result->blocked = qtrue;
-			result->blockentity = trace.entityNum;
-			result->flags |= MOVERESULT_ONTOPOF_OBSTACLE;
-#ifdef DEBUG
-			botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "%d: BotCheckBlocked: I'm on top of an obstacle!\n", ms->client);
-#endif // DEBUG
-		}
-	// if no blocking obstacle is found, do a full trace to check for distant obstacles to avoid, depending on current speed
-	} else {
-		VectorMA(ms->origin, 400, dir, end);
-		trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-		// if not started in solid and NOT hitting the world entity
-		if (!trace.startsolid && (trace.entityNum != ENTITYNUM_WORLD && trace.entityNum != ENTITYNUM_NONE)) {
-			result->blocked = qtrue;
-			result->blockentity = trace.entityNum;
-#ifdef DEBUG
-			botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon!\n", ms->client);
-#endif // DEBUG
-		}
-	}
-	// Tobias NOTE: this new version permanently checks the bottom for blocking obstacles. This way we are able to let bots deal with blocking obstacles under
-	//              there feet (like destroyable crates, blocking bodies or corpses, etc.). Eventually add 'checktop' for crates above ladders?
-	//              THINKABOUTME: Is it really worth to waste CPU power for this permanent check?
-*/
-	// test for entities obstructing the bot's path
-	AAS_PresenceTypeBoundingBox(ms->presencetype, mins, maxs);
-	// if the bot can step on
-	if (fabs(DotProduct(dir, up)) < 0.7) {
+	if (fabs(DotProduct(dir, up)) < 0.7) { // Tobias CHECK: why do we need DotProduct here?
+		// ignore obstacles if the bot can step on
 		mins[2] += sv_maxstep->value; // Tobias CHECK: doesn't this contradict 'checkbottom'
 	}
 	// get the current speed
 	currentspeed = DotProduct(ms->velocity, dir) + 10;
-	// if no blocking obstacle is found, do a full trace to check for distant obstacles to avoid, depending on current speed
-	VectorMA(ms->origin, currentspeed * 1.25, dir, end);
+	// do a full trace to check for distant obstacles to avoid, depending on current speed
+	VectorMA(ms->origin, currentspeed * 1.25, dir, end); // Tobias NOTE: tweak this, because this depends on bot_thinktime
 	trace = AAS_Trace(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
 	// if not started in solid and NOT hitting the world entity
 	if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE && trace.entityNum != ENTITYNUM_WORLD) {
 		result->blocked = qtrue;
 		result->blockentity = trace.entityNum;
 #ifdef DEBUG
-		botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon! Check distance: %i.\n", ms->client, currentspeed);
-#endif // DEBUG
+		botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "%d: BotCheckBlocked: I will get blocked soon! Check distance: %f.\n", ms->client, currentspeed * 1.4);
+#endif
 	// if the bot is standing on something and not in an area with reachability
 	} else if (checkbottom && !AAS_AreaReachability(ms->areanum)) {
 		VectorMA(ms->origin, -4, up, end);
@@ -1474,10 +1433,10 @@ void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_mover
 			result->blockentity = trace.entityNum;
 			result->flags |= MOVERESULT_ONTOPOF_OBSTACLE;
 #ifdef DEBUG
-				botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "%d: BotCheckBlocked: I'm on top of an obstacle without any reachability area!\n", ms->client);
+			botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "%d: BotCheckBlocked: I'm on top of an obstacle without any reachability area!\n", ms->client);
 #endif // DEBUG
 		}
-	// check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed)
+	// if no blocking obstacle was found, check for nearby entities only (sometimes world entity is hit before hitting nearby entities... this can cause entities to go unnoticed)
 	} else {
 		VectorMA(ms->origin, 4, dir, end);
 		trace = AAS_TraceEntities(ms->origin, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
@@ -1485,6 +1444,9 @@ void BotCheckBlocked(bot_movestate_t *ms, vec3_t dir, int checkbottom, bot_mover
 		if (!trace.startsolid && trace.entityNum != ENTITYNUM_NONE) {
 			result->blocked = qtrue;
 			result->blockentity = trace.entityNum;
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_RED "%d: BotCheckBlocked: Nearby obstacle!\n", ms->client);
+#endif
 		}
 	}
 }
@@ -1533,7 +1495,7 @@ BotTravel_Walk
 */
 bot_moveresult_t BotTravel_Walk(bot_movestate_t *ms, aas_reachability_t *reach) {
 	float dist, gapdist, speed, currentspeed;
-	vec3_t hordir;
+	vec3_t hordir, sideward, up = {0, 0, 1};
 	bot_moveresult_t_cleared(result);
 // Tobias CHECK: not really needed?
 /*
@@ -1567,19 +1529,96 @@ bot_moveresult_t BotTravel_Walk(bot_movestate_t *ms, aas_reachability_t *reach) 
 			EA_Crouch(ms->client);
 		}
 	}
+// Tobias NOTE: These code changes are very map dependant (q3dm6, q3dm7, q3dm12), maybe delete all this gap checking code at all (at least for QW maps, or keep it only for obstacles?)
+/*
+	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
 
-	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum); // Tobias NOTE: in a perfect world we would not need this! Try to get rid of gap checking here (it works fine, but it looks ugly)
+	if (ms->moveflags & MFL_WALK) {
+		if (gapdist > 0) {
+			speed = 200 - (180 - gapdist);
+		} else {
+			speed = 200;
+		}
+	} else {
+		if (gapdist > 0) {
+			speed = 400 - (360 - 2 * gapdist);
+		} else {
+			speed = 400;
+		}
+	}
+*/
+/*
+	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
 
 	if (ms->moveflags & MFL_WALK) {
 		speed = 200;
 	} else {
 		if (gapdist > 0) {
-			speed = 200;
+			VectorNormalize(hordir);
+			// get the sideward vector
+			CrossProduct(hordir, up, sideward);
+			// start point
+			VectorMA(ms->origin, 100, sideward, start);
+			// if there is NO gap at the right side
+			if (!BotGapDistance(start, ms->velocity, hordir, ms->entitynum)) {
+				speed = 400;
+				EA_Move(ms->client, sideward, speed);
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Found a gap at %i: Moving to the right side (Speed: %f)\n", gapdist, currentspeed);
+#endif // DEBUG
+			} else {
+				VectorNegate(sideward, sideward);
+				speed = 400;
+				EA_Move(ms->client, sideward, speed);
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Found a gap at %i: Moving to the left side (Speed: %f)\n", gapdist, currentspeed);
+#endif // DEBUG
+			}
+		} else {
+			speed = 400;
+		}
+	}
+*/
+	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
+
+	if (ms->moveflags & MFL_WALK) {
+		speed = 200;
+	} else {
+		if (gapdist > 0) { // Tobias NOTE: avoid gap checking twice, move this down!
+			speed = 400 - (200 - gapdist);
 		} else {
 			speed = 400;
 		}
 	}
 
+	if (gapdist > 0) {
+		VectorNormalize(hordir);
+		// get the sideward vector
+		CrossProduct(hordir, up, sideward);
+		// if there is NO gap at the right side
+		if (!BotGapDistance(ms->origin, ms->velocity, sideward, ms->entitynum)) {
+			BotCheckBlocked(ms, sideward, qtrue, &result);
+			// elementary action move in direction
+			EA_Move(ms->client, sideward, 400);
+			VectorCopy(sideward, result.movedir);
+#ifdef DEBUG
+			botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Found a gap at %i: Moving to the right side (Speed: %f)\n", gapdist, currentspeed);
+#endif // DEBUG
+		} else {
+			VectorNegate(sideward, sideward);
+			// if there is NO gap at the left side
+			if (!BotGapDistance(ms->origin, ms->velocity, sideward, ms->entitynum)) {
+				BotCheckBlocked(ms, sideward, qtrue, &result);
+				// elementary action move in direction
+				EA_Move(ms->client, sideward, 400);
+				VectorCopy(sideward, result.movedir);
+#ifdef DEBUG
+				botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Found a gap at %i: Moving to the left side (Speed: %f)\n", gapdist, currentspeed);
+#endif // DEBUG
+			}
+		}
+	}
+// Tobias END
 	BotCheckBlocked(ms, hordir, qtrue, &result);
 	// elementary action move in direction
 	EA_Move(ms->client, hordir, speed);
@@ -2159,7 +2198,7 @@ bot_moveresult_t BotTravel_Jump(bot_movestate_t *ms, aas_reachability_t *reach) 
 
 	AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
 	// check for solids
-	trace = AAS_Trace(start, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
+	trace = AAS_Trace(start, mins, maxs, end, ms->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY);
 
 	if (trace.startsolid) {
 		VectorCopy(start, trace.endpos);

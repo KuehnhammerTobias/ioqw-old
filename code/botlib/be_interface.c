@@ -67,28 +67,12 @@ int botlibsetup = qfalse;
 
 /*
 =======================================================================================================================================
-ValidClientNumber
-=======================================================================================================================================
-*/
-qboolean ValidClientNumber(int num, char *str) {
-
-	if (num < 0 || num > botlibglobals.maxclients) {
-		// weird: the disabled stuff results in a crash
-		botimport.Print(PRT_ERROR, "%s: invalid client number %d, [0, %d]\n", str, num, botlibglobals.maxclients);
-		return qfalse;
-	}
-
-	return qtrue;
-}
-
-/*
-=======================================================================================================================================
 ValidEntityNumber
 =======================================================================================================================================
 */
-qboolean ValidEntityNumber(int num, char *str) {
+static qboolean ValidEntityNumber(int num, const char *str) {
 
-	if (num < 0 || num > botlibglobals.maxentities) {
+	if (num < 0 || (unsigned)num > botlibglobals.maxentities) {
 		botimport.Print(PRT_ERROR, "%s: invalid entity number %d, [0, %d]\n", str, num, botlibglobals.maxentities);
 		return qfalse;
 	}
@@ -101,7 +85,7 @@ qboolean ValidEntityNumber(int num, char *str) {
 BotLibSetup
 =======================================================================================================================================
 */
-qboolean BotLibSetup(char *str) {
+static qboolean BotLibSetup(const char *str) {
 
 	if (!botlibglobals.botlibsetup) {
 		botimport.Print(PRT_ERROR, "%s: bot library used before being setup\n", str);
@@ -233,13 +217,11 @@ Export_BotLibVarGet
 =======================================================================================================================================
 */
 int Export_BotLibVarGet(const char *var_name, char *value, int size) {
-	char *varvalue;
+	const char *varvalue;
 
 	varvalue = LibVarGetString(var_name);
 
-	strncpy(value, varvalue, size - 1);
-
-	value[size - 1] = '\0';
+	Q_strncpyz(value, varvalue, size);
 	return BLERR_NOERROR;
 }
 
@@ -295,7 +277,7 @@ int Export_BotLibLoadMap(const char *mapname) {
 Export_BotLibUpdateEntity
 =======================================================================================================================================
 */
-int Export_BotLibUpdateEntity(int ent, bot_entitystate_t *state) {
+static int Export_BotLibUpdateEntity(int ent, bot_entitystate_t *state) {
 
 	if (!BotLibSetup("BotUpdateEntity")) {
 		return BLERR_LIBRARYNOTSETUP;
@@ -590,8 +572,8 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 
 	AAS_ClearShownDebugLines();
 
-	if (trace.ent) {
-		ent = &aasworld.entities[trace.ent];
+	if (trace.entityNum) {
+		ent = &aasworld.entities[trace.entityNum];
 		AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 	}
 
@@ -635,8 +617,8 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 
 		AAS_DrawPlaneCross(bsptrace.endpos, bsptrace.plane.normal, bsptrace.plane.dist + bsptrace.exp_dist, bsptrace.plane.type, LINECOLOR_GREEN);
 
-		if (trace.ent) {
-			ent = &aasworld.entities[trace.ent];
+		if (trace.entityNum) {
+			ent = &aasworld.entities[trace.entityNum];
 			AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 		}
 	}
@@ -648,7 +630,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 	if (bsptrace.fraction < 1.0) {
 		AAS_DrawPlaneCross(bsptrace.endpos, bsptrace.plane.normal, bsptrace.plane.dist, bsptrace.plane.type, LINECOLOR_RED);
 
-		if (bsptrace.ent) {
+		if (bsptrace.entityNum) {
 			ent = &aasworld.entities[bsptrace.ent];
 			AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 		}

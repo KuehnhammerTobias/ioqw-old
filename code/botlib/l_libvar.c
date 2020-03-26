@@ -138,7 +138,7 @@ libvar_t *LibVarGet(const char *var_name) {
 LibVarGetString
 =======================================================================================================================================
 */
-char *LibVarGetString(const char *var_name) {
+const char *LibVarGetString(const char *var_name) {
 	libvar_t *v;
 
 	v = LibVarGet(var_name);
@@ -197,7 +197,7 @@ libvar_t *LibVar(const char *var_name, const char *value) {
 LibVarString
 =======================================================================================================================================
 */
-char *LibVarString(const char *var_name, const char *value) {
+const char *LibVarString(const char *var_name, const char *value) {
 	libvar_t *v;
 
 	v = LibVar(var_name, value);

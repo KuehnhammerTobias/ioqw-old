@@ -341,7 +341,7 @@ weightconfig_t *ReadWeightConfig(char *filename) {
 #ifdef DEBUG
 	int starttime;
 
-	starttime = Sys_MilliSeconds();
+	starttime = botimport.MilliSeconds();
 #endif // DEBUG
 	if (!LibVarGetValue("bot_reloadcharacters")) {
 		avail = -1;
@@ -473,7 +473,7 @@ weightconfig_t *ReadWeightConfig(char *filename) {
 	botimport.Print(PRT_MESSAGE, "loaded %s\n", filename);
 #ifdef DEBUG
 	if (botDeveloper) {
-		botimport.Print(PRT_MESSAGE, "weights loaded in %d msec\n", Sys_MilliSeconds() - starttime);
+		botimport.Print(PRT_MESSAGE, "weights loaded in %d msec\n", botimport.MilliSeconds() - starttime);
 	}
 #endif // DEBUG
 	if (!LibVarGetValue("bot_reloadcharacters")) {
@@ -682,7 +682,7 @@ qboolean WriteWeightConfig(char *filename, weightconfig_t *config) {
 FindFuzzyWeight
 =======================================================================================================================================
 */
-int FindFuzzyWeight(weightconfig_t *wc, char *name) {
+int FindFuzzyWeight(weightconfig_t *wc, const char *name) {
 	int i;
 
 	for (i = 0; i < wc->numweights; i++) {
