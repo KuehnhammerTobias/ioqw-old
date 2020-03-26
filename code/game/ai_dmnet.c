@@ -1787,6 +1787,10 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 
 			return qfalse;
 		}
+		// predict obstacles
+		if (BotAIPredictObstacles(bs, goal, AIEnter_Seek_ActivateEntity)) {
+			return qfalse;
+		}
 		// move towards the goal
 		trap_BotMoveToGoal(&moveresult, bs->ms, goal, bs->tfl);
 		// if the movement failed
@@ -1796,15 +1800,11 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 			//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 			bs->activatestack->time = 0;
 		}
+		// check if the bot is blocked
+		BotAIBlocked(bs, &moveresult, AIEnter_Seek_ActivateEntity);
 	}
 	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
-	// check if the bot is blocked
-	BotAIBlocked(bs, &moveresult, AIEnter_Seek_ActivateEntity);
-	// predict obstacles
-	if (BotAIPredictObstacles(bs, goal, AIEnter_Seek_ActivateEntity)) {
-		return qfalse;
-	}
 	// if the bot has to shoot to activate
 	if (bs->activatestack->shoot) {
 		// if the view angles aren't yet used for the movement
@@ -1949,6 +1949,10 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		AIEnter_Wait(bs, "seek nbg: waiting");
 		return qfalse;
 	}
+	// predict obstacles
+	if (BotAIPredictObstacles(bs, &goal, AIEnter_Seek_NBG)) {
+		return qfalse;
+	}
 	// move towards the goal
 	trap_BotMoveToGoal(&moveresult, bs->ms, &goal, bs->tfl);
 	// if the movement failed
@@ -1958,14 +1962,10 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 		bs->nbg_time = 0;
 	}
-	// check if the bot has to deactivate obstacles
-	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, AIEnter_Seek_NBG);
-	// predict obstacles
-	if (BotAIPredictObstacles(bs, &goal, AIEnter_Seek_NBG)) {
-		return qfalse;
-	}
+	// check if the bot has to deactivate obstacles
+	BotClearPath(bs, &moveresult);
 	// if the view angles are used for the movement
 	if (moveresult.flags & (MOVERESULT_MOVEMENTVIEW|MOVERESULT_MOVEMENTVIEWSET|MOVERESULT_SWIMVIEW)) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);
@@ -2123,6 +2123,10 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		AIEnter_Wait(bs, "seek ltg: waiting");
 		return qfalse;
 	}
+	// predict obstacles
+	if (BotAIPredictObstacles(bs, &goal, AIEnter_Seek_LTG)) {
+		return qfalse;
+	}
 	// move towards the goal
 	trap_BotMoveToGoal(&moveresult, bs->ms, &goal, bs->tfl);
 	// if the movement failed
@@ -2132,14 +2136,10 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 		bs->ltg_time = 0;
 	}
-	// check if the bot has to deactivate obstacles
-	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, AIEnter_Seek_LTG);
-	// predict obstacles
-	if (BotAIPredictObstacles(bs, &goal, AIEnter_Seek_LTG)) {
-		return qfalse;
-	}
+	// check if the bot has to deactivate obstacles
+	BotClearPath(bs, &moveresult);
 	// if the view angles are used for the movement
 	if (moveresult.flags & (MOVERESULT_MOVEMENTVIEW|MOVERESULT_MOVEMENTVIEWSET|MOVERESULT_SWIMVIEW)) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);
@@ -2289,9 +2289,12 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	}
 
 	VectorCopy(entinfo.origin, target);
-	// if attacking an obelisk
-	if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
-		target[2] += OBELISK_TARGET_HEIGHT;
+	// if not a player enemy
+	if (bs->enemy >= MAX_CLIENTS) {
+		// if attacking an obelisk
+		if (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum) {
+			target[2] += OBELISK_TARGET_HEIGHT;
+		}
 	}
 	// update the reachability area and origin if possible
 	areanum = BotPointAreaNum(target);
@@ -2299,6 +2302,10 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	if (areanum && trap_AAS_AreaReachability(areanum)) {
 		VectorCopy(target, bs->lastenemyorigin);
 		bs->lastenemyareanum = areanum;
+	}
+	// if in lava or slime the bot should be able to get out
+	if (BotInLavaOrSlime(bs)) {
+		bs->tfl |= TFL_LAVA|TFL_SLIME;
 	}
 	// update the attack inventory values
 	BotUpdateBattleInventory(bs, bs->enemy);
@@ -2485,6 +2492,8 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 	}
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, AIEnter_Battle_Chase);
+	// check if the bot has to deactivate obstacles
+	BotClearPath(bs, &moveresult);
 	// if the view angles are used for the movement
 	if (moveresult.flags & (MOVERESULT_MOVEMENTVIEW|MOVERESULT_MOVEMENTVIEWSET|MOVERESULT_SWIMVIEW)) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);
@@ -2608,9 +2617,12 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		bs->enemyvisible_time = FloatTime();
 
 		VectorCopy(entinfo.origin, target);
-		// if attacking an obelisk
-		if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
-			target[2] += OBELISK_TARGET_HEIGHT;
+		// if not a player enemy
+		if (bs->enemy >= MAX_CLIENTS) {
+			// if attacking an obelisk
+			if (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum) {
+				target[2] += OBELISK_TARGET_HEIGHT;
+			}
 		}
 		// update the reachability area and origin if possible
 		areanum = BotPointAreaNum(target);
@@ -2631,6 +2643,8 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 			AIEnter_Battle_Fight(bs, "battle retreat: another enemy");
 			return qfalse;
 		}
+		// check if the bot has to deactivate obstacles
+		BotClearPath(bs, &moveresult);
 	}
 	// check for nearby goals periodicly
 	if (bs->check_time < FloatTime()) {
@@ -2772,15 +2786,16 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	}
 	// map specific code
 	BotMapScripts(bs);
-	// update the attack inventory values
-	BotUpdateBattleInventory(bs, bs->enemy);
 	// update the last time the enemy was visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		bs->enemyvisible_time = FloatTime();
 		VectorCopy(entinfo.origin, target);
-		// if attacking an obelisk
-		if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
-			target[2] += OBELISK_TARGET_HEIGHT;
+		// if not a player enemy
+		if (bs->enemy >= MAX_CLIENTS) {
+			// if attacking an obelisk
+			if (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum) {
+				target[2] += OBELISK_TARGET_HEIGHT;
+			}
 		}
 		// update the reachability area and origin if possible
 		areanum = BotPointAreaNum(target);
@@ -2824,6 +2839,8 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	}
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, AIEnter_Battle_NBG);
+	// update the attack inventory values
+	BotUpdateBattleInventory(bs, bs->enemy);
 	// if the view is fixed for the movement
 	if (moveresult.flags & (MOVERESULT_MOVEMENTVIEW|MOVERESULT_SWIMVIEW)) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);

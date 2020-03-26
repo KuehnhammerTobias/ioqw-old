@@ -6576,25 +6576,6 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, bot_aienter_t a
 	}
 
 	ent = &g_entities[moveresult->blockentity];
-
-	VectorSubtract(entinfo.origin, bs->origin, dir1);
-	VectorNormalize(dir1);
-	VectorNormalize2(ent->client->ps.velocity, dir2);
-	// if the blocking entity is moving away from us (or moving along the same direction), or if it is an enemy farther away than 24 units, ignore the entity.
-	if (DotProduct(dir2, dir1) > 0.0 || !BotSameTeam(bs, moveresult->blockentity)) {
-		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
-		VectorMA(bs->origin, 24, dir1, end);
-		BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-		// if nothing is hit
-		if (trace.fraction >= 1.0) {
-			return;
-		}
-#ifdef OBSTACLEDEBUG
-		else {
-			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "Blocked by an obstacle moving along the same direction, or blocked by a distant enemy, ignoring!\n");
-		}
-#endif
-	}
 	// if blocked by a bsp model
 	if (!ent->client) {
 		if (entinfo.modelindex > 0 && entinfo.modelindex <= max_bspmodelindex) {
@@ -6640,6 +6621,26 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, bot_aienter_t a
 					return;
 				}
 			}
+		}
+	// if blocked by a player
+	} else {
+		VectorSubtract(entinfo.origin, bs->origin, dir1);
+		VectorNormalize(dir1);
+		VectorNormalize2(ent->client->ps.velocity, dir2);
+		// if the blocking entity is moving away from us (or moving along the same direction), or if it is an enemy farther away than 24 units
+		if (DotProduct(dir2, dir1) > 0.0 || !BotSameTeam(bs, moveresult->blockentity)) {
+			trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
+			VectorMA(bs->origin, 24, dir1, end);
+			BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+			// if nothing is hit
+			if (trace.fraction >= 1.0) {
+				return;
+			}
+#ifdef OBSTACLEDEBUG
+			else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Ignoring blocking player moving along the same direction, or distant enemy!\n", netname);
+			}
+#endif
 		}
 	}
 	// just some basic dynamic obstacle avoidance code
