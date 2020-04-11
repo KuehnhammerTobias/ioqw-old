@@ -4678,7 +4678,6 @@ qboolean BotEqualizeTeamScore(bot_state_t *bs) {
 	}
 
 	return qfalse;
-
 }
 
 /*
@@ -4786,7 +4785,6 @@ qboolean BotEqualizeWeakestHumanTeamScore(bot_state_t *bs) {
 	}
 
 	return qfalse;
-
 }
 // Tobias END
 /*
@@ -4892,7 +4890,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 
 	if (aim_skill > 0.95) {
 		// don't aim too early
-		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
+		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
 
 		if (bs->enemysight_time > FloatTime() - reactiontime) {
 			return;
@@ -5345,7 +5343,7 @@ void BotCheckAttack(bot_state_t *bs) {
 		}
 	}
 
-	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
+	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
 	// if the enemy is invisible
 	if (EntityIsInvisible(&entinfo)) {
 		reactiontime += 1.5f;
@@ -6277,7 +6275,7 @@ int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal, bot_
 	BotEntityInfo(activategoal->goal.entitynum, &activateinfo);
 	// if the entity information is valid
 	if (!activateinfo.valid) {
-		AIEnter_Seek_LTG(bs, "ActivateGoal: goal ent invalid");
+		AIEnter_Seek_LTG(bs, "BotGoForActivateGoal: goal ent invalid");
 		return qtrue;
 	}
 
@@ -6285,7 +6283,7 @@ int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal, bot_
 
 	if (BotPushOntoActivateGoalStack(bs, activategoal)) {
 		// enter the activate entity AI node
-		AIEnter_Seek_ActivateEntity(bs, "BotGoForActivateGoal");
+		AIEnter_Seek_ActivateEntity(bs, "BotGoForActivateGoal: entering activate ent.");
 		return qtrue;
 	} else {
 		// enable any routing areas that were disabled

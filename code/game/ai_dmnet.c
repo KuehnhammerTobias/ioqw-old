@@ -107,9 +107,8 @@ int BotGetAirGoal(bot_state_t *bs, bot_goal_t *goal) {
 	vec3_t end, mins = {-15, -15, -2}, maxs = {15, 15, 2};
 	int areanum;
 
-	// trace up until we hit solid
 	VectorCopy(bs->origin, end);
-
+	// trace up until we hit solid
 	end[2] += 1000;
 
 	BotAI_Trace(&bsptrace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
@@ -500,7 +499,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				//BotAI_Print(PRT_MESSAGE, "new nearby goal %s\n", buf);
 				// time the bot gets to pick up the nearby goal item
 				bs->nbg_time = FloatTime() + 8;
-				AIEnter_Seek_NBG(bs, "BotLongTermGoal: go for air");
+				AIEnter_Seek_NBG(bs, "BotGetLongTermGoal: Go for air!");
 				return qfalse;
 			}
 
@@ -1637,7 +1636,7 @@ AIEnter_Seek_ActivateEntity
 */
 void AIEnter_Seek_ActivateEntity(bot_state_t *bs, char *s) {
 
-	BotRecordNodeSwitch(bs, "ACTIVATE ENTITY", "", s);
+	BotRecordNodeSwitch(bs, S_COLOR_BLUE "ACTIVATE ENTITY", "", s);
 	bs->ainode = AINode_Seek_ActivateEntity;
 }
 
@@ -1881,9 +1880,9 @@ void AIEnter_Seek_NBG(bot_state_t *bs, char *s) {
 
 	if (trap_BotGetTopGoal(bs->gs, &goal)) {
 		trap_BotGoalName(goal.number, buf, 144);
-		BotRecordNodeSwitch(bs, "SEEK NBG", buf, s);
+		BotRecordNodeSwitch(bs, S_COLOR_GREEN "SEEK NBG", buf, s);
 	} else {
-		BotRecordNodeSwitch(bs, "SEEK NBG", "No goal", s);
+		BotRecordNodeSwitch(bs, S_COLOR_GREEN "SEEK NBG", "No goal", s);
 	}
 
 	bs->ainode = AINode_Seek_NBG;
@@ -1938,7 +1937,7 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		// pop the current goal from the stack
 		trap_BotPopGoal(bs->gs);
 		// check for new nearby items right away
-		// NOTE: we canNOT reset the check_time to zero because it would create an endless loop of node switches
+		// NOTE: we can NOT reset the check_time to zero because it would create an endless loop of node switches
 		bs->check_time = FloatTime() + 0.05;
 		// go back to seek ltg
 		AIEnter_Seek_LTG(bs, "SEEK NBG: time out.");
@@ -2024,9 +2023,9 @@ void AIEnter_Seek_LTG(bot_state_t *bs, char *s) {
 
 	if (trap_BotGetTopGoal(bs->gs, &goal)) {
 		trap_BotGoalName(goal.number, buf, 144);
-		BotRecordNodeSwitch(bs, "SEEK LTG", buf, s);
+		BotRecordNodeSwitch(bs, S_COLOR_GREEN "SEEK LTG", buf, s);
 	} else {
-		BotRecordNodeSwitch(bs, "SEEK LTG", "No goal", s);
+		BotRecordNodeSwitch(bs, S_COLOR_GREEN "SEEK LTG", "No goal", s);
 	}
 
 	bs->ainode = AINode_Seek_LTG;
@@ -2192,7 +2191,7 @@ AIEnter_Battle_Fight
 */
 void AIEnter_Battle_Fight(bot_state_t *bs, char *s) {
 
-	BotRecordNodeSwitch(bs, "BATTLE FIGHT", "", s);
+	BotRecordNodeSwitch(bs, S_COLOR_RED "BATTLE FIGHT", "", s);
 	trap_BotResetLastAvoidReach(bs->ms);
 
 	bs->ainode = AINode_Battle_Fight;
@@ -2206,7 +2205,7 @@ AIEnter_Battle_SuicidalFight
 */
 void AIEnter_Battle_SuicidalFight(bot_state_t *bs, char *s) {
 
-	BotRecordNodeSwitch(bs, "BATTLE FIGHT", "", s);
+	BotRecordNodeSwitch(bs, S_COLOR_RED "BATTLE FIGHT", "", s);
 	trap_BotResetLastAvoidReach(bs->ms);
 
 	bs->ainode = AINode_Battle_Fight;
@@ -2333,7 +2332,7 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 				trap_BotResetLastAvoidReach(bs->ms);
 				// time the bot gets to pick up the nearby goal item
 				bs->nbg_time = FloatTime() + (range * 0.006);
-				AIEnter_Battle_NBG(bs, "battle fight: going for NBG");
+				AIEnter_Battle_NBG(bs, "BATTLE FIGHT: check for Nbg.");
 				return qfalse;
 			}
 		}
@@ -2379,7 +2378,7 @@ AIEnter_Battle_Chase
 */
 void AIEnter_Battle_Chase(bot_state_t *bs, char *s) {
 
-	BotRecordNodeSwitch(bs, "BATTLE CHASE", "", s);
+	BotRecordNodeSwitch(bs, S_COLOR_CYAN "BATTLE CHASE", "", s);
 	bs->chase_time = FloatTime();
 	bs->ainode = AINode_Battle_Chase;
 }
@@ -2535,7 +2534,7 @@ AIEnter_Battle_Retreat
 */
 void AIEnter_Battle_Retreat(bot_state_t *bs, char *s) {
 
-	BotRecordNodeSwitch(bs, "BATTLE RETREAT", "", s);
+	BotRecordNodeSwitch(bs, S_COLOR_YELLOW "BATTLE RETREAT", "", s);
 	bs->ainode = AINode_Battle_Retreat;
 }
 
@@ -2729,9 +2728,9 @@ void AIEnter_Battle_NBG(bot_state_t *bs, char *s) {
 
 	if (trap_BotGetTopGoal(bs->gs, &goal)) {
 		trap_BotGoalName(goal.number, buf, 144);
-		BotRecordNodeSwitch(bs, "BATTLE NBG", buf, s);
+		BotRecordNodeSwitch(bs, S_COLOR_MAGENTA "BATTLE NBG", buf, s);
 	} else {
-		BotRecordNodeSwitch(bs, "BATTLE NBG", "No goal", s);
+		BotRecordNodeSwitch(bs, S_COLOR_MAGENTA "BATTLE NBG", "No goal", s);
 	}
 
 	bs->ainode = AINode_Battle_NBG;
