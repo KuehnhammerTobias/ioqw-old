@@ -1549,21 +1549,19 @@ int AINode_Wait(bot_state_t *bs) {
 	bot_moveresult_t moveresult;
 
 	if (BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "waiting: observer");
+		AIEnter_Observer(bs, "WAIT: joined observer.");
 		return qfalse;
 	}
 	// if in the intermission
 	if (BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "waiting: intermission");
+		AIEnter_Intermission(bs, "WAIT: joined intermission.");
 		return qfalse;
 	}
 	// respawn if dead
 	if (BotIsDead(bs)) {
-		AIEnter_Respawn(bs, "waiting: bot dead");
+		AIEnter_Respawn(bs, "WAIT: bot dead.");
 		return qfalse;
 	}
-
-	bs->tfl = TFL_DEFAULT;
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
@@ -1576,17 +1574,21 @@ int AINode_Wait(bot_state_t *bs) {
 	if (BotFindEnemy(bs, -1)) {
 		if (BotWantsToRetreat(bs)) {
 			// keep the current long term goal and retreat
-			AIEnter_Battle_Retreat(bs, "waiting: found enemy");
+			AIEnter_Battle_Retreat(bs, "WAIT: found enemy.");
 			return qfalse;
 		} else {
 			trap_BotResetLastAvoidReach(bs->ms);
 			// empty the goal stack
 			trap_BotEmptyGoalStack(bs->gs);
 			// go fight
-			AIEnter_Battle_Fight(bs, "waiting: found enemy");
+			AIEnter_Battle_Fight(bs, "WAIT: found enemy.");
 			return qfalse;
 		}
 	}
+	// check if the bot is blocked
+	BotAIBlocked(bs, &moveresult, AIEnter_Wait);
+	// check if the bot has to deactivate obstacles
+	BotClearPath(bs, &moveresult);
 	// check if the bot is blocking teammates
 	BotCheckBlockedTeammates(bs);
 	// if the view angles are used for the movement
@@ -1622,7 +1624,7 @@ int AINode_Wait(bot_state_t *bs) {
 	}
 	// when done waiting
 	if (bs->wait_time < FloatTime() - 0.5) {
-		AIEnter_Seek_LTG(bs, "waiting: time out");
+		AIEnter_Seek_LTG(bs, "WAIT: time out.");
 		return qfalse;
 	}
 
@@ -1943,9 +1945,9 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		AIEnter_Seek_LTG(bs, "SEEK NBG: time out.");
 		return qfalse;
 	}
-	// if the bot should wait
-	if (BotCanWait(bs, &goal)) {
-		AIEnter_Wait(bs, "seek nbg: waiting");
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Seek_NBG)) {
+		AIEnter_Wait(bs, "SEEK NBG: waiting.");
 		return qfalse;
 	}
 	// predict obstacles
@@ -2117,9 +2119,9 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	if (!BotLongTermGoal(bs, bs->tfl, qfalse, &goal)) {
 		return qtrue;
 	}
-	// if the bot should wait
-	if (BotCanWait(bs, &goal)) {
-		AIEnter_Wait(bs, "seek ltg: waiting");
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Seek_LTG)) {
+		AIEnter_Wait(bs, "SEEK LTG: waiting.");
 		return qfalse;
 	}
 	// predict obstacles
@@ -2471,9 +2473,9 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 			return qfalse;
 		}
 	}
-	// if the bot should wait
-	if (BotCanWait(bs, &goal)) {
-		AIEnter_Wait(bs, "battle chase: waiting");
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Chase)) {
+		AIEnter_Wait(bs, "BATTLE CHASE: waiting.");
 		return qfalse;
 	}
 	// predict obstacles
@@ -2668,9 +2670,9 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		AIEnter_Battle_SuicidalFight(bs, "battle retreat: no way out");
 		return qfalse;
 	}
-	// if the bot should wait
-	if (BotCanWait(bs, &goal)) {
-		AIEnter_Wait(bs, "battle retreat: waiting");
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Retreat)) {
+		AIEnter_Wait(bs, "BATTLE RETREAT: waiting.");
 		return qfalse;
 	}
 	// predict obstacles
@@ -2796,6 +2798,7 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	// update the last time the enemy was visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		bs->enemyvisible_time = FloatTime();
+
 		VectorCopy(entinfo.origin, target);
 		// if not a player enemy
 		if (bs->enemy >= MAX_CLIENTS) {

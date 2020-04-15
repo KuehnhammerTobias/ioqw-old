@@ -75,7 +75,7 @@ qboolean BotAggression(bot_state_t *bs);
 // returns how bad the bot feels
 qboolean BotFeelingBad(bot_state_t *bs);
 // the bot should NOT walk further, he should wait for a specific period of time
-qboolean BotCanWait(bot_state_t *bs, bot_goal_t *goal);
+qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal);
 // returns true if the bot is in hurry
 qboolean BotHasEmergencyGoal(bot_state_t *bs);
 // returns true if the bot wants to retreat

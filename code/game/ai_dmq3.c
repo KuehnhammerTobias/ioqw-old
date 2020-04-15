@@ -2042,11 +2042,11 @@ void BotUpdateInventory(bot_state_t *bs) {
 	bs->inventory[INVENTORY_NEUTRALFLAG] = bs->cur_ps.powerups[PW_NEUTRALFLAG] != 0;
 
 	if (BotTeam(bs) == TEAM_RED) {
-		bs->inventory[INVENTORY_REDCUBE] = bs->cur_ps.tokens;
+		bs->inventory[INVENTORY_REDCUBE] = bs->cur_ps.tokens; // Tobias CHECK: aren't they reversed, everywhere?
 		bs->inventory[INVENTORY_BLUECUBE] = 0;
 	} else {
 		bs->inventory[INVENTORY_REDCUBE] = 0;
-		bs->inventory[INVENTORY_BLUECUBE] = bs->cur_ps.tokens;
+		bs->inventory[INVENTORY_BLUECUBE] = bs->cur_ps.tokens; // Tobias CHECK: aren't they reversed, everywhere?
 	}
 
 	bs->inventory[BOT_IS_IN_HURRY] = (int)BotHasEmergencyGoal(bs);
@@ -2581,174 +2581,463 @@ qtrue  -> bots can decide what to do.
 */
 qboolean BotAggression(bot_state_t *bs) {
 	float aggression, selfpreservation;
+	int value;
 	aas_entityinfo_t entinfo;
 	vec3_t dir, angles;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	aggression = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AGGRESSION, 0, 1);
 	selfpreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_SELFPRESERVATION, 0, 1);
-	// if the enemy is located way higher than the bot
-	if (bs->inventory[ENEMY_HEIGHT] > 200) {
-		return qfalse;
-	}
-	// if the bot is using the napalmlauncher
-	if (bs->weaponnum == WP_NAPALMLAUNCHER) {
-		return qfalse;
-	}
-	// if the bot is using the grenadelauncher
-	if (bs->weaponnum == WP_GRENADELAUNCHER) {
-		return qfalse;
-	}
-	// if the bot is using the proxylauncher
-	if (bs->weaponnum == WP_PROXLAUNCHER) {
-		return qfalse;
-	}
-	// current enemy
-	if (bs->enemy >= 0) {
-		// get the entity information
-		BotEntityInfo(bs->enemy, &entinfo);
 
-		if (entinfo.valid) {
-			// if the bot is using the gauntlet
-			if (bs->weaponnum == WP_GAUNTLET) {
-				// if attacking an obelisk
-				if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
-					return qfalse;
-				}
-				// if the enemy is located higher than the bot can jump on
-				if (bs->inventory[ENEMY_HEIGHT] > 42) {
-					return qfalse;
-				}
-				// an extremely aggressive bot will less likely retreat
-				if (aggression > 0.9) {
-					return qtrue;
-				}
-				// if the enemy is really near
-				if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
-					return qtrue;
-				}
-				// if the enemy is far away, check if we can attack the enemy from behind
-				if (aggression > 0.5 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 500) {
-					VectorSubtract(bs->origin, entinfo.origin, dir);
-					VectorToAngles(dir, angles);
-					// if not in the enemy's field of vision, attack!
-					if (!InFieldOfVision(entinfo.angles, 180, angles)) {
-						return qtrue;
-					}
-				}
-				// if currently using the gauntlet, retreat!
-				return qfalse;
-			}
-			// if the enemy is using the gauntlet
-			if (entinfo.weapon == WP_GAUNTLET) {
-				return qtrue;
-			}
-			// an extremely aggressive bot will less likely retreat
-			if (aggression > 0.9 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
-				return qtrue;
-			}
-			// if the enemy is using the bfg
-			if (entinfo.weapon == WP_BFG) {
-				return qfalse;
-			}
-			// if the enemy is using the napalmlauncher
-			if (entinfo.weapon == WP_NAPALMLAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy is using the grenadelauncher
-			if (entinfo.weapon == WP_GRENADELAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy is using the proxylauncher
-			if (entinfo.weapon == WP_PROXLAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy has the quad damage
-			if (entinfo.powerups & (1 << PW_QUAD)) {
-				return qfalse;
-			}
-			// if the bot is out for revenge
-			if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
-				return qtrue;
-			}
-		}
-	}
-	// if the bot has the quad damage powerup
-	if (bs->inventory[INVENTORY_QUAD]) {
-		return qtrue;
-	}
-	// if the bot has the invisibility powerup
-	if (bs->inventory[INVENTORY_INVISIBILITY]) {
-		return qtrue;
-	}
-	// if the bot has the regeneration powerup
-	if (bs->inventory[INVENTORY_REGEN]) {
-		return qtrue;
-	}
-	// if the bot has the guard powerup
-	if (bs->inventory[INVENTORY_GUARD]) {
-		return qtrue;
-	}
-	// if the bot is very low on health.
-	if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation) {
-		return qfalse;
-	}
-	// if the bot is low on health.
-	if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation + 20) {
-		// if the bot has insufficient armor
-		if (bs->inventory[INVENTORY_ARMOR] < 40) {
+	if (!bot_alt_aggressive.integer) {
+		// if the enemy is located way higher than the bot
+		if (bs->inventory[ENEMY_HEIGHT] > 200) {
 			return qfalse;
 		}
+		// if the bot is using the napalmlauncher
+		if (bs->weaponnum == WP_NAPALMLAUNCHER) {
+			return qfalse;
+		}
+		// if the bot is using the grenadelauncher
+		if (bs->weaponnum == WP_GRENADELAUNCHER) {
+			return qfalse;
+		}
+		// if the bot is using the proxylauncher
+		if (bs->weaponnum == WP_PROXLAUNCHER) {
+			return qfalse;
+		}
+		// current enemy
+		if (bs->enemy >= 0) {
+			// get the entity information
+			BotEntityInfo(bs->enemy, &entinfo);
+			// if the entity information is valid
+			if (entinfo.valid) {
+				// if the bot is using the gauntlet
+				if (bs->weaponnum == WP_GAUNTLET) {
+					// if attacking an obelisk
+					if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
+						return qfalse;
+					}
+					// if the enemy is located higher than the bot can jump on
+					if (bs->inventory[ENEMY_HEIGHT] > 42) {
+						return qfalse;
+					}
+					// an extremely aggressive bot will less likely retreat
+					if (aggression > 0.9) {
+						return qtrue;
+					}
+					// if the enemy is really near
+					if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+						return qtrue;
+					}
+					// if the enemy is far away, check if we can attack the enemy from behind
+					if (aggression > 0.5 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 500) {
+						VectorSubtract(bs->origin, entinfo.origin, dir);
+						VectorToAngles(dir, angles);
+						// if not in the enemy's field of vision, attack!
+						if (!InFieldOfVision(entinfo.angles, 180, angles)) {
+							return qtrue;
+						}
+					}
+					// if currently using the gauntlet, retreat!
+					return qfalse;
+				}
+				// if the enemy is using the gauntlet
+				if (entinfo.weapon == WP_GAUNTLET) {
+					return qtrue;
+				}
+				// an extremely aggressive bot will less likely retreat
+				if (aggression > 0.9 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+					return qtrue;
+				}
+				// if the enemy is using the bfg
+				if (entinfo.weapon == WP_BFG) {
+					return qfalse;
+				}
+				// if the enemy is using the napalmlauncher
+				if (entinfo.weapon == WP_NAPALMLAUNCHER) {
+					return qfalse;
+				}
+				// if the enemy is using the grenadelauncher
+				if (entinfo.weapon == WP_GRENADELAUNCHER) {
+					return qfalse;
+				}
+				// if the enemy is using the proxylauncher
+				if (entinfo.weapon == WP_PROXLAUNCHER) {
+					return qfalse;
+				}
+				// if the enemy has the quad damage
+				if (entinfo.powerups & (1 << PW_QUAD)) {
+					return qfalse;
+				}
+				// if the bot is out for revenge
+				if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+					return qtrue;
+				}
+			}
+		}
+		// if the bot has the quad damage powerup
+		if (bs->inventory[INVENTORY_QUAD]) {
+			return qtrue;
+		}
+		// if the bot has the invisibility powerup
+		if (bs->inventory[INVENTORY_INVISIBILITY]) {
+			return qtrue;
+		}
+		// if the bot has the regeneration powerup
+		if (bs->inventory[INVENTORY_REGEN]) {
+			return qtrue;
+		}
+		// if the bot has the guard powerup
+		if (bs->inventory[INVENTORY_GUARD]) {
+			return qtrue;
+		}
+		// if the bot is very low on health.
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation) {
+			return qfalse;
+		}
+		// if the bot is low on health.
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation + 20) {
+			// if the bot has insufficient armor
+			if (bs->inventory[INVENTORY_ARMOR] < 40) {
+				return qfalse;
+			}
+		}
+		// if the bot has the ammoregen powerup
+		if (bs->inventory[INVENTORY_AMMOREGEN]) {
+			return qtrue;
+		}
+		// if the bot has the doubler powerup
+		if (bs->inventory[INVENTORY_DOUBLER]) {
+			return qtrue;
+		}
+		// if the bot has the scout powerup
+		if (bs->inventory[INVENTORY_SCOUT]) {
+			return qtrue;
+		}
+		// if the bot can use the machine gun
+		if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
+			return qtrue;
+		}
+		// if the bot can use the chain gun
+		if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
+			return qtrue;
+		}
+		// if the bot can use the shot gun
+		if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
+			return qtrue;
+		}
+		// if the bot can use the nail gun
+		if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
+			return qtrue;
+		}
+		// if the bot can use the rocket launcher
+		if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
+			return qtrue;
+		}
+		// if the bot can use the beam gun
+		if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
+			return qtrue;
+		}
+		// if the bot can use the railgun
+		if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
+			return qtrue;
+		}
+		// if the bot can use the plasma gun
+		if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
+			return qtrue;
+		}
+		// if the bot can use the bfg
+		if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
+			return qtrue;
+		}
+		// otherwise the bot is not feeling too good
+		return qfalse;
+	} else {
+		value = 0;
+		// if the enemy is located way higher than the bot
+		if (bs->inventory[ENEMY_HEIGHT] > 200) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy higher than 200 (%i).\n", netname, value);
+#endif
+			return 0;
+		}
+		// if the bot is using the napalmlauncher
+		if (bs->weaponnum == WP_NAPALMLAUNCHER) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Using Napalmlauncher (%i).\n", netname, value);
+#endif
+			return 0;
+		}
+		// if the bot is using the grenadelauncher
+		if (bs->weaponnum == WP_GRENADELAUNCHER) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Using Grenadelauncher (%i).\n", netname, value);
+#endif
+			return 0;
+		}
+		// if the bot is using the proxylauncher
+		if (bs->weaponnum == WP_PROXLAUNCHER) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Using Proxylauncher (%i).\n", netname, value);
+#endif
+			return 0;
+		}
+		// current enemy
+		if (bs->enemy >= 0) {
+			// get the entity information
+			BotEntityInfo(bs->enemy, &entinfo);
+			// if the entity information is valid
+			if (entinfo.valid) {
+				// if the bot is using the gauntlet
+				if (bs->weaponnum == WP_GAUNTLET) {
+					// if attacking an obelisk
+					if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Using Gauntlet enemy Obelisk (%i).\n", netname, value);
+#endif
+						return 0;
+					}
+					// if the enemy is located higher than the bot can jump on
+					if (bs->inventory[ENEMY_HEIGHT] > 42) {
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Using Gauntlet enemy higher 42 (%i).\n", netname, value);
+#endif
+						return 0;
+					}
+					// an extremely aggressive bot will less likely retreat
+					if (aggression > 0.9) {
+						value += 50;
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Using Gauntlet char aggression +50 (%i).\n", netname, value);
+#endif
+					}
+					// if the enemy is really near
+					if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+						value += 50;
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Using Gauntlet dist < 200 +50 (%i).\n", netname, value);
+#endif
+					}
+					// if the enemy is far away, check if we can attack the enemy from behind
+					if (aggression > 0.5 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 500) {
+						VectorSubtract(bs->origin, entinfo.origin, dir);
+						VectorToAngles(dir, angles);
+						// if not in the enemy's field of vision, attack!
+						if (!InFieldOfVision(entinfo.angles, 180, angles)) {
+							value += 50;
+#ifdef DEBUG
+							BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Using Gauntlet attacking from behind +50 (%i).\n", netname, value);
+#endif
+						}
+					}
+				}
+				// if the enemy is using the gauntlet
+				if (entinfo.weapon == WP_GAUNTLET) {
+					value += 50;
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy Gauntlet +50 (%i).\n", netname, value);
+#endif
+				}
+				// an extremely aggressive bot will less likely retreat
+				if (aggression > 0.9 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+					value += 50;
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy Gauntlet char aggression +50 (%i).\n", netname, value);
+#endif
+				}
+				// if the enemy is using the bfg
+				if (entinfo.weapon == WP_BFG) {
+					// if the enemy is really near
+					if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+						value += 100;
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy BFG < 200 +100 (%i).\n", netname, value);
+#endif
+					} else {
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy BFG > 200 (%i).\n", netname, value);
+#endif
+						return 0;
+					}
+				}
+				// if the enemy is using the napalmlauncher
+				if (entinfo.weapon == WP_NAPALMLAUNCHER) {
+					// if the enemy is really near
+					if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+						value += 100;
+					} else {
+						return 0;
+					}
+				}
+				// if the enemy is using the grenadelauncher
+				if (entinfo.weapon == WP_GRENADELAUNCHER) {
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy Grenadelauncher (%i).\n", netname, value);
+#endif
+					return 0;
+				}
+				// if the enemy is using the proxylauncher
+				if (entinfo.weapon == WP_PROXLAUNCHER) {
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy Proxylauncher (%i).\n", netname, value);
+#endif
+					return 0;
+				}
+				// if the enemy has the quad damage
+				if (entinfo.powerups & (1 << PW_QUAD)) {
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy Quad (%i).\n", netname, value);
+#endif
+					return 0;
+				}
+				// if the bot is out for revenge
+				if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+					value += 20;
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Out for revenge +20 (%i).\n", netname, value);
+#endif
+				}
+			}
+		}
+		// if the bot has the quad damage powerup
+		if (bs->inventory[INVENTORY_QUAD]) {
+			value += 70;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Quad +70 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot has the invisibility powerup
+		if (bs->inventory[INVENTORY_INVISIBILITY]) {
+			value += 70;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Invis +70 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot has the regeneration powerup
+		if (bs->inventory[INVENTORY_REGEN]) {
+			value += bs->inventory[INVENTORY_HEALTH];
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Regen +Health (%i).\n", netname, value);
+#endif
+		}
+		// if the bot has the guard powerup
+		if (bs->inventory[INVENTORY_GUARD]) {
+			value += bs->inventory[INVENTORY_HEALTH];
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Guard +Health (%i).\n", netname, value);
+#endif
+		}
+		// if the bot is very low on health
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Low Health (%i).\n", netname, value);
+#endif
+			return 0;
+		}
+		// if the bot is low on health
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation + 20) {
+			// if the bot has insufficient armor
+			if (bs->inventory[INVENTORY_ARMOR] < 40) {
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Low Health and Armor (%i).\n", netname, value);
+#endif
+				return 0;
+			}
+		}
+		// if the bot has the ammoregen powerup
+		if (bs->inventory[INVENTORY_AMMOREGEN]) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Ammoregen +50 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot has the doubler powerup
+		if (bs->inventory[INVENTORY_DOUBLER]) {
+			value += 100;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Doubler +100 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot has the scout powerup
+		if (bs->inventory[INVENTORY_SCOUT]) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Scout +50 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the machine gun
+		if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
+			value += 30;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Machinegun +30 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the chain gun
+		if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Chaingun +50 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the shot gun
+		if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
+			value += 30;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Shotgun +30 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the nail gun
+		if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
+			value += 30;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Nailgun +30 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the rocket launcher
+		if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
+			value += 30;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Rocketlauncher +30 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the beam gun
+		if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
+			value += 30;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Beamgun +30 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the railgun
+		if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Railgun +50 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the plasma gun
+		if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Plasmagun +50 (%i).\n", netname, value);
+#endif
+		}
+		// if the bot can use the bfg
+		if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
+			value += 50;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: BFG +50 (%i).\n", netname, value);
+#endif
+		}
+		// otherwise the bot is not feeling too good
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: AGGRESSION VALUE = %i.\n", netname, value);
+#endif
+		return (int)value;
 	}
-	// if the bot has the ammoregen powerup
-	if (bs->inventory[INVENTORY_AMMOREGEN]) {
-		return qtrue;
-	}
-	// if the bot has the doubler powerup
-	if (bs->inventory[INVENTORY_DOUBLER]) {
-		return qtrue;
-	}
-	// if the bot has the scout powerup
-	if (bs->inventory[INVENTORY_SCOUT]) {
-		return qtrue;
-	}
-	// if the bot can use the machine gun
-	if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
-		return qtrue;
-	}
-	// if the bot can use the chain gun
-	if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
-		return qtrue;
-	}
-	// if the bot can use the shot gun
-	if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the nail gun
-	if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the rocket launcher
-	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the beam gun
-	if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
-		return qtrue;
-	}
-	// if the bot can use the railgun
-	if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
-		return qtrue;
-	}
-	// if the bot can use the plasma gun
-	if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
-		return qtrue;
-	}
-	// if the bot can use the bfg
-	if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
-		return qtrue;
-	}
-	// otherwise the bot is not feeling too good
-	return qfalse;
 }
 
 /*
@@ -2780,43 +3069,43 @@ qboolean BotFeelingBad(bot_state_t *bs) {
 
 /*
 =======================================================================================================================================
-BotPlayerInDanger
+BotTeammateNeedsNBG
 
-NOTE: this function takes information into account that a human player can't derive from his display. I justify this by assuming that
-an endangered player screams for help and tells the needed information.
+NOTE: This function takes information into account a human player can't derive from his display. I justify this by assuming that an
+endangered player screams for help and tells the needed information.
 =======================================================================================================================================
 */
-qboolean BotPlayerInDanger(const playerState_t *ps) {
+qboolean BotTeammateNeedsNBG(const playerState_t *ps) {
 
 	// a dead player is not in danger :)
 	if (ps->stats[STAT_HEALTH] <= 0) {
 		return qfalse;
 	}
-	// a player carrying a flag feels very easily endangered
-	if (ps->powerups[PW_REDFLAG] || ps->powerups[PW_BLUEFLAG] || ps->powerups[PW_NEUTRALFLAG]) {
+	// a team mate carrying a flag should be preferred
+	if (ps->powerups[PW_REDFLAG] || ps->powerups[PW_BLUEFLAG] || ps->powerups[PW_NEUTRALFLAG]) { // Tobias NOTE: add skulls!
 		return qtrue;
 	}
-	// if the player has the chaingun with some ammo
+	// if the team mate has the chaingun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_CHAINGUN)) && ps->ammo[WP_CHAINGUN] >= 50) {
 		return qfalse;
 	}
-	// if the player has the nailgun with some ammo
+	// if the team mate has the nailgun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_NAILGUN)) && ps->ammo[WP_NAILGUN] >= 5) {
 		return qfalse;
 	}
-	// if the player has the rocketlauncher with some ammo
+	// if the team mate has the rocketlauncher with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_ROCKETLAUNCHER)) && ps->ammo[WP_ROCKETLAUNCHER] >= 5) {
 		return qfalse;
 	}
-	// if the player has the railgun with some ammo
+	// if the team mate has the railgun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_RAILGUN)) && ps->ammo[WP_RAILGUN] >= 5) {
 		return qfalse;
 	}
-	// if the player has the plasmagun with some ammo
+	// if the team mate has the plasmagun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_PLASMAGUN)) && ps->ammo[WP_PLASMAGUN] >= 15) {
 		return qfalse;
 	}
-	// if the player has the bfg with some ammo
+	// if the team mate has the bfg with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_BFG)) && ps->ammo[WP_BFG] >= 5) {
 		return qfalse;
 	}
@@ -2838,7 +3127,11 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 	playerState_t ps;
 	vec3_t dir, angles, v1;
 	aas_entityinfo_t entinfo;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	if (gametype < GT_TEAM) {
 		return qfalse;
 	}
@@ -2852,7 +3145,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 	}
 	// always pick up team items
 	if (g_entities[goal->entitynum].item->giType == IT_TEAM) {
-		//BotAI_Print(PRT_MESSAGE, S_COLOR_RED "Picking up a team goal!\n");
+		//BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Picking up a team goal!\n", netname);
 		return qfalse;
 	}
 
@@ -2862,13 +3155,13 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 		if (i == bs->client) {
 			continue;
 		}
-		// ignore enemies
+		// if on the same team
 		if (!BotSameTeam(bs, i)) {
 			continue;
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -2901,7 +3194,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 			}
 		} else {
 			// always pick up items if using the machinegun
-			if (bs->weaponnum == WP_MACHINEGUN) {
+			if (bs->weaponnum == WP_MACHINEGUN) { // Tobias NOTE: move this up (outside 'for')
 				continue;
 			}
 			// always pick up items if using the proxylauncher
@@ -2919,22 +3212,22 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 		}
 		// always pick up health if the health is lower than the one from the team mate
 		if (g_entities[goal->entitynum].item->giType == IT_HEALTH && ent->client->ps.stats[STAT_HEALTH] > bs->inventory[INVENTORY_HEALTH]) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "Picking up Health. Own health: %i, Health of team mate: %i.\n", bs->inventory[INVENTORY_HEALTH], ent->client->ps.stats[STAT_HEALTH]);
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Picking up Health. Own health: %i, Health of team mate: %i.\n", netname, bs->inventory[INVENTORY_HEALTH], ent->client->ps.stats[STAT_HEALTH]);
 			continue;
 		}
 		// always pick up armor if the armor is lower than the one from the team mate
 		if (g_entities[goal->entitynum].item->giType == IT_ARMOR && ent->client->ps.stats[STAT_ARMOR] > bs->inventory[INVENTORY_ARMOR]) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "Picking up Armor. Own armor: %i, Armor of team mate: %i.\n", bs->inventory[INVENTORY_ARMOR], ent->client->ps.stats[STAT_ARMOR]);
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Picking up Armor. Own armor: %i, Armor of team mate: %i.\n", netname, bs->inventory[INVENTORY_ARMOR], ent->client->ps.stats[STAT_ARMOR]);
 			continue;
 		}
 		// always pick up holdable items if the team mate already has one
 		if (g_entities[goal->entitynum].item->giType == IT_HOLDABLE && ent->client->ps.stats[STAT_HOLDABLE_ITEM] > 0) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "Picking up a holdable item. The team mate already has one.\n");
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: Picking up a holdable item. The team mate already has one.\n", netname);
 			continue;
 		}
 		// always pick up persistant powerups if the team mate already has one
 		if (g_entities[goal->entitynum].item->giType == IT_PERSISTANT_POWERUP && ent->client->ps.stats[STAT_PERSISTANT_POWERUP] > 0) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "Picking up a persistant powerup. The team mate already has one.\n");
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Picking up a persistant powerup. The team mate already has one.\n", netname);
 			continue;
 		}
 
@@ -2950,7 +3243,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 			}
 		}
 		// if the teammate is in danger
-		if (BotAI_GetClientState(i, &ps) && BotPlayerInDanger(&ps)) {
+		if (BotAI_GetClientState(i, &ps) && BotTeammateNeedsNBG(&ps)) {
 			return qtrue;
 		}
 	}
@@ -2960,16 +3253,16 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 
 /*
 =======================================================================================================================================
-BotCanWait
+BotAIWaiting
 =======================================================================================================================================
 */
-qboolean BotCanWait(bot_state_t *bs, bot_goal_t *goal) {
+qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal) {
 
 	// never wait if there is an enemy
 	if (bs->enemy >= 0) {
 		return qfalse;
 	}
-	// and never wait when the health is decreasing
+	// never wait when the health is decreasing
 	if (level.clients[bs->client].lasthurt_time > level.time - 1000) {
 		return qfalse;
 	}
@@ -2986,6 +3279,8 @@ qboolean BotCanWait(bot_state_t *bs, bot_goal_t *goal) {
 /*
 =======================================================================================================================================
 BotHasEmergencyGoal
+
+The bot is in hurry sometimes, he shouldn't pick up every single item on it's way.
 =======================================================================================================================================
 */
 qboolean BotHasEmergencyGoal(bot_state_t *bs) {
@@ -3019,6 +3314,7 @@ qboolean BotHasEmergencyGoal(bot_state_t *bs) {
 
 			break;
 		case GT_1FCTF:
+			// if the bot carries the flag
 			if (Bot1FCTFCarryingFlag(bs)) {
 				return qtrue;
 			}
@@ -3027,6 +3323,7 @@ qboolean BotHasEmergencyGoal(bot_state_t *bs) {
 		case GT_OBELISK:
 			break;
 		case GT_HARVESTER:
+			// if the bot carries cubes
 			if (BotHarvesterCarryingCubes(bs)) {
 				return qtrue;
 			}
@@ -5453,6 +5750,11 @@ void BotCheckAttack(bot_state_t *bs) {
 			return;
 		}
 	}
+// Tobias DEBUG
+	if (bot_noshoot.integer) {
+		return;
+	}
+// DEBUG
 	// if fire has to be release to activate weapon
 	if (wi.flags & WFL_FIRERELEASED) {
 		if (bs->flags & BFL_ATTACKED) {
