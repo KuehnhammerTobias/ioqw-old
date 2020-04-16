@@ -204,7 +204,7 @@ qboolean EntityIsDead(aas_entityinfo_t *entinfo) {
 
 	// if attacking an obelisk
 	if (entinfo->number >= MAX_CLIENTS && (entinfo->number == redobelisk.entitynum || entinfo->number == blueobelisk.entitynum)) {
-		// if obelisk is respawning return
+		// if the obelisk is respawning
 		if (g_entities[entinfo->number].activator && g_entities[entinfo->number].activator->s.frame == 2) {
 			return qtrue;
 		}

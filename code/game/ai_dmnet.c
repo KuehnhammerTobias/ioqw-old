@@ -183,36 +183,50 @@ BotNearbyGoal
 */
 int BotNearbyGoal(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
 	int ret, dist;
+// Tobias DEBUG
+#ifdef DEBUG
+	bot_goal_t goal;
+	int tt_nbg;
+	char netname[MAX_NETNAME];
+	char buf[128];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+// Tobias END
 	// check if the bot should go for air
 	if (BotGoForAir(bs, tfl, ltg, range)) {
 		return qtrue;
 	}
-	// if the bot is carrying a flag or cubes
+	// if doing something important the bot shouldn't be distracted too much
 	if (BotHasEmergencyGoal(bs)) {
 		if (!BotFeelingBad(bs)) {
 			dist = 900;
 		} else {
 			dist = 300;
 		}
-		// if the bot is just a few secs away from the base
-		if (trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < dist) {
+		// if the bot is just a few secs away from team goal area number
+		if (trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < dist) { // Tobias NOTE: this is wrong, and it was always wrong, teamgoal.areanum is NOT always a base!
 			// make the range really small
 			range = 20;
 		}
 	}
-
+// Tobias DEBUG
+#ifdef DEBUG
+	BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Range: %i.\n", netname, range);
+#endif
+// Tobias END
 	ret = trap_BotChooseNBGItem(bs->gs, bs->origin, bs->inventory, tfl, ltg, range);
-	/*
+// Tobias DEBUG
+#ifdef DEBUG
 	if (ret) {
-		char buf[128];
-
+		tt_nbg = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT);
 		// get the goal at the top of the stack
 		trap_BotGetTopGoal(bs->gs, &goal);
 		trap_BotGoalName(goal.number, buf, sizeof(buf));
-		BotAI_Print(PRT_MESSAGE, "%1.1f: new nearby goal %s\n", FloatTime(), buf);
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%1.1f: (%s) NBG (%s) Traveltime: %i Range: %i.\n", FloatTime(), netname, buf, tt_nbg, range);
 	}
-	*/
+#endif
+// Tobias END
 	return ret;
 }
 
@@ -2315,7 +2329,7 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 		// if the enemy is NOT visible for 1 second
 		if (bs->enemyvisible_time < FloatTime() - 1) {
 			if (BotWantsToChase(bs)) {
-				AIEnter_Battle_Chase(bs, "BATTLE FIGHT: obelisk out of sight.");
+				AIEnter_Battle_Chase(bs, "BATTLE FIGHT: enemy out of sight.");
 				return qfalse;
 			} else {
 				AIEnter_Seek_LTG(bs, "BATTLE FIGHT: enemy out of sight.");
@@ -2818,6 +2832,7 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	// if the bot has no goal or touches the current goal
 	if (!trap_BotGetTopGoal(bs->gs, &goal)) {
 		bs->nbg_time = 0;
+	// if the bot touches the current goal
 	} else if (BotReachedGoal(bs, &goal)) {
 		bs->nbg_time = 0;
 	}
