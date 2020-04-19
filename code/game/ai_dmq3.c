@@ -4324,9 +4324,11 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 	aas_entityinfo_t entinfo, curenemyinfo, curbotinfo;
 	vec3_t dir, angles;
 	qboolean foundEnemy;
-	//char botname[32];
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
-	//ClientName(bs->client, botname, sizeof(botname));
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	//alertness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ALERTNESS, 0, 1);
 	enemypreference = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ENEMY_PREFERENCE, 0, 1);
 	easyfragger = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_EASY_FRAGGER, 0, 1);
@@ -4424,12 +4426,12 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			}
 		}
 		// less aggressive bots will immediatly stop firing if the enemy is dead
-		if (EntityIsDead(&curenemyinfo) && aggression < 0.2) {
+		if (EntityIsDead(&curenemyinfo) && aggression < 0.5) {
 			bs->enemy = -1;
 			curenemy = -1;
 			cursquaredist = 0;
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy dead!Immediately check for another enemy.\n", netname);
 		} else {
-			VectorSubtract(curenemyinfo.origin, bs->origin, dir);
 			cursquaredist = VectorLengthSquared(dir);
 		}
 	} else {
@@ -4554,7 +4556,7 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			// if the bot isn't in the fov of the enemy
 			if (!InFieldOfVision(entinfo.angles, 90, angles)) {
 				// update some stuff for this enemy
-				BotUpdateBattleInventory(bs, i);
+				BotUpdateBattleInventory(bs, i); // Tobias CHECK: delete this after ENEMY_HEIGHT in BotAggression is replaced by real values?
 				// if the bot doesn't really want to fight
 				if (BotWantsToRetreat(bs)) {
 					continue;
