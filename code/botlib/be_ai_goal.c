@@ -1343,6 +1343,9 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
 	if (!areanum || !AAS_AreaReachability(areanum)) {
+#ifdef DEBUG
+		botimport.Print(PRT_MESSAGE, "BotChooseLTGItem: Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
+#endif
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {
 			areanum = gs->lastreachabilityarea;
@@ -1507,6 +1510,8 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 /*
 =======================================================================================================================================
 BotChooseNBGItem
+
+Pops a new nearby goal on the goal stack in the goalstate.
 =======================================================================================================================================
 */
 int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelflags, bot_goal_t *ltg, float maxtime) {
@@ -1532,7 +1537,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	// if the bot is in solid or if the area the bot is in has no reachability links
 	if (!areanum || !AAS_AreaReachability(areanum)) {
 #ifdef DEBUG
-		botimport.Print(PRT_MESSAGE, "Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
+		botimport.Print(PRT_MESSAGE, "BotChooseNBGItem: Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
 #endif
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {

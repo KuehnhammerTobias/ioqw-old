@@ -844,7 +844,7 @@ int BotGetReachabilityToGoal(vec3_t origin, int areanum, int lastgoalareanum, in
 	aas_reachability_t reach;
 
 	// if not in a valid area
-	if (!areanum || !goal->areanum || !AAS_AreaReachability(areanum)) {
+	if (!areanum || !goal->areanum || !AAS_AreaReachability(areanum)/* || !AAS_AreaReachability(goal->areanum)*/) { // Tobias NOTE: dont't do this anymore, it will cause the areanum being out of range!
 		//botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "(SG 3 of 3) !areanum || !goal->areanum || !AAS_AreaReachability: %d %d\n", areanum, goal->areanum);
 		return 0;
 	}
