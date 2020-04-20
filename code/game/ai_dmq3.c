@@ -1713,7 +1713,7 @@ BotUsesLongRangeInstantHitWeapon
 =======================================================================================================================================
 */
 /*
-static qboolean BotUsesLongRangeInstantHitWeapon(bot_state_t *bs) {
+static const qboolean BotUsesLongRangeInstantHitWeapon(bot_state_t *bs) {
 
 	switch (bs->weaponnum) {
 		case WP_RAILGUN:
@@ -1728,11 +1728,12 @@ static qboolean BotUsesLongRangeInstantHitWeapon(bot_state_t *bs) {
 BotUsesMidRangeWeapon
 =======================================================================================================================================
 */
-static qboolean BotUsesMidRangeWeapon(bot_state_t *bs) {
+static const qboolean BotUsesMidRangeWeapon(bot_state_t *bs) {
 
 	switch (bs->weaponnum) {
 		case WP_MACHINEGUN:
 		case WP_CHAINGUN:
+		case WP_NAPALMLAUNCHER:
 		case WP_ROCKETLAUNCHER:
 		case WP_BEAMGUN:
 		case WP_RAILGUN:
@@ -1749,7 +1750,7 @@ static qboolean BotUsesMidRangeWeapon(bot_state_t *bs) {
 BotUsesGravityAffectedProjectileWeapon
 =======================================================================================================================================
 */
-static qboolean BotUsesGravityAffectedProjectileWeapon(bot_state_t *bs) {
+static const qboolean BotUsesGravityAffectedProjectileWeapon(bot_state_t *bs) {
 
 	switch (bs->weaponnum) {
 		case WP_PROXLAUNCHER:
@@ -1766,7 +1767,7 @@ static qboolean BotUsesGravityAffectedProjectileWeapon(bot_state_t *bs) {
 BotUsesInstantHitWeapon
 =======================================================================================================================================
 */
-static qboolean BotUsesInstantHitWeapon(bot_state_t *bs) {
+static const qboolean BotUsesInstantHitWeapon(bot_state_t *bs) {
 
 	switch (bs->weaponnum) {
 		case WP_GAUNTLET:
@@ -1786,7 +1787,7 @@ static qboolean BotUsesInstantHitWeapon(bot_state_t *bs) {
 BotUsesCloseCombatWeapon
 =======================================================================================================================================
 */
-static qboolean BotUsesCloseCombatWeapon(bot_state_t *bs) {
+static const qboolean BotUsesCloseCombatWeapon(bot_state_t *bs) {
 
 	switch (bs->weaponnum) {
 		case WP_GAUNTLET:
@@ -1795,6 +1796,7 @@ static qboolean BotUsesCloseCombatWeapon(bot_state_t *bs) {
 			return qfalse;
 	}
 }
+
 /*
 =======================================================================================================================================
 BotChooseWeapon
@@ -3120,7 +3122,7 @@ BotAvoidItemPickup
 The bot leaves the item to someone else.
 =======================================================================================================================================
 */
-qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
+static qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 	float obtrusiveness;
 	int i;
 	gentity_t *ent;
@@ -3281,9 +3283,17 @@ qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal) {
 BotHasEmergencyGoal
 
 The bot is in hurry sometimes, he shouldn't pick up every single item on it's way.
+
+1.DONE: If the bot carries the enmemy CTF flag and the own flag is at base.
+1.DONE: If the bot is trying to get the enemy CTF flag and the own flag is NOT at base.
+3.DONE: If the bot carries the 1CTF flag.
+4.DONE: If the bot carries cubes.
+
+TODO: If the bot is rushing the enemy base and the bot isn't in the fov of an enemy (or no enemy at their home base).
+TODO: If the enemy obelsik (GT_OBELISK) is seriously damaged and will explode very likely.
 =======================================================================================================================================
 */
-qboolean BotHasEmergencyGoal(bot_state_t *bs) {
+static qboolean BotHasEmergencyGoal(bot_state_t *bs) {
 
 	switch (gametype) {
 		case GT_CTF:
@@ -3341,7 +3351,7 @@ qboolean BotHasEmergencyGoal(bot_state_t *bs) {
 BotWantsToRetreat
 =======================================================================================================================================
 */
-int BotWantsToRetreat(bot_state_t *bs) {
+const int BotWantsToRetreat(bot_state_t *bs) {
 	aas_entityinfo_t entinfo;
 
 	// retreat when standing in lava or slime
@@ -3433,7 +3443,7 @@ int BotWantsToRetreat(bot_state_t *bs) {
 BotWantsToChase
 =======================================================================================================================================
 */
-int BotWantsToChase(bot_state_t *bs) {
+const int BotWantsToChase(bot_state_t *bs) {
 	aas_entityinfo_t entinfo;
 
 	// don't chase if in lava or slime
@@ -4325,9 +4335,12 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 	vec3_t dir, angles;
 	qboolean foundEnemy;
 #ifdef DEBUG
-	char netname[MAX_NETNAME];
+	//int curdist, dist;
+	char netname1[MAX_NETNAME];
+	char netname2[MAX_NETNAME];
+	char netname3[MAX_NETNAME];
 
-	ClientName(bs->client, netname, sizeof(netname));
+	ClientName(bs->client, netname1, sizeof(netname1));
 #endif
 	//alertness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ALERTNESS, 0, 1);
 	enemypreference = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ENEMY_PREFERENCE, 0, 1);
@@ -4368,13 +4381,13 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			return qtrue;
 		}
 	}
-
+	// if the bot already has an enemy
 	if (curenemy >= 0) {
 		// get the entity information
 		BotEntityInfo(curenemy, &curenemyinfo);
 		// if the entity information is valid
 		if (!curenemyinfo.valid) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy -> !curenemyinfo.valid\n"); // Tobias CHECK: shouldn't happen?
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy: !curenemyinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 			return qfalse;
 		}
 		// if the entity isn't the bot self
@@ -4383,19 +4396,30 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		}
 		// only concentrate on flag carrier if not carrying a flag
 		if (EntityCarriesFlag(&curenemyinfo) && !BotCTFCarryingFlag(bs)) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy (%s) is carrying a flag.\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// only concentrate on cube carrier if not carrying cubes
 		if (EntityCarriesCubes(&curenemyinfo) && !BotHarvesterCarryingCubes(bs)) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy (%s) is carrying cubes.\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// looking for revenge
 		if (curenemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Found revenge enemy (%s).\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
-		// if stupid ignore all new enemies
+		// stupid bots don't accept new enemies at all
 		if (enemypreference < 0.2) {
-			//BotAI_Print(PRT_MESSAGE, "%s: I already have an enemy!.\n", botname);
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: I already have an enemy (%s).\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// calculate the distance towards the enemy
@@ -4430,7 +4454,9 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			bs->enemy = -1;
 			curenemy = -1;
 			cursquaredist = 0;
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy dead!Immediately check for another enemy.\n", netname);
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy dead! Immediately check for another enemy.\n", netname1);
+#endif
 		} else {
 			cursquaredist = VectorLengthSquared(dir);
 		}
@@ -4460,7 +4486,7 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		BotEntityInfo(i, &entinfo);
 		// if the entity information is valid
 		if (!entinfo.valid) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy -> !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy: !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 			continue;
 		}
 		// if the entity isn't the bot self

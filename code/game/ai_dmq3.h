@@ -79,9 +79,9 @@ qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal);
 // returns true if the bot is in hurry
 qboolean BotHasEmergencyGoal(bot_state_t *bs);
 // returns true if the bot wants to retreat
-int BotWantsToRetreat(bot_state_t *bs);
+const int BotWantsToRetreat(bot_state_t *bs);
 // returns true if the bot wants to chase
-int BotWantsToChase(bot_state_t *bs);
+const int BotWantsToChase(bot_state_t *bs);
 // returns true if the bot wants to help
 int BotWantsToHelp(bot_state_t *bs);
 // returns true if the bot can and wants to rocketjump
