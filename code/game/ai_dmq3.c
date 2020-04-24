@@ -5159,10 +5159,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	}
 
 	//BotAI_Print(PRT_MESSAGE, "client %d: aiming at client %d\n", bs->entitynum, bs->enemy);
-
+	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
 	aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
 	aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY, 0, 1);
-	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
 	// get the weapon information
 	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
 	// get the weapon specific aim accuracy and or aim skill
@@ -5177,23 +5176,23 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_SHOTGUN, 0, 1);
 			break;
 		case WP_NAILGUN:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAILGUN, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_NAILGUN, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAILGUN, 0, 1);
 			break;
 		case WP_PROXLAUNCHER:
 			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PROXLAUNCHER, 0, 1);
 			break;
 		case WP_GRENADELAUNCHER:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_GRENADELAUNCHER, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_GRENADELAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_GRENADELAUNCHER, 0, 1);
 			break;
 		case WP_NAPALMLAUNCHER:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAPALMLAUNCHER, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_NAPALMLAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAPALMLAUNCHER, 0, 1);
 			break;
 		case WP_ROCKETLAUNCHER:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_ROCKETLAUNCHER, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_ROCKETLAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_ROCKETLAUNCHER, 0, 1);
 			break;
 		case WP_BEAMGUN:
 			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BEAMGUN, 0, 1);
@@ -5202,12 +5201,12 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_RAILGUN, 0, 1);
 			break;
 		case WP_PLASMAGUN:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PLASMAGUN, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_PLASMAGUN, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PLASMAGUN, 0, 1);
 			break;
 		case WP_BFG:
-			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BFG10K, 0, 1);
 			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_BFG10K, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BFG10K, 0, 1);
 			break;
 		default:
 			break;
@@ -5215,7 +5214,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 
 	if (aim_skill > 0.95) {
 		// don't aim too early
-		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
+		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5); // Tobias FIXME: this is nonsense, if reactiontime is 0 than this has no effect (0.5 * 0 = 0)
 
 		if (bs->enemysight_time > FloatTime() - reactiontime) {
 			return;
@@ -5243,6 +5242,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			if (DotProduct(bs->enemyvelocity, enemyvelocity) < 0) {
 				// aim accuracy should be worse now
 				aim_accuracy *= 0.7f;
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, "%s: Enemy changed direction (*0.7): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 			}
 		}
 	}
@@ -5250,6 +5252,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	if (EntityIsInvisible(&entinfo)) {
 		if (random() > 0.1) {
 			aim_accuracy *= 0.4f;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy invisible (*0.4): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 		}
 	}
 	// keep a minimum accuracy
@@ -5258,11 +5263,17 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	}
 	// if the bot is standing still
 	if (VectorLengthSquared(bs->cur_ps.velocity) <= 0) {
-		aim_accuracy += 0.2;
+		aim_accuracy += 0.3;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Standing still (+0.2): aim accuracy: %f, vel: %i.\n", netname, aim_accuracy, (int)VectorLengthSquared(bs->cur_ps.velocity));
+#endif
 	}
 	// if the bot is crouching
 	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
-		aim_accuracy += 0.1;
+		aim_accuracy += 0.2;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Crouching (+0.1): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	}
 	// Tobias TODO: add prone ~ + 0.2;
 	// if the enemy is standing still
@@ -5273,6 +5284,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	}
 
 	aim_accuracy += 0.2 * (0.5 - (f / 200.0));
+#ifdef DEBUG
+	if (f <= 0) {
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy standing still (+0.2): aim accuracy: %f, enemy vel: %i.\n", netname, aim_accuracy, (int)f);
+	}
+#endif
 	// if the bot needs some time to react on the enemy, aiming gets better with time
 	if (reactiontime > 1.75) {
 		f = FloatTime() - bs->enemysight_time;
@@ -5282,6 +5298,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		}
 
 		aim_accuracy += 0.2 * f / 2.0;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: time based aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	}
 	// maximum accuracy
 	if (aim_accuracy > 1.0) {
@@ -5290,8 +5309,14 @@ void BotAimAtEnemy(bot_state_t *bs) {
 // Tobias HACK
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
 		aim_accuracy *= bot_equalizer_aim.value; // DEBUG: bot_equalizer_aim
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Camouflage skin: aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	}
 // Tobias END
+#ifdef DEBUG
+	BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: final aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	// if the enemy is visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		VectorCopy(entinfo.origin, bestorigin);
@@ -5307,12 +5332,19 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		BotAI_Trace(&trace, start, mins, maxs, bestorigin, bs->entitynum, MASK_SHOT);
 		// if the enemy is NOT hit
 		if (trace.fraction <= 1 && trace.entityNum != entinfo.number) {
+			// aim a bit higher
 			bestorigin[2] += 16;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy NOT hit. Aiming higher!\n", netname);
+#endif
 		}
 		// if it is not an instant hit weapon the bot might want to predict the enemy
 		if (!BotUsesInstantHitWeapon(bs)) {
+			// direction towards the enemy
 			VectorSubtract(bestorigin, bs->origin, dir);
+			// distance towards the enemy
 			dist = VectorLength(dir);
+			// direction the enemy is moving in
 			VectorSubtract(entinfo.origin, bs->enemyorigin, dir);
 			// if the enemy is NOT pretty far away and strafing just small steps left and right
 			if (!(dist > 100 && VectorLengthSquared(dir) < Square(32))) {
@@ -5338,6 +5370,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 					//BotAI_Print(PRT_MESSAGE, "%1.1f predicted speed = %f, frames = %f\n", FloatTime(), VectorLength(dir), dist * 10 / wi.speed);
 				// if not that skilled do linear prediction
 				} else if (aim_skill > 0.4) {
+					// direction towards the enemy
 					VectorSubtract(entinfo.origin, bs->origin, dir);
 					// distance towards the enemy
 					dist = VectorLength(dir);
@@ -5362,7 +5395,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 				end[2] -= 64;
 
 				BotAI_Trace(&trace, entinfo.origin, NULL, NULL, end, entinfo.number, MASK_SHOT);
-				VectorCopy(bestorigin, groundtarget);
+				VectorCopy(bestorigin, groundtarget); // Tobias CHECK: is 'bestorigin' wrong now (changed above), or was it always strange to use 'bestorigin' instead of 'end' ?
 
 				if (trace.startsolid) {
 					groundtarget[2] = entinfo.origin[2] - 16;
@@ -5397,6 +5430,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		bestorigin[0] += 20 * crandom() * (1 - aim_accuracy);
 		bestorigin[1] += 20 * crandom() * (1 - aim_accuracy);
 		bestorigin[2] += 10 * crandom() * (1 - aim_accuracy);
+	// if the enemy is NOT visible
 	} else {
 		VectorCopy(bs->lastenemyorigin, bestorigin);
 
@@ -5415,7 +5449,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 
 				if (trap_BotPredictVisiblePosition(bs->lastenemyorigin, bs->lastenemyareanum, &goal, TFL_DEFAULT, target)) {
 					VectorSubtract(target, bs->eye, dir);
-
+					// if the hitpoint is far enough from the bot
 					if (VectorLengthSquared(dir) > Square(80)) {
 						VectorCopy(target, bestorigin);
 						// if the projectile does large radial damage try to aim at the ground in front of the enemy
@@ -5444,9 +5478,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
                                                o *
                                           o   *
                                      o     *
-            trace start ---->  o        *
+             trace start ----> o        *
                                       *
-                             __|__  *
+                            _______ *
                            |      *
                            |     * |
                            |    *  |
@@ -5461,9 +5495,9 @@ NOTE: 3. wi.proj.gravity is a simple configurable (pseudo)multiplier, this seems
 NOTE: 4. It doesn't really make sense to use DEFAULT_GRAVITY or g_gravity (projectiles are not influenced by g_gravity at all in Q3a).
 NOTE: 5. Although my method of computing the ballistics looks like magic, it is the simplest and fastest way I could think of (correct but slow math: -> https://en.wikipedia.org/wiki/Parabola)
          Computing the ballistics this way takes configurable projectile speed, configurable projectile gravity, dynamic enemy height and dynamic enemy distance into account.
-NOTE: 6. This code becomes more precise the faster the projectile moves. Grenades are too slow in Q3a, even grandma can throw apples farther! Fix this: average H-Gren.: bolt speed 1300, = ~60 meters. (gravity 0.35)
+NOTE: 6. This code becomes more precise the faster the projectile moves. Grenades are too slow in Q3a! Fix this: average H-Gren.: bolt speed 1300, = ~60 meters. (gravity 0.35)
 
-WARNING 1: Accuracy is nearly 100% even with very fast projectiled weapons (e.g.: speed 20000 etc.), this means bots will always hit their opponents, even with a bow (eventually decrease the bots individual aim_accuracy), otherwise it is very likely you become shot down by an arrow without knowing :)
+WARNING 1: Accuracy is nearly 100% even with very fast projectiled weapons (e.g.: speed 20000 etc.), this means bots will always hit their opponents, even with a bow (eventually decrease the bots individual aim_accuracy)
 WARNING 2: Bots will also throw grenades through windows even from distance, so be careful!
 */
 	if (BotUsesGravityAffectedProjectileWeapon(bs)) {
