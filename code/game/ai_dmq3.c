@@ -5127,7 +5127,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	bot_goal_t goal;
 	bsp_trace_t trace;
 	vec3_t target;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	// if the bot has no enemy
 	if (bs->enemy < 0) {
 		return;
@@ -5214,7 +5218,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 
 	if (aim_skill > 0.95) {
 		// don't aim too early
-		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5); // Tobias FIXME: this is nonsense, if reactiontime is 0 than this has no effect (0.5 * 0 = 0)
+		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
 
 		if (bs->enemysight_time > FloatTime() - reactiontime) {
 			return;
@@ -5258,53 +5262,53 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		}
 	}
 	// keep a minimum accuracy
-	if (aim_accuracy <= 0) {
+	if (aim_accuracy <= 0.0f) {
 		aim_accuracy = 0.0001f;
 	}
 	// if the bot is standing still
 	if (VectorLengthSquared(bs->cur_ps.velocity) <= 0) {
-		aim_accuracy += 0.3;
+		aim_accuracy += 0.3f;
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Standing still (+0.2): aim accuracy: %f, vel: %i.\n", netname, aim_accuracy, (int)VectorLengthSquared(bs->cur_ps.velocity));
 #endif
 	}
 	// if the bot is crouching
 	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
-		aim_accuracy += 0.2;
+		aim_accuracy += 0.2f;
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Crouching (+0.1): aim accuracy: %f.\n", netname, aim_accuracy);
 #endif
 	}
-	// Tobias TODO: add prone ~ + 0.2;
+	// Tobias TODO: add prone ~ + 0.2f;
 	// if the enemy is standing still
 	f = VectorLength(bs->enemyvelocity);
 
-	if (f > 200) {
-		f = 200;
+	if (f > 200.0f) {
+		f = 200.0f;
 	}
 
-	aim_accuracy += 0.2 * (0.5 - (f / 200.0));
+	aim_accuracy += 0.2f * (0.5f - (f / 200.0f));
 #ifdef DEBUG
 	if (f <= 0) {
 		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy standing still (+0.2): aim accuracy: %f, enemy vel: %i.\n", netname, aim_accuracy, (int)f);
 	}
 #endif
 	// if the bot needs some time to react on the enemy, aiming gets better with time
-	if (reactiontime > 1.75) {
+	if (reactiontime > 1.75f) {
 		f = FloatTime() - bs->enemysight_time;
 
-		if (f > 2.0) {
-			f = 2.0;
+		if (f > 2.0f) {
+			f = 2.0f;
 		}
 
-		aim_accuracy += 0.2 * f / 2.0;
+		aim_accuracy += 0.2f * f / 2.0f;
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: time based aim accuracy: %f.\n", netname, aim_accuracy);
 #endif
 	}
 	// maximum accuracy
-	if (aim_accuracy > 1.0) {
-		aim_accuracy = 1.0;
+	if (aim_accuracy > 1.0f) {
+		aim_accuracy = 1.0f;
 	}
 // Tobias HACK
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
@@ -5459,7 +5463,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 					}
 				}
 
-				aim_accuracy = 1;
+				aim_accuracy = 1.0f;
 			}
 		}
 	}
@@ -5549,15 +5553,15 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 			dist = 150;
 		}
 
-		f = 0.6 + dist / 150 * 0.4;
+		f = 0.6f + dist / 150 * 0.4f;
 		aim_accuracy *= f;
 	}
 	// add some random stuff to the aim direction depending on the aim accuracy
-	if (aim_accuracy < 0.8) {
+	if (aim_accuracy < 0.8f) {
 		VectorNormalize(dir);
 
 		for (i = 0; i < 3; i++) {
-			dir[i] += 0.3 * crandom() * (1 - aim_accuracy);
+			dir[i] += 0.3f * crandom() * (1 - aim_accuracy);
 		}
 	}
 	// set the ideal view angles
@@ -5570,7 +5574,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 	// if the bots should be really challenging
 	if (bot_challenge.integer) {
 		// if the bot is really accurate and has the enemy in view for some time
-		if (aim_accuracy > 0.9 && bs->enemysight_time < FloatTime() - 1) {
+		if (aim_accuracy > 0.9f && bs->enemysight_time < FloatTime() - 1) {
 			// set the view angles directly
 			if (bs->ideal_viewangles[PITCH] > 180) {
 				bs->ideal_viewangles[PITCH] -= 360;
@@ -5674,7 +5678,11 @@ void BotCheckAttack(bot_state_t *bs) {
 	bsp_trace_t trace;
 	aas_entityinfo_t entinfo;
 	vec3_t mins = {-8, -8, -8}, maxs = {8, 8, 8};
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	attackentity = bs->enemy;
 
 	if (attackentity < 0) {
@@ -5714,20 +5722,29 @@ void BotCheckAttack(bot_state_t *bs) {
 // Tobias HACK
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
 		reactiontime += bot_equalizer_react.value; // DEBUG: bot_equalizer_react
-#if 0 // DEBUG
+#ifdef DEBUG
 		if (BotTeam(bs) == TEAM_RED) {
-			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "EQUALIZE for BLUE! RED score: %i, BLUE score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: EQUALIZE for BLUE! RED score: %i, BLUE score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
 		} else {
-			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "EQUALIZE for RED! BLUE score: %i, RED score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: EQUALIZE for RED! BLUE score: %i, RED score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
 		}
-#endif // DEBUGEND
+#endif
 	}
 // Tobias END
+#ifdef DEBUG
+	BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: final reactiontime = %f.\n", netname, reactiontime);
+#endif
 	if (bs->enemysight_time > FloatTime() - reactiontime) {
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: No attack: bs->enemysight_time > FloatTime!\n", netname);
+#endif
 		return;
 	}
 
 	if (bs->teleport_time > FloatTime() - reactiontime) {
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: No attack: bs->teleport_time > FloatTime!\n", netname);
+#endif
 		return;
 	}
 	// if changing weapons
@@ -5738,20 +5755,32 @@ void BotCheckAttack(bot_state_t *bs) {
 	BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, bs->aimtarget, bs->client, MASK_SHOT);
 
 	if (bsptrace.fraction < 1.0 && bsptrace.entityNum != attackentity) {
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: No attack: trace won't hit!\n", netname);
+#endif
 		return;
 	}
 
 	VectorSubtract(bs->aimtarget, bs->eye, dir);
 
-	if (VectorLengthSquared(dir) < Square(100)) {
+	if (VectorLengthSquared(dir) < Square(100)) { // Tobias NOTE: hmm, I still don't see a reason for this (keep it for spin-up weapons)?
 		fov = 120;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Dist < 100, FOV: %i.\n", netname, fov);
+#endif
 	} else {
 		fov = 50;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Dist > 100, FOV: %i.\n", netname, fov);
+#endif
 	}
 
 	VectorToAngles(dir, angles);
 
 	if (!InFieldOfVision(bs->viewangles, fov, angles)) {
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: No attack: not in fov!\n", netname);
+#endif
 		return;
 	}
 	// get the start point shooting from
