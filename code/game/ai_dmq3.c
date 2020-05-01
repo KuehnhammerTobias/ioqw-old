@@ -5314,7 +5314,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
 		aim_accuracy *= bot_equalizer_aim.value; // DEBUG: bot_equalizer_aim
 #ifdef DEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Camouflage skin: aim accuracy: %f.\n", netname, aim_accuracy);
+		if (BotTeam(bs) == TEAM_RED) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Camouflage skin: EQUALIZE for BLUE! RED score = %i, BLUE score = %i, aim accuracy = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, aim_accuracy);
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Camouflage skin: EQUALIZE for RED! BLUE score = %i, RED score = %i, aim accuracy = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, aim_accuracy);
+		}
 #endif
 	}
 	// if the enemy is visible
@@ -5743,21 +5747,18 @@ void BotCheckAttack(bot_state_t *bs) {
 			reactiontime = 2.5f;
 		}
 	}
-// Tobias HACK
+	// consider enemy model specific attributes
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
 		reactiontime += bot_equalizer_react.value; // DEBUG: bot_equalizer_react
 #ifdef DEBUG
 		if (BotTeam(bs) == TEAM_RED) {
-			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: EQUALIZE for BLUE! RED score: %i, BLUE score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Camouflage skin: EQUALIZE for BLUE! RED score = %i, BLUE score = %i, reactiontime = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, reactiontime);
 		} else {
-			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: EQUALIZE for RED! BLUE score: %i, RED score: %i.\n", bs->ownteamscore, bs->enemyteamscore);
+			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Camouflage skin: EQUALIZE for RED! BLUE score = %i, RED score = %i, reactiontime = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, reactiontime);
 		}
 #endif
 	}
-// Tobias END
-#ifdef DEBUG
-	BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: final reactiontime = %f.\n", netname, reactiontime);
-#endif
+
 	if (bs->enemysight_time > FloatTime() - reactiontime) {
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: No attack: bs->enemysight_time > FloatTime!\n", netname);
@@ -5869,6 +5870,9 @@ void BotCheckAttack(bot_state_t *bs) {
 	if (bot_noshoot.integer) {
 		return;
 	}
+#ifdef DEBUG
+	BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Final Reactiontime = %f.\n", netname, reactiontime);
+#endif
 // DEBUG
 	// if fire has to be release to activate weapon
 	if (wi.flags & WFL_FIRERELEASED) {
