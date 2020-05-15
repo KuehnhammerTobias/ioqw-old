@@ -1288,7 +1288,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 					}
 					// if the two projected edge lines have no overlap
 					if (x2 <= x3 || x4 <= x1) {
-//						Log_Write("lines no overlap: from area %d to %d\r\n", area1num, area2num);
+						//Log_Write("lines no overlap: from area %d to %d\r\n", area1num, area2num);
 						continue;
 					}
 					// if the two lines fully overlap
@@ -2383,6 +2383,7 @@ int AAS_Reachability_Jump(int area1num, int area2num) {
 
 			VectorNormalize(dir);
 			VectorScale(dir, speed, velocity);
+			// movement prediction
 			AAS_PredictClientMovement(&move, -1, beststart, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 3, 30, 0.1f, stopevent, 0, qfalse);
 			// if prediction time wasn't enough to fully predict the movement
 			if (move.frames >= 30) {
@@ -3007,6 +3008,7 @@ void AAS_Reachability_Teleport(void) {
 				}
 
 				VectorClear(cmdmove);
+				// movement prediction
 				AAS_PredictClientMovement(&move, -1, destorigin, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 0, 30, 0.1f, SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER, 0, qfalse); //qtrue
 
 				area2num = AAS_PointAreaNum(move.endpos);
@@ -3815,6 +3817,7 @@ void AAS_Reachability_JumpPad(void) {
 		}
 
 		areastart[2] += 0.125;
+
 		//AAS_DrawPermanentCross(origin, 4, 4);
 		// get the target entity
 		AAS_ValueForBSPEpairKey(ent, "target", target, MAX_EPAIRKEY);
@@ -3890,6 +3893,7 @@ void AAS_Reachability_JumpPad(void) {
 			area2num = 0;
 
 			for (i = 0; i < 20; i++) {
+				// movement prediction
 				AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 0, 30, 0.1f, SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER, 0, bot_visualizejumppads);
 
 				area2num = move.endarea;
@@ -4014,6 +4018,7 @@ void AAS_Reachability_JumpPad(void) {
 					{
 						// get command movement
 						VectorScale(dir, speed, cmdmove);
+						// movement prediction
 						AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 30, 30, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER|SE_HITGROUNDAREA, area2num, visualize);
 						// if prediction time wasn't enough to fully predict the movement
 						// don't enter slime or lava and don't fall from too high
