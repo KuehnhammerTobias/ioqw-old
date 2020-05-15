@@ -1832,9 +1832,35 @@ AAS_AreaTravelTimeToGoalArea
 =======================================================================================================================================
 */
 int AAS_AreaTravelTimeToGoalArea(int areanum, vec3_t origin, int goalareanum, int travelflags) {
-	int traveltime, reachnum = 0;
+	int traveltime, reachnum;
+
+	reachnum = 0;
 
 	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
+		return traveltime;
+	}
+
+	return 0;
+}
+
+/*
+=======================================================================================================================================
+AAS_AreaTravelTimeToGoalAreaCheckLoop
+=======================================================================================================================================
+*/
+int AAS_AreaTravelTimeToGoalAreaCheckLoop(int areanum, vec3_t origin, int goalareanum, int travelflags, int loopareanum) {
+	int traveltime, reachnum;
+	aas_reachability_t *reach;
+
+	reachnum = 0;
+
+	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
+		reach = &aasworld.reachability[reachnum];
+
+		if (loopareanum && reach->areanum == loopareanum) {
+			return 0; // going here will cause a looped route
+		}
+
 		return traveltime;
 	}
 
@@ -1847,7 +1873,9 @@ AAS_AreaReachabilityToGoalArea
 =======================================================================================================================================
 */
 int AAS_AreaReachabilityToGoalArea(int areanum, vec3_t origin, int goalareanum, int travelflags) {
-	int traveltime, reachnum = 0;
+	int traveltime, reachnum;
+
+	reachnum = 0;
 
 	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
 		return reachnum;

@@ -254,26 +254,6 @@ int AAS_Swimming(vec3_t origin) {
 
 /*
 =======================================================================================================================================
-AAS_SetMovedir
-=======================================================================================================================================
-*/
-void AAS_SetMovedir(vec3_t angles, vec3_t movedir) {
-	static vec3_t VEC_UP = {0, -1, 0};
-	static vec3_t MOVEDIR_UP = {0, 0, 1};
-	static vec3_t VEC_DOWN = {0, -2, 0};
-	static vec3_t MOVEDIR_DOWN = {0, 0, -1};
-
-	if (VectorCompare(angles, VEC_UP)) {
-		VectorCopy(MOVEDIR_UP, movedir);
-	} else if (VectorCompare(angles, VEC_DOWN)) {
-		VectorCopy(MOVEDIR_DOWN, movedir);
-	} else {
-		AngleVectorsForward(angles, movedir);
-	}
-}
-
-/*
-=======================================================================================================================================
 AAS_JumpReachRunStart
 =======================================================================================================================================
 */
@@ -325,7 +305,7 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage) {
 
 	start[2] += 8; // view offset Z
 
-	AngleVectors(viewangles, forward, right, NULL);
+	AngleVectorsForwardRight(viewangles, forward, right);
 
 	start[0] += forward[0] * rocketoffset[0] + right[0] * rocketoffset[1];
 	start[1] += forward[1] * rocketoffset[0] + right[1] * rocketoffset[1];
@@ -344,8 +324,6 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage) {
 	if (points < 0) {
 		points = 0;
 	}
-	// the owner of the rocket gets half the damage
-	points *= 0.5;
 	// mass of the bot (g_client.c: PutClientInServer)
 	mass = 200;
 	// knockback is the same as the damage points

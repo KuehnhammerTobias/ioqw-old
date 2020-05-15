@@ -50,8 +50,8 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define REACHABILITYAREASPERCYCLE 15
 // number of units reachability points are placed inside the areas
 #define INSIDEUNITS 2
-#define INSIDEUNITS_WALKEND 5
 #define INSIDEUNITS_WALKSTART 0.1
+#define INSIDEUNITS_WALKEND 5
 #define INSIDEUNITS_WATERJUMP 15
 // area flag used for weapon jumping
 #define AREA_WEAPONJUMP 8192 // valid area to weapon jump to
@@ -1042,8 +1042,8 @@ int AAS_Reachability_EqualFloorHeight(int area1num, int area2num) {
 					CrossProduct(edgevec, plane2->normal, normal);
 					VectorNormalize(normal);
 					//VectorMA(start, -1, normal, start);
-					VectorMA(end, INSIDEUNITS_WALKEND, normal, end);
 					VectorMA(start, INSIDEUNITS_WALKSTART, normal, start);
+					VectorMA(end, INSIDEUNITS_WALKEND, normal, end);
 
 					end[2] += 0.125;
 					height = DotProduct(invgravity, start);
@@ -3062,6 +3062,7 @@ void AAS_Reachability_Teleport(void) {
 			lreach->traveltype |= AAS_TravelFlagsForTeam(ent);
 			lreach->traveltime = aassettings.rs_teleport;
 			lreach->next = areareachability[area1num];
+
 			areareachability[area1num] = lreach;
 
 			reach_teleport++;
@@ -3706,12 +3707,11 @@ void AAS_Reachability_FuncBobbing(void) {
 					lreach->traveltype = TRAVEL_FUNCBOB;
 					lreach->traveltype |= AAS_TravelFlagsForTeam(ent);
 					lreach->traveltime = aassettings.rs_funcbob;
-
-					reach_funcbob++;
-
 					lreach->next = areareachability[startreach->areanum];
 
 					areareachability[startreach->areanum] = lreach;
+
+					reach_funcbob++;
 				}
 			}
 
@@ -3779,7 +3779,7 @@ void AAS_Reachability_JumpPad(void) {
 		}
 
 //		AAS_VectorForBSPEpairKey(ent, "angles", angles);
-//		AAS_SetMovedir(angles, velocity);
+//		SetMovedir(angles, velocity);
 //		VectorScale(velocity, speed, velocity);
 		VectorClear(angles);
 		// get the mins, maxs and origin of the model
@@ -3921,7 +3921,7 @@ void AAS_Reachability_JumpPad(void) {
 					if (AAS_ReachabilityExists(link->areanum, area2num)) {
 						continue;
 					}
-					// create a rocket or bfg jump reachability from area1 to area2
+					// create a rocket jump reachability from area1 to area2
 					lreach = AAS_AllocReachability();
 
 					if (!lreach) {
@@ -4620,7 +4620,7 @@ int AAS_ContinueInitReachability(float time) {
 			if (AAS_ReachabilityExists(i, j)) {
 				continue;
 			}
-			// check for a weapon jump reachability
+			// check for a rocket jump reachability
 			AAS_Reachability_WeaponJump(i, j);
 		}
 		// if the calculation took more time than the max reachability delay

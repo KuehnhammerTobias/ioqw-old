@@ -29,11 +29,12 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define MAX_AVOIDGOALS 256
 #define MAX_GOALSTACK 8
 
-#define GFL_NONE	0x00000001
-#define GFL_ITEM	0x00000002
-#define GFL_ROAM	0x00000004
-#define GFL_DROPPED	0x00000008
-#define GFL_AIR		0x00000010
+#define GFL_NONE			0x00000001
+#define GFL_ITEM			0x00000002
+#define GFL_ROAM			0x00000004
+#define GFL_DROPPED			0x00000008
+#define GFL_AIR				0x00000010
+#define GFL_NOSLOWAPPROACH	0x00000020
 // a bot goal
 typedef struct bot_goal_s {
 	vec3_t origin;		// origin of the goal
