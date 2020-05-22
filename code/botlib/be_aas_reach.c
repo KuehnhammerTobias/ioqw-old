@@ -655,8 +655,6 @@ float AAS_MaxJumpHeight(float phys_jumpvel) {
 /*
 =======================================================================================================================================
 AAS_MaxJumpDistance
-
-Returns true if a player can only crouch in the area.
 =======================================================================================================================================
 */
 float AAS_MaxJumpDistance(float phys_jumpvel) {
@@ -1676,7 +1674,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 
 	return qfalse;
 }
-
+// Tobias NOTE: please move those to qcommon!
 /*
 =======================================================================================================================================
 VectorDistance
@@ -1718,7 +1716,7 @@ void VectorMiddle(vec3_t v1, vec3_t v2, vec3_t middle) {
 	VectorAdd(v1, v2, middle);
 	VectorScale(middle, 0.5, middle);
 }
-
+// Tobias END
 /*
 =======================================================================================================================================
 AAS_ClosestEdgePoints
@@ -2747,6 +2745,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 					lreach->traveltype = TRAVEL_LADDER;
 					lreach->traveltime = 10;
 					lreach->next = areareachability[area1num];
+
 					areareachability[area1num] = lreach;
 
 					reach_ladder++;

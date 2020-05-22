@@ -527,7 +527,7 @@ intptr_t CL_CgameSystemCalls(intptr_t *args) {
 		case CG_UPDATESCREEN:
 			// this is used during lengthy level loading, so pump message loop
 			//Com_EventLoop(); // FIXME: if a server restarts here, BAD THINGS HAPPEN!
-			// we can't call Com_EventLoop here, a restart will crash and this _does_ happen if there is a map change while we are downloading at pk3.
+			// we can't call Com_EventLoop here, a restart will crash and this _does_ happen if there is a map change while we are downloading a pk3
 			SCR_UpdateScreen();
 			return 0;
 		case CG_GETGAMESTATE:

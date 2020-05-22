@@ -459,7 +459,7 @@ static void CL_CaptureVoip(void) {
 
 		// enough data buffered in audio hardware to process yet?
 		if (samples >= packetSamples) {
-			// audio capture is always MONO16.
+			// audio capture is always MONO16
 			static int16_t sampbuffer[VOIP_MAX_PACKET_SAMPLES];
 			float voipPower = 0.0f;
 			int voipFrames;
@@ -557,7 +557,7 @@ void CL_AddReliableCommand(const char *cmd, qboolean isDisconnectCmd) {
 	int unacknowledged = clc.reliableSequence - clc.reliableAcknowledge;
 
 	// if we would be losing an old command that hasn't been acknowledged, we must drop the connection
-	// also leave one slot open for the disconnect command in this case.
+	// also leave one slot open for the disconnect command in this case
 	if ((isDisconnectCmd && unacknowledged > MAX_RELIABLE_COMMANDS) || (!isDisconnectCmd && unacknowledged >= MAX_RELIABLE_COMMANDS)) {
 		if (com_errorEntered) {
 			return;
@@ -1035,6 +1035,7 @@ void CL_PlayDemo_f(void) {
 			int len;
 
 			Com_Printf("Protocol %d not supported for demos\n", protocol);
+
 			len = ext_test - arg;
 
 			if (len >= ARRAY_LEN(retry)) {
@@ -1042,6 +1043,7 @@ void CL_PlayDemo_f(void) {
 			}
 
 			Q_strncpyz(retry, arg, len + 1);
+
 			retry[len] = '\0';
 			protocol = CL_WalkDemoExt(retry, name, &clc.demofile);
 		}
@@ -1055,7 +1057,6 @@ void CL_PlayDemo_f(void) {
 	}
 
 	Q_strncpyz(clc.demoName, arg, sizeof(clc.demoName));
-
 	Con_Close();
 
 	clc.state = CA_CONNECTED;

@@ -155,7 +155,7 @@ static void SV_WriteSnapshotToClient(client_t *client, msg_t *msg) {
 	if (client->oldServerTime) {
 		// the server has not yet got an acknowledgement of the new gamestate from this client, so continue to send it
 		// a time as if the server has not restarted. Note from the client's perspective this time is strictly speaking
-		// incorrect, but since it'll be busy loading a map at the time it doesn't really matter.
+		// incorrect, but since it'll be busy loading a map at the time it doesn't really matter
 		MSG_WriteLong(msg, sv.time + client->oldServerTime);
 	} else {
 		MSG_WriteLong(msg, sv.time);
@@ -529,7 +529,7 @@ static void SV_BuildClientSnapshot(client_t *client) {
 	// add all the entities directly visible to the eye, which may include portal entities that merge other viewpoints
 	SV_AddEntitiesVisibleFromPoint(org, frame, &entityNumbers, qfalse);
 	// if there were portals visible, there may be out of order entities in the list which will need to be resorted for the delta compression
-	// to work correctly. This also catches the error condition of an entity being included twice.
+	// to work correctly. This also catches the error condition of an entity being included twice
 	qsort(entityNumbers.snapshotEntities, entityNumbers.numSnapshotEntities, sizeof(entityNumbers.snapshotEntities[0]), SV_QsortEntityNumbers);
 	// now that all viewpoint's areabits have been OR'd together, invert all of them to make it a mask vector, which is what the renderer wants
 	for (i = 0; i < MAX_MAP_AREA_BYTES / 4; i++) {

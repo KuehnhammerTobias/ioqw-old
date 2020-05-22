@@ -357,7 +357,7 @@ void Com_Quit_f(void) {
 	char *p = Cmd_Args();
 
 	if (!com_errorEntered) {
-		// some VMs might execute "quit" command directly, which would trigger an unload of active VM error.
+		// some VMs might execute "quit" command directly, which would trigger an unload of active VM error
 		// Sys_Quit will kill this process anyways, so a corrupt call stack makes no difference
 		VM_Forced_Unload_Start();
 		SV_Shutdown(p[0] ? p : "Server quit");
@@ -1685,7 +1685,6 @@ qboolean Hunk_CheckMark(void) {
 void CL_ShutdownCGame(void);
 void CL_ShutdownUI(void);
 void SV_ShutdownGameProgs(void);
-
 /*
 =======================================================================================================================================
 Hunk_Clear
@@ -2422,7 +2421,7 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect) {
 
 		if (disconnect) {
 			// we don't want to change any network settings if gamedir change was triggered by a connect to server because the
-			// new network settings might make the connection fail.
+			// new network settings might make the connection fail
 			NET_Restart_f();
 		}
 
@@ -2719,6 +2718,7 @@ void Com_ReadFromPipe(void) {
 
 		if (brk) {
 			char tmp = *brk;
+
 			*brk = '\0';
 			Cbuf_ExecuteText(EXEC_APPEND, buf);
 			*brk = tmp;
@@ -2824,7 +2824,7 @@ int Com_ModifyMsec(int msec) {
 	}
 
 	if (com_dedicated->integer) {
-		// dedicated servers don't want to clamp for a much longer period, because it would mess up all the client's views of time.
+		// dedicated servers don't want to clamp for a much longer period, because it would mess up all the client's views of time
 		if (com_sv_running->integer && msec > 500) {
 			Com_Printf("Hitch warning: %i msec frame time\n", msec);
 		}
@@ -2963,7 +2963,7 @@ void Com_Frame(void) {
 	}
 
 	SV_Frame(msec);
-	// if "dedicated" has been modified, start up or shut down the client system.
+	// if "dedicated" has been modified, start up or shut down the client system
 	// do this after the server may have started, but before the client tries to auto-connect
 	if (com_dedicated->modified) {
 		// get the latched value

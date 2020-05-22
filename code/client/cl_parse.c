@@ -495,7 +495,7 @@ void CL_ParseGamestate(msg_t *msg) {
 	CL_ParseServerInfo();
 	// parse serverId and other cvars
 	CL_SystemInfoChanged();
-	// stop recording now so the demo won't have an unnecessary level load at the end.
+	// stop recording now so the demo won't have an unnecessary level load at the end
 	if (cl_autoRecordDemo->integer && clc.demorecording) {
 		CL_StopRecord_f();
 	}
@@ -588,8 +588,8 @@ void CL_ParseDownload(msg_t *msg) {
 			FS_SV_Rename(clc.downloadTempName, clc.downloadName, qfalse);
 		}
 		// send intentions now
-		// we need this because without it, we would hold the last nextdl and then start loading right away.
-		// if we take a while to load, the server is happily trying to send us that last block over and over.
+		// we need this because without it, we would hold the last nextdl and then start loading right away
+		// if we take a while to load, the server is happily trying to send us that last block over and over
 		// write it twice to help make sure we acknowledge the download
 		CL_WritePacket();
 		CL_WritePacket();
@@ -718,7 +718,7 @@ static void CL_ParseVoip(msg_t *msg, qboolean ignoreData) {
 		opus_decoder_ctl(clc.opusDecoder[sender], OPUS_RESET_STATE);
 		seqdiff = 0;
 	} else if (seqdiff * VOIP_MAX_PACKET_SAMPLES * 2 >= sizeof(decoded)) { // dropped more than we can handle?
-		// just start over.
+		// just start over
 		Com_DPrintf("VoIP: Dropped way too many (%d) frames from client #%d\n", seqdiff, sender);
 		opus_decoder_ctl(clc.opusDecoder[sender], OPUS_RESET_STATE);
 		seqdiff = 0;

@@ -826,8 +826,8 @@ void QDECL Com_Printf(const char *msg, ...) __attribute__((format(printf, 1, 2))
 #define CVAR_VM_CREATED		0x00001000 // cvar was created exclusively in one of the VMs.
 #define CVAR_PROTECTED		0x00002000 // prevent modifying this var from VMs or the server
 // these flags are only returned by the Cvar_Flags() function
-#define CVAR_MODIFIED		0x40000000 // Cvar was modified
-#define CVAR_NONEXISTENT	0x80000000 // Cvar doesn't exist.
+#define CVAR_MODIFIED		0x40000000 // cvar was modified
+#define CVAR_NONEXISTENT	0x80000000 // cvar doesn't exist
 // nothing outside the Cvar_*() functions should modify these fields!
 typedef struct cvar_s cvar_t;
 
@@ -876,7 +876,7 @@ typedef struct {
 // if you change the count of flags be sure to also change VOIP_FLAGNUM
 #define VOIP_SPATIAL	0x00000001 // spatialized voip message
 #define VOIP_DIRECT		0x00000002 // non-spatialized voip message
-// number of flags voip knows. You will have to bump protocol version number if you change this.
+// number of flags voip knows. You will have to bump protocol version number if you change this
 #define VOIP_FLAGCNT 2
 
 /*

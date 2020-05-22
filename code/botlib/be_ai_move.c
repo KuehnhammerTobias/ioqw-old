@@ -654,7 +654,7 @@ void BotAddToAvoidReach(bot_movestate_t *ms, int number, float avoidtime) {
 		}
 	}
 }
-
+// Tobias NOTE: please move those to qcommon!
 /*
 =======================================================================================================================================
 DistanceFromLineSquared
@@ -697,7 +697,7 @@ float VectorDistanceSquared(vec3_t p1, vec3_t p2) {
 	VectorSubtract(p2, p1, dir);
 	return VectorLengthSquared(dir);
 }
-
+// Tobias END!
 /*
 =======================================================================================================================================
 BotAvoidSpots
@@ -1999,6 +1999,7 @@ bot_moveresult_t BotFinishTravel_WaterJump(bot_movestate_t *ms, aas_reachability
 	}
 	// swim straight to reachability end
 	VectorSubtract(reach->end, ms->origin, dir);
+
 	dir[0] += crandom() * 10;
 	dir[1] += crandom() * 10;
 	dir[2] += 70 + crandom() * 10;
@@ -2250,6 +2251,7 @@ bot_moveresult_t BotFinishTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachabil
 	if (!BotAirControl(ms->origin, ms->velocity, end, hordir, &speed)) {
 		// move straight to the reachability end
 		VectorCopy(dir, hordir);
+
 		hordir[2] = 0;
 		speed = 400;
 	}
@@ -3270,7 +3272,7 @@ bot_moveresult_t BotTravel_RocketJump(bot_movestate_t *ms, aas_reachability_t *r
 		}
 
 		speed = 400 - (400 - 5 * dist);
-
+		// check if blocked
 		BotCheckBlocked(ms, hordir, qtrue, &result);
 		// elementary action move in direction
 		EA_Move(ms->client, hordir, speed);
@@ -3549,7 +3551,7 @@ bot_moveresult_t BotMoveInGoalArea(bot_movestate_t *ms, bot_goal_t *goal) {
 	ms->lastreachnum = 0;
 	ms->lastareanum = 0;
 	ms->lastgoalareanum = goal->areanum;
-
+	// copy the last origin
 	VectorCopy(ms->origin, ms->lastorigin);
 
 	return result;

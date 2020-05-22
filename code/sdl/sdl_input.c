@@ -220,7 +220,7 @@ static keyNum_t IN_TranslateSDLToQ3Key(SDL_Keysym *keysym, qboolean down) {
 
 	if (keysym->scancode >= SDL_SCANCODE_1 && keysym->scancode <= SDL_SCANCODE_0) {
 		// always map the number keys as such even if they actually map to other characters (eg, "1" is "&" on an AZERTY keyboard).
-		// this is required for SDL before 2.0.6, except on Windows which already had this behavior.
+		// this is required for SDL before 2.0.6, except on Windows which already had this behavior
 		if (keysym->scancode == SDL_SCANCODE_0) {
 			key = '0';
 		} else {
@@ -590,7 +590,7 @@ static void IN_InitJoystick(void) {
 
 	memset(&stick_state, '\0', sizeof(stick_state));
 	// SDL 2.0.4 requires SDL_INIT_JOYSTICK to be initialized separately from SDL_INIT_GAMECONTROLLER for SDL_JoystickOpen() to work correctly,
-	// despite https://wiki.libsdl.org/SDL_Init (retrieved 2016-08-16) indicating SDL_INIT_JOYSTICK should be initialized automatically.
+	// despite https://wiki.libsdl.org/SDL_Init (retrieved 2016-08-16) indicating SDL_INIT_JOYSTICK should be initialized automatically
 	if (!SDL_WasInit(SDL_INIT_JOYSTICK)) {
 		Com_DPrintf("Calling SDL_Init(SDL_INIT_JOYSTICK)...\n");
 

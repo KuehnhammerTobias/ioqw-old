@@ -482,7 +482,7 @@ static void SV_KickNum_f(void) {
 	}
 
 	if (cl->netchan.remoteAddress.type == NA_LOOPBACK) {
-		Com_Printf("Cannot kick host player\n");
+		Com_Printf("Cannot ban host player\n");
 		return;
 	}
 
@@ -904,7 +904,7 @@ static void SV_FlushBans_f(void) {
 	}
 
 	serverBansCount = 0;
-	// empty the ban file.
+	// empty the ban file
 	SV_WriteBans();
 	Com_Printf("All bans and exceptions have been deleted.\n");
 }
