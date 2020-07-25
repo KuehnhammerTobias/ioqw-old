@@ -1562,7 +1562,6 @@ static void UI_DrawMapCinematic(rectDef_t *rect, float scale, vec4_t color, qboo
 static qboolean updateModel = qtrue;
 static qboolean q3Model = qfalse;
 static qboolean updateModelColor = qtrue;
-
 /*
 =======================================================================================================================================
 UI_DrawPlayerModel
@@ -2279,7 +2278,6 @@ static void UI_BuildPlayerList(void) {
 
 	uiInfo.playerNumber = cs.clientNum;
 	uiInfo.teamLeader = atoi(Info_ValueForKey(info, "tl"));
-
 	team = atoi(Info_ValueForKey(info, "t"));
 
 	trap_GetConfigString(CS_SERVERINFO, info, sizeof(info));
@@ -5986,7 +5984,7 @@ static qboolean MapList_Parse(char **p) {
 			//mapList[mapCount].imageName = String_Alloc(va("levelshots/%s", mapList[mapCount].mapLoadName));
 
 			//if (uiInfo.mapCount == 0) {
-			//	only load the first cinematic, selection loads the others
+			// only load the first cinematic, selection loads the others
 			//	uiInfo.mapList[uiInfo.mapCount].cinematic = trap_CIN_PlayCinematic(va("%s.roq", uiInfo.mapList[uiInfo.mapCount].mapLoadName), qfalse, qfalse, qtrue, 0, 0, 0, 0);
 			//}
 
@@ -6334,6 +6332,7 @@ void _UI_Init(qboolean inGameLoad) {
 #endif
 	Menus_CloseAll();
 	trap_LAN_LoadCachedServers();
+
 	UI_LoadBestScores(uiInfo.mapList[ui_currentMap.integer].mapLoadName, uiInfo.gameTypes[ui_gameType.integer].gtEnum);
 	UI_BuildModel_List();
 	UI_LoadBots();
@@ -6921,7 +6920,7 @@ static cvarTable_t cvarTable[] = {
 	{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
 	{&ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE},
 	{&ui_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
-	{&ui_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
+	{&ui_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE},
 	{&ui_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE},
 	{&ui_marks, "cg_marks", "1", CVAR_ARCHIVE},
 	{&ui_new, "ui_new", "0", CVAR_TEMP},
@@ -7145,9 +7144,9 @@ static void UI_StartServerRefresh(qboolean full, qboolean force) {
 	int lanSource;
 	qtime_t q;
 
-	// this function is called with force = qfalse when server browser menu opens or net source changes.
-	// automatically update local and favorite servers.
-	// only auto update master server list if there is no server info cache.
+	// this function is called with force = qfalse when server browser menu opens or net source changes
+	// automatically update local and favorite servers
+	// only auto update master server list if there is no server info cache
 	if (!force && (ui_netSource.integer >= UIAS_GLOBAL0 && ui_netSource.integer <= UIAS_GLOBAL5)) {
 		if (trap_LAN_GetServerCount(UI_SourceForLAN()) > 0) {
 			return; // have cached list

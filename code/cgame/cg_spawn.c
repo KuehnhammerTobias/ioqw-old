@@ -144,7 +144,7 @@ void SP_misc_gamemodel(void) {
 	vec3_t org;
 	cg_gamemodel_t *gamemodel;
 	int i;
-#if 0 // ZTM: Note: Spearmint's game always drops misc_gamemodels. Also, RTCW has targetname set though I'm not sure what, if anything, it's used for.
+#if 0 // ZTM: Note: Spearmint's game always drops misc_gamemodels. Also, RTCW has targetname set though I'm not sure what, if anything, it's used for
 	if (CG_SpawnString("targetname", "", &model) || CG_SpawnString("scriptname", "", &model) || CG_SpawnString("spawnflags", "", &model)) {
 		// this model may not be static, so let the server handle it
 		return;
@@ -201,7 +201,8 @@ void SP_misc_gamemodel(void) {
 	}
 }
 
-/*QUAKED props_skyportal (.6 .7 .7)(-8 -8 0)(8 8 16)
+/*
+QUAKED props_skyportal (.6 .7 .7)(-8 -8 0)(8 8 16)
 "fov" for the skybox default is 90
 To have the portal sky fogged, enter any of the following values:
 "fogcolor" (r g b)(values 0.0-1.0)
@@ -312,9 +313,9 @@ qboolean CG_ParseSpawnVars(void) {
 	}
 
 	if (com_token[0] != '{') {
-		CG_Error("CG_ParseSpawnVars: found %s when expecting {",com_token);
+		CG_Error("CG_ParseSpawnVars: found %s when expecting {", com_token);
 	}
-	// go through all the key / value pairs
+	// go through all the key/value pairs
 	while (1) {
 		// parse key
 		if (!trap_GetEntityToken(keyname, sizeof(keyname))) {
@@ -345,6 +346,11 @@ qboolean CG_ParseSpawnVars(void) {
 	return qtrue;
 }
 
+/*
+=======================================================================================================================================
+SP_worldspawn
+=======================================================================================================================================
+*/
 void SP_worldspawn(void) {
 	char *s;
 
@@ -390,7 +396,6 @@ void CG_ParseEntitiesFromString(void) {
 	cg.numSpawnVars = 0;
 	cg.spawnEntityOffset = 0;
 	cg.numMiscGameModels = 0;
-
 	// the worldspawn is not an actual entity, but it still has a "spawn" function to perform any global setup
 	// needed by a level (setting configstrings or cvars, etc.)
 	if (!CG_ParseSpawnVars()) {

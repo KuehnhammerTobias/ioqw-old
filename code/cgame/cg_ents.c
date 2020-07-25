@@ -185,7 +185,7 @@ void CG_AddLightstyle(centity_t *cent) {
 		// ZTM: NOTE: lightning on ET's Radar map is too bright with multiple light passes (enabled with r_dynamiclight 2 in vanilla ET, currently always done in Spearmint) so scale the light values down
 		//lightval *= 0.25f;
 
-		AngleVectors(cent->currentState.angles, normal, NULL, NULL);
+		AngleVectorsForward(cent->currentState.angles, normal);
 		trap_R_AddDirectedLightToScene(normal, lightval, (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f);
 	// normal global dlight
 	} else {

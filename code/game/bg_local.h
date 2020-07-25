@@ -28,7 +28,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 #define MIN_WALK_NORMAL 0.7f // can't walk on very steep slopes
 #define STEPSIZE 18
-#define JUMP_VELOCITY 270
+#define JUMP_VELOCITY 200
 #define TIMER_LAND 130
 #define OVERCLIP 1.001f
 

@@ -70,7 +70,7 @@ void BotDumpNodeSwitches(bot_state_t *bs) {
 	char netname[MAX_NETNAME];
 
 	ClientName(bs->client, netname, sizeof(netname));
-	BotAI_Print(PRT_MESSAGE, "%s at %1.1f switched more than %d AI nodes\n", netname, FloatTime(), MAX_NODESWITCHES);
+	BotAI_Print(PRT_MESSAGE, "%1.1f: %s switched more than %d AI nodes\n", FloatTime(), netname, MAX_NODESWITCHES);
 
 	for (i = 0; i < numnodeswitches; i++) {
 		BotAI_Print(PRT_MESSAGE, "%s", nodeswitch[i]);
@@ -88,12 +88,18 @@ void BotRecordNodeSwitch(bot_state_t *bs, char *node, char *str, char *s) {
 	char netname[MAX_NETNAME];
 
 	ClientName(bs->client, netname, sizeof(netname));
-	Com_sprintf(nodeswitch[numnodeswitches], 144, "%s at %2.1f entered %s: %s from %s\n", netname, FloatTime(), node, str, s);
-#ifdef DEBUG
-	if (0) {
+	Q_strncpyz(bs->ainodename, node, sizeof(bs->ainodename)); // Tobias DEBUG
+
+	if (!*str) {
+		Com_sprintf(nodeswitch[numnodeswitches], 144, S_COLOR_YELLOW "%2.1f: %s entered %s from %s\n", FloatTime(), netname, node, s);
+	} else {
+		Com_sprintf(nodeswitch[numnodeswitches], 144, S_COLOR_GREEN "%2.1f: %s entered %s (%s) from %s\n", FloatTime(), netname, node, str, s);
+	}
+// Tobias DEBUG
+	if (bot_shownodechanges.integer) {
 		BotAI_Print(PRT_MESSAGE, "%s", nodeswitch[numnodeswitches]);
 	}
-#endif // DEBUG
+// Tobias END
 	numnodeswitches++;
 }
 
@@ -312,6 +318,7 @@ int BotGetItemLongTermGoal(bot_state_t *bs, int tfl, bot_goal_t *goal) {
 
 	// if the bot has no goal
 	if (!trap_BotGetTopGoal(bs->gs, goal)) {
+		//AIEnter_Wait(bs, "BotDeathmatchAI: no ltg on stack"); // Tobias NOTE: Currently disabled (loading 64 bots doesn't work on 'us_intro')
 		//BotAI_Print(PRT_MESSAGE, "no ltg on stack\n");
 		bs->ltg_time = 0;
 	// if the bot touches the current goal
@@ -370,8 +377,8 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 	int areanum, teammates;
 	float croucher;
 	aas_entityinfo_t entinfo;
-	bsp_trace_t bsptrace;
 	bot_waypoint_t *wp;
+	bsp_trace_t bsptrace;
 
 	if (bs->ltgtype == LTG_TEAMHELP && !retreat) {
 		// check for bot typing status message
@@ -474,13 +481,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 						bs->arrive_time = FloatTime();
 					// if the bot wants to crouch
 					} else if (bs->crouch_time > FloatTime()) {
-						// get the start point looking from
 						VectorCopy(bs->origin, start);
-
+						// get the crouch view height
 						start[2] += CROUCH_VIEWHEIGHT;
-						// only try to crouch if the teammate remains visible
+						// only try to crouch if the team mate remains visible
 						BotAI_Trace(&bsptrace, start, NULL, NULL, entinfo.origin, bs->client, MASK_SHOT);
-						// if the teammate is visible from the current position
+						// if the team mate remains visible from the predicted position
 						if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == bs->teammate) {
 							trap_EA_Crouch(bs->client);
 						}
@@ -1310,7 +1316,7 @@ void AIEnter_Stand(bot_state_t *bs, char *s) {
 
 	BotRecordNodeSwitch(bs, "STAND", "", s);
 
-	bs->standfindenemy_time = FloatTime() + 1;
+	bs->standfindenemy_time = FloatTime() + 0.5;
 	bs->ainode = AINode_Stand;
 }
 
@@ -1327,7 +1333,7 @@ int AINode_Stand(bot_state_t *bs) {
 			return qfalse;
 		}
 
-		bs->standfindenemy_time = FloatTime() + 1;
+		bs->standfindenemy_time = FloatTime() + 0.5;
 	}
 	// when done standing
 	if (bs->stand_time < FloatTime()) {
@@ -1501,7 +1507,6 @@ void BotClearPath(bot_state_t *bs, bot_moveresult_t *moveresult) {
 		}
 
 		if (bestmine != -1) {
-			//state->team == TEAM_RED || state->team == TEAM_BLUE
 			// deactivate prox mines in the bot's path by shooting rockets or plasma cells etc. at them
 			BotAI_GetEntityState(bs->proxmines[bestmine], &state);
 			VectorCopy(state.pos.trBase, target);

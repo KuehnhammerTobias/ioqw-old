@@ -1364,6 +1364,7 @@ void Com_Meminfo_f(void) {
 	Com_Printf("%8i high tempHighwater\n", hunk_high.tempHighwater);
 	Com_Printf("\n");
 	Com_Printf("%8i total hunk in use\n", hunk_low.permanent + hunk_high.permanent);
+
 	unused = 0;
 
 	if (hunk_low.tempHighwater > hunk_low.permanent) {

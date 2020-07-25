@@ -112,7 +112,7 @@ void BG_GenerateTracemap(const char *mapname, vec3_t mapcoordsMins, vec3_t mapco
 			tracecount++;
 			// find ground
 			while (1) {
-				// perform traces up to the sky, repeating at a higher start height if we start inside a solid.
+				// perform traces up to the sky, repeating at a higher start height if we start inside a solid
 				if (start[2] <= MIN_WORLD_HEIGHT) {
 					tracemap.ground[j][i] = MIN_WORLD_HEIGHT;
 					break;
@@ -182,7 +182,7 @@ void BG_GenerateTracemap(const char *mapname, vec3_t mapcoordsMins, vec3_t mapco
 			} else {
 				// find sky
 				while (1) {
-					// perform traces up to the sky, repeating at a higher start height if we start inside a solid.
+					// perform traces up to the sky, repeating at a higher start height if we start inside a solid
 					if (start[2] >= MAX_WORLD_HEIGHT) {
 						tracemap.sky[j][i] = MAX_WORLD_HEIGHT;
 						break;
@@ -195,7 +195,7 @@ void BG_GenerateTracemap(const char *mapname, vec3_t mapcoordsMins, vec3_t mapco
 					gen->trace(&tr, start, NULL, NULL, end, ENTITYNUM_NONE, MASK_SOLID);
 					tracecount++;
 
-					if (tr.startsolid) { // stuck in something, skip over it.
+					if (tr.startsolid) { // stuck in something, skip over it
 						// can happen, tr.endpos still is valid even if we're starting in a solid but trace out of it hitting the next surface
 						if (tr.surfaceFlags & SURF_SKY) {
 							// are we in a solid?

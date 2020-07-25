@@ -1287,7 +1287,7 @@ static void NET_GetLocalAddress(void) {
 		Com_Printf("NET_GetLocalAddress: Unable to get list of network interfaces: %s\n", NET_ErrorString());
 	} else {
 		for (search = ifap; search; search = search->ifa_next) {
-			// only add interfaces that are up.
+			// only add interfaces that are up
 			if (ifap->ifa_flags & IFF_UP) {
 				NET_AddLocalAddress(search->ifa_name, search->ifa_addr, search->ifa_netmask);
 			}

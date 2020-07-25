@@ -1389,7 +1389,7 @@ static void S_AL_SrcLoop(alSrcPriority_t priority, sfxHandle_t sfx, const vec3_t
 	sent->loopPriority = priority;
 	sent->loopSfx = sfx;
 	sent->range = range;
-	// if this is not set then the looping sound is stopped.
+	// if this is not set then the looping sound is stopped
 	sent->loopAddedThisFrame = qtrue;
 	// these lines should be called via S_AL_SrcSetup, but we can't call that yet as it buffers sfxes that may change
 	// with subsequent calls to S_AL_SrcLoop

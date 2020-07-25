@@ -264,6 +264,7 @@ typedef struct {
 	int follow1, follow2;			// clientNums for auto-follow spectators
 	int snd_fry;					// sound index for standing in lava
 	int warmupModificationCount;	// for detecting if g_warmup is changed
+	int botReportModificationCount; // Tobias DEBUG
 	// voting state
 	char voteString[MAX_STRING_CHARS];
 	char voteDisplayString[MAX_STRING_CHARS];
@@ -482,6 +483,7 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 int BotAIShutdownClient(int client, qboolean restart);
 int BotAIStartFrame(int time);
 void BotTestAAS(vec3_t origin);
+void Svcmd_BotTeamplayReport_f(void); // Tobias DEBUG
 
 #include "g_team.h" // teamplay specific stuff
 

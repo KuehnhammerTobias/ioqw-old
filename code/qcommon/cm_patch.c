@@ -415,7 +415,6 @@ static facet_t facets[MAX_FACETS];
 
 #define NORMAL_EPSILON 0.0001
 #define DIST_EPSILON 0.02
-
 /*
 =======================================================================================================================================
 CM_PlaneEqual
@@ -1245,7 +1244,7 @@ struct patchCollide_s *CM_GeneratePatchCollide(int width, int height, vec3_t *po
 	CM_SetGridWrapWidth(&grid);
 	CM_SubdivideGridColumns(&grid);
 	CM_RemoveDegenerateColumns(&grid);
-	// we now have a grid of points exactly on the curve the approximate surface defined by these points will be collided against
+	// we now have a grid of points exactly on the curve, the approximate surface defined by these points will be collided against
 	pf = Hunk_Alloc(sizeof(*pf), h_high);
 
 	ClearBounds(pf->bounds[0], pf->bounds[1]);

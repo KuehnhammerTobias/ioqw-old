@@ -2210,7 +2210,13 @@ Float sprites over the player's head.
 static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	int friendFlags, thirdPersonFlags, team;
 	vec3_t origin;
+// Tobias DEBUG
+	clientInfo_t *ci;
+	int clientNum;
 
+	clientNum = cent->currentState.clientNum;
+	ci = &cgs.clientinfo[clientNum];
+// Tobias END
 	VectorCopy(parent->origin, origin);
 
 	origin[2] += 42;
@@ -2227,7 +2233,29 @@ static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	} else {
 		friendFlags = thirdPersonFlags = 0;
 	}
+// Tobias DEBUG
+	if (cg_drawDebug.integer) {
+		if (cg_drawStatusDebug.integer) {
+			if (cgs.gametype > GT_TOURNAMENT) {
+				if (ci) {
+					qhandle_t h;
 
+					h = CG_StatusHandle(ci->teamTask);
+					CG_PlayerFloatSprite(origin, thirdPersonFlags, h);
+					return;
+				}
+			}
+		} else if (cg_drawObstacleDebug.integer) {
+			if (ci) {
+				qhandle_t h;
+
+				h = CG_ObstacleHandle(ci->teamTask);
+				CG_PlayerFloatSprite(origin, thirdPersonFlags, h);
+				return;
+			}
+		}
+	}
+// Tobias END
 	if (cent->currentState.eFlags & EF_CONNECTION) {
 		CG_PlayerFloatSprite(origin, thirdPersonFlags, cgs.media.connectionShader);
 		return;

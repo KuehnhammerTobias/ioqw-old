@@ -56,22 +56,53 @@ float regularupdate_time;
 
 int bot_interbreed;
 int bot_interbreedmatchcount;
-
-vmCvar_t bot_thinktime;
-vmCvar_t bot_memorydump;
+// Tobias DEBUG: new bot test cvars for debugging
+vmCvar_t bot_enable;
+vmCvar_t bot_developer;
+vmCvar_t bot_debug;
+vmCvar_t bot_maxdebugpolys;
+vmCvar_t bot_groundonly;
+vmCvar_t bot_reachability;
+vmCvar_t bot_visualizejumppads;
+vmCvar_t bot_forceclustering;
+vmCvar_t bot_forcereachability;
+vmCvar_t bot_forcewrite;
+vmCvar_t bot_aasoptimize;
 vmCvar_t bot_saveroutingcache;
-vmCvar_t bot_pause;
-vmCvar_t bot_report;
+vmCvar_t bot_thinktime;
+vmCvar_t bot_reloadcharacters;
+vmCvar_t bot_testichat;
+vmCvar_t bot_testrchat;
 vmCvar_t bot_testsolid;
 vmCvar_t bot_testclusters;
-vmCvar_t bot_developer;
+vmCvar_t bot_fastchat;
+vmCvar_t bot_nochat;
+vmCvar_t bot_pause;
+vmCvar_t bot_report;
+vmCvar_t bot_rocketjump;
+vmCvar_t bot_challenge;
 vmCvar_t bot_interbreedchar;
 vmCvar_t bot_interbreedbots;
 vmCvar_t bot_interbreedcycle;
 vmCvar_t bot_interbreedwrite;
+vmCvar_t bot_memorydump;
+vmCvar_t bot_visualrange;
+vmCvar_t bot_checktime;
+vmCvar_t bot_predictobstacles;
+vmCvar_t bot_equalize;
+vmCvar_t bot_equalizer_aim;
+vmCvar_t bot_equalizer_react;
+vmCvar_t bot_equalizer_fembon;
+vmCvar_t bot_equalizer_teambon;
+vmCvar_t bot_noshoot;
+vmCvar_t bot_nowalk;
+vmCvar_t bot_shownodechanges;
 vmCvar_t bot_teambluestrategy;
 vmCvar_t bot_teamredstrategy;
-
+vmCvar_t bot_alt_aggressive;
+vmCvar_t bot_alt_attack;
+vmCvar_t bot_alt_pickup;
+// Tobias END
 void ExitLevel(void);
 
 /*
@@ -296,169 +327,79 @@ void BotTestAAS(vec3_t origin) {
 		}
 	}
 }
-
+// Tobias DEBUG
 /*
 =======================================================================================================================================
 BotReportStatus
 =======================================================================================================================================
 */
 void BotReportStatus(bot_state_t *bs) {
-	char goalname[MAX_MESSAGE_SIZE];
+	char buf[MAX_INFO_STRING];
 	char netname[MAX_MESSAGE_SIZE];
-	char *leader, flagstatus[32];
+	char leader[MAX_MESSAGE_SIZE];
+	char carrying[MAX_MESSAGE_SIZE];
+	char action[MAX_MESSAGE_SIZE];
+	char node[MAX_MESSAGE_SIZE];
+
+	trap_GetConfigstring(CS_BOTINFO + bs->client, buf, sizeof(buf));
+
+	if (!*buf) {
+		return;
+	}
 
 	ClientName(bs->client, netname, sizeof(netname));
 
-	if (Q_stricmp(netname, bs->teamleader) == 0) {
-		leader = "L";
-	} else {
-		leader = "";
-	}
+	Q_strncpyz(leader, Info_ValueForKey(buf, "l"), sizeof(leader));
+	Q_strncpyz(carrying, Info_ValueForKey(buf, "c"), sizeof(carrying));
+	Q_strncpyz(action, Info_ValueForKey(buf, "a"), sizeof(action));
+	Q_strncpyz(node, Info_ValueForKey(buf, "n"), sizeof(node));
 
-	strcpy(flagstatus, "");
-
-	if (gametype == GT_CTF) {
-		if (BotCTFCarryingFlag(bs)) {
-			if (BotTeam(bs) == TEAM_RED) {
-				strcpy(flagstatus, S_COLOR_RED "F");
-			} else {
-				strcpy(flagstatus, S_COLOR_BLUE "F");
-			}
-		}
-	} else if (gametype == GT_1FCTF) {
-		if (Bot1FCTFCarryingFlag(bs)) {
-			if (BotTeam(bs) == TEAM_RED) {
-				strcpy(flagstatus, S_COLOR_RED "F");
-			} else {
-				strcpy(flagstatus, S_COLOR_BLUE "F");
-			}
-		}
-	} else if (gametype == GT_HARVESTER) {
-		if (BotHarvesterCarryingCubes(bs)) {
-			if (BotTeam(bs) == TEAM_RED) {
-				Com_sprintf(flagstatus, sizeof(flagstatus), S_COLOR_RED "%2d", bs->inventory[INVENTORY_REDCUBE]);
-			} else {
-				Com_sprintf(flagstatus, sizeof(flagstatus), S_COLOR_BLUE "%2d", bs->inventory[INVENTORY_BLUECUBE]);
-			}
-		}
-	}
-
-	switch (bs->ltgtype) {
-		case LTG_TEAMHELP:
-		{
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: helping %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_TEAMACCOMPANY:
-		{
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: accompanying %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_DEFENDKEYAREA:
-		{
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: defending %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_GETITEM:
-		{
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: getting item %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_KILL:
-		{
-			ClientName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: killing %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_CAMP:
-		case LTG_CAMPORDER:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: camping\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_PATROL:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: patrolling\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_GETFLAG:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: capturing flag\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_RUSHBASE:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: rushing base\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_RETURNFLAG:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: returning flag\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_ATTACKENEMYBASE:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: attacking the enemy base\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_HARVEST:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: harvesting\n", netname, leader, flagstatus);
-			break;
-		}
-		default:
-		{
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: roaming\n", netname, leader, flagstatus);
-			break;
-		}
-	}
+	BotAI_Print(PRT_MESSAGE, "%-20s%-1s%-2s: %s (%s)\n", netname, leader, carrying, action, node);
 }
 
 /*
 =======================================================================================================================================
-BotTeamplayReport
+Svcmd_BotTeamplayReport_f
 =======================================================================================================================================
 */
-void BotTeamplayReport(void) {
+void Svcmd_BotTeamplayReport_f(void) {
 	int i;
-	char buf[MAX_INFO_STRING];
 
-	BotAI_Print(PRT_MESSAGE, S_COLOR_RED "RED\n");
-
-	for (i = 0; i < level.maxclients; i++) {
-		if (!botstates[i] || !botstates[i]->inuse) {
-			continue;
-		}
-
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
-			continue;
-		}
-		// skip spectators
-		if (atoi(Info_ValueForKey(buf, "t")) == TEAM_RED) {
-			BotReportStatus(botstates[i]);
-		}
+	if (!bot_report.integer) {
+		BotAI_Print(PRT_MESSAGE, "Must set bot_report 1 before using botreport command.\n");
+		return;
 	}
 
-	BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "BLUE\n");
+	if (gametype > GT_TOURNAMENT) {
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "RED\n");
 
-	for (i = 0; i < level.maxclients; i++) {
-		if (!botstates[i] || !botstates[i]->inuse) {
-			continue;
+		for (i = 0; i < level.maxclients; i++) {
+			if (!botstates[i] || !botstates[i]->inuse) {
+				continue;
+			}
+
+			if (BotTeam(botstates[i]) == TEAM_RED) {
+				BotReportStatus(botstates[i]);
+			}
 		}
 
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
-			continue;
+		BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "BLUE\n");
+
+		for (i = 0; i < level.maxclients; i++) {
+			if (!botstates[i] || !botstates[i]->inuse) {
+				continue;
+			}
+
+			if (BotTeam(botstates[i]) == TEAM_BLUE) {
+				BotReportStatus(botstates[i]);
+			}
 		}
-		// skip spectators
-		if (atoi(Info_ValueForKey(buf, "t")) == TEAM_BLUE) {
+	} else {
+		for (i = 0; i < level.maxclients; i++) {
+			if (!botstates[i] || !botstates[i]->inuse) {
+				continue;
+			}
+
 			BotReportStatus(botstates[i]);
 		}
 	}
@@ -488,18 +429,22 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 
 	if (gametype == GT_CTF) {
 		if (BotCTFCarryingFlag(bs)) {
-			strcpy(carrying, "F");
+			if (BotTeam(bs) == TEAM_RED) {
+				strcpy(carrying, "Blue Flag");
+			} else {
+				strcpy(carrying, "Red Flag");
+			}
 		}
 	} else if (gametype == GT_1FCTF) {
 		if (Bot1FCTFCarryingFlag(bs)) {
-			strcpy(carrying, "F");
+			strcpy(carrying, "Neutral Flag");
 		}
 	} else if (gametype == GT_HARVESTER) {
 		if (BotHarvesterCarryingCubes(bs)) {
 			if (BotTeam(bs) == TEAM_RED) {
-				Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_REDCUBE]);
+				Com_sprintf(carrying, sizeof(carrying), "%2d Skull(s)", bs->inventory[INVENTORY_REDCUBE]);
 			} else {
-				Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_BLUECUBE]);
+				Com_sprintf(carrying, sizeof(carrying), "%2d Skull(s)", bs->inventory[INVENTORY_BLUECUBE]);
 			}
 		}
 	}
@@ -507,80 +452,94 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 	switch (bs->ltgtype) {
 		case LTG_GETFLAG:
 		{
-			Com_sprintf(action, sizeof(action), "capturing flag");
+			if (gametype == GT_1FCTF) {
+				Com_sprintf(action, sizeof(action), "Capturing the flag");
+			} else {
+				Com_sprintf(action, sizeof(action), "Capturing the enemy flag");
+			}
+
 			break;
 		}
 		case LTG_ATTACKENEMYBASE:
 		{
-			Com_sprintf(action, sizeof(action), "attacking the enemy base");
+			Com_sprintf(action, sizeof(action), "Attacking the enemy base");
 			break;
 		}
 		case LTG_HARVEST:
 		{
-			Com_sprintf(action, sizeof(action), "harvesting");
+			Com_sprintf(action, sizeof(action), "Harvesting skulls");
 			break;
 		}
 		case LTG_DEFENDKEYAREA:
 		{
 			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "defending %s", goalname);
+			Com_sprintf(action, sizeof(action), "Defending %s", goalname);
 			break;
 		}
 		case LTG_RUSHBASE:
 		{
-			Com_sprintf(action, sizeof(action), "rushing base");
+			Com_sprintf(action, sizeof(action), "Rushing base");
 			break;
 		}
 		case LTG_RETURNFLAG:
 		{
-			Com_sprintf(action, sizeof(action), "returning flag");
+			if (gametype == GT_1FCTF) {
+				Com_sprintf(action, sizeof(action), "Returning the flag");
+			} else {
+				Com_sprintf(action, sizeof(action), "Returning our flag");
+			}
+
 			break;
 		}
 		case LTG_TEAMHELP:
 		{
 			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "helping %s", goalname);
+			Com_sprintf(action, sizeof(action), "Helping %s", goalname);
 			break;
 		}
 		case LTG_TEAMACCOMPANY:
 		{
 			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "accompanying %s", goalname);
+			Com_sprintf(action, sizeof(action), "Accompanying %s", goalname);
 			break;
 		}
 		case LTG_CAMP:
 		case LTG_CAMPORDER:
 		{
-			Com_sprintf(action, sizeof(action), "camping");
+			Com_sprintf(action, sizeof(action), "Camping");
 			break;
 		}
 		case LTG_PATROL:
 		{
-			Com_sprintf(action, sizeof(action), "patrolling");
+			Com_sprintf(action, sizeof(action), "Patrolling");
 			break;
 		}
 		case LTG_GETITEM:
 		{
 			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "getting item %s", goalname);
+			Com_sprintf(action, sizeof(action), "Getting item %s", goalname);
 			break;
 		}
 		case LTG_KILL:
 		{
 			ClientName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "killing %s", goalname);
+			Com_sprintf(action, sizeof(action), "Killing %s", goalname);
 			break;
 		}
 		default:
 		{
-			trap_BotGetTopGoal(bs->gs, &goal);
-			trap_BotGoalName(goal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "roaming %s", goalname);
+			if (!trap_BotGetTopGoal(bs->gs, &goal)) {
+				Com_sprintf(action, sizeof(action), "No Item LTG during %s", bs->ainodename);
+			} else {
+				trap_BotGoalName(goal.number, goalname, sizeof(goalname));
+				Com_sprintf(action, sizeof(action), "Roaming %s", goalname);
+			}
+
 			break;
 		}
 	}
 
-	cs = va("l\\%s\\c\\%s\\a\\%s", leader, carrying, action);
+	cs = va("l\\%s\\c\\%s\\a\\%s\\n\\%s", leader, carrying, action, bs->ainodename);
 
 	trap_SetConfigstring(CS_BOTINFO + bs->client, cs);
 }
@@ -594,6 +553,13 @@ void BotUpdateInfoConfigStrings(void) {
 	int i;
 	char buf[MAX_INFO_STRING];
 
+	// let bot_report 0 run once to clear strings
+	if (bot_report.modificationCount != level.botReportModificationCount) {
+		level.botReportModificationCount = bot_report.modificationCount;
+	} else if (!bot_report.integer) {
+		return;
+	}
+
 	for (i = 0; i < level.maxclients; i++) {
 		if (!botstates[i] || !botstates[i]->inuse) {
 			continue;
@@ -601,14 +567,18 @@ void BotUpdateInfoConfigStrings(void) {
 
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 
-		BotSetInfoConfigString(botstates[i]);
+		if (!bot_report.integer) {
+			trap_SetConfigstring(CS_BOTINFO + i, "");
+		} else {
+			BotSetInfoConfigString(botstates[i]);
+		}
 	}
 }
-
+// Tobias END?
 /*
 =======================================================================================================================================
 BotInterbreedBots
@@ -730,7 +700,7 @@ void BotInterbreeding(void) {
 	trap_Cvar_SetValue("bot_reloadcharacters", 1);
 	// add a number of bots using the desired bot character
 	for (i = 0; i < bot_interbreedbots.integer; i++) {
-		trap_Cmd_ExecuteText(EXEC_INSERT, va("addbot %s 4 free %i %s%d\n", bot_interbreedchar.string, i * 50, bot_interbreedchar.string, i));
+		trap_Cmd_ExecuteText(EXEC_INSERT, va("addbot %s 4 free %i %s %d\n", bot_interbreedchar.string, i * 50, bot_interbreedchar.string, i));
 	}
 
 	trap_Cvar_Set("bot_interbreedchar", "");
@@ -774,29 +744,6 @@ int BotTeamLeader(bot_state_t *bs) {
 	}
 
 	return qtrue;
-}
-
-/*
-=======================================================================================================================================
-AngleDifference
-=======================================================================================================================================
-*/
-float AngleDifference(float ang1, float ang2) {
-	float diff;
-
-	diff = ang1 - ang2;
-
-	if (ang1 > ang2) {
-		if (diff > 180.0) {
-			diff -= 360.0;
-		}
-	} else {
-		if (diff < -180.0) {
-			diff += 360.0;
-		}
-	}
-
-	return diff;
 }
 
 /*
@@ -918,7 +865,7 @@ void BotChangeViewAngles(bot_state_t *bs, float thinktime) {
 	if (bs->viewangles[PITCH] > 180) {
 		bs->viewangles[PITCH] -= 360;
 	}
-	// elementary action: view
+	// elementary action view
 	trap_EA_View(bs->client, bs->viewangles);
 }
 
@@ -1024,7 +971,7 @@ void BotInputToUserCommand(bot_input_t *bi, usercmd_t *ucmd, int delta_angles[3]
 	angles[YAW] = bi->viewangles[YAW];
 	angles[ROLL] = 0;
 
-	AngleVectors(angles, forward, right, NULL);
+	AngleVectorsForwardRight(angles, forward, right);
 	// bot input speed is in the range [0, 400]
 	bi->speed = bi->speed * 127 / 400;
 	// set the view independent movement
@@ -1391,6 +1338,7 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 	bs->ms = trap_BotAllocMoveState();
 	bs->walker = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WALKER, 0, 1);
 	bs->revenge_enemy = -1;
+
 	numbots++;
 
 	if (trap_Cvar_VariableIntegerValue("bot_testichat")) {
@@ -1433,6 +1381,8 @@ int BotAIShutdownClient(int client, qboolean restart) {
 	if (BotChat_ExitGame(bs)) {
 		trap_BotEnterChat(bs->cs, bs->client, CHAT_ALL);
 	}
+
+	trap_SetConfigstring(CS_BOTINFO + bs->client, ""); // Tobias DEBUG
 	// free the move state
 	trap_BotFreeMoveState(bs->ms);
 	// free the goal state
@@ -1568,25 +1518,57 @@ int BotAIStartFrame(int time) {
 	static int lastbotthink_time;
 
 	G_CheckBotSpawn();
-
-	trap_Cvar_Update(&bot_rocketjump);
+// Tobias DEBUG: new bot test cvars for debugging
+	trap_Cvar_Update(&bot_enable);
+	trap_Cvar_Update(&bot_developer);
+	trap_Cvar_Update(&bot_debug);
+	trap_Cvar_Update(&bot_maxdebugpolys);
+	trap_Cvar_Update(&bot_groundonly);
+	trap_Cvar_Update(&bot_reachability);
+	trap_Cvar_Update(&bot_visualizejumppads);
+	trap_Cvar_Update(&bot_forceclustering);
+	trap_Cvar_Update(&bot_forcereachability);
+	trap_Cvar_Update(&bot_forcewrite);
+	trap_Cvar_Update(&bot_aasoptimize);
+	trap_Cvar_Update(&bot_saveroutingcache);
+	trap_Cvar_Update(&bot_thinktime);
+	trap_Cvar_Update(&bot_reloadcharacters);
+	trap_Cvar_Update(&bot_testichat);
+	trap_Cvar_Update(&bot_testrchat);
+	trap_Cvar_Update(&bot_testsolid);
+	trap_Cvar_Update(&bot_testclusters);
 	trap_Cvar_Update(&bot_fastchat);
 	trap_Cvar_Update(&bot_nochat);
-	trap_Cvar_Update(&bot_testrchat);
-	trap_Cvar_Update(&bot_thinktime);
-	trap_Cvar_Update(&bot_memorydump);
-	trap_Cvar_Update(&bot_saveroutingcache);
 	trap_Cvar_Update(&bot_pause);
 	trap_Cvar_Update(&bot_report);
+	trap_Cvar_Update(&bot_rocketjump);
+	trap_Cvar_Update(&bot_challenge);
+	trap_Cvar_Update(&bot_interbreedchar);
+	trap_Cvar_Update(&bot_interbreedbots);
+	trap_Cvar_Update(&bot_interbreedcycle);
+	trap_Cvar_Update(&bot_interbreedwrite);
+	trap_Cvar_Update(&bot_memorydump);
+	trap_Cvar_Update(&bot_visualrange);
+	trap_Cvar_Update(&bot_checktime);
+	trap_Cvar_Update(&bot_predictobstacles);
+	trap_Cvar_Update(&bot_equalize);
+	trap_Cvar_Update(&bot_equalizer_aim);
+	trap_Cvar_Update(&bot_equalizer_react);
+	trap_Cvar_Update(&bot_equalizer_fembon);
+	trap_Cvar_Update(&bot_equalizer_teambon);
+	trap_Cvar_Update(&bot_noshoot);
+	trap_Cvar_Update(&bot_nowalk);
+	trap_Cvar_Update(&bot_shownodechanges);
 	trap_Cvar_Update(&bot_teambluestrategy);
 	trap_Cvar_Update(&bot_teamredstrategy);
+	trap_Cvar_Update(&bot_alt_aggressive);
+	trap_Cvar_Update(&bot_alt_attack);
+	trap_Cvar_Update(&bot_alt_pickup);
 
 	if (bot_report.integer) {
-		//BotTeamplayReport();
-		//trap_Cvar_SetValue("bot_report", 0);
 		BotUpdateInfoConfigStrings();
 	}
-
+// Tobias END
 	if (bot_pause.integer) {
 		// execute bot user commands every frame
 		for (i = 0; i < level.maxclients; i++) {
@@ -1810,6 +1792,38 @@ int BotInitLibrary(void) {
 	if (strlen(buf)) {
 		trap_BotLibVarSet("nochat", buf);
 	}
+// Tobias DEBUG
+	// no shooting
+	trap_Cvar_VariableStringBuffer("bot_noshoot", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("bot_noshoot", buf);
+	}
+	// don't walk
+	trap_Cvar_VariableStringBuffer("bot_nowalk", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("bot_nowalk", buf);
+	}
+	// aggression
+	trap_Cvar_VariableStringBuffer("bot_alt_aggressive", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("bot_alt_aggressive", buf);
+	}
+	// attack
+	trap_Cvar_VariableStringBuffer("bot_alt_attack", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("bot_alt_attack", buf);
+	}
+	// pickup
+	trap_Cvar_VariableStringBuffer("bot_alt_pickup", buf, sizeof(buf));
+
+	if (strlen(buf)) {
+		trap_BotLibVarSet("bot_alt_pickup", buf);
+	}
+// Tobias END
 	// visualize jump pads
 	trap_Cvar_VariableStringBuffer("bot_visualizejumppads", buf, sizeof(buf));
 
@@ -1865,21 +1879,55 @@ BotAISetup
 */
 int BotAISetup(int restart) {
 	int errnum;
-
-	trap_Cvar_Register(&bot_thinktime, "bot_thinktime", "100", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_memorydump, "bot_memorydump", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_saveroutingcache, "bot_saveroutingcache", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_pause, "bot_pause", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_report, "bot_report", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_testsolid, "bot_testsolid", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_testclusters, "bot_testclusters", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_developer, "bot_developer", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_teambluestrategy, "bot_teambluestrategy", "0", 0);
-	trap_Cvar_Register(&bot_teamredstrategy, "bot_teamredstrategy", "0", 0);
+// Tobias DEBUG: new bot test cvars for debugging
+	trap_Cvar_Register(&bot_enable, "bot_enable", "1", 0);
+	trap_Cvar_Register(&bot_developer, "bot_developer", "0", 0);
+	trap_Cvar_Register(&bot_debug, "bot_debug", "0", 0);
+	trap_Cvar_Register(&bot_maxdebugpolys, "bot_maxdebugpolys", "2", 0);
+	trap_Cvar_Register(&bot_groundonly, "bot_groundonly", "1", 0);
+	trap_Cvar_Register(&bot_reachability, "bot_reachability", "0", 0);
+	trap_Cvar_Register(&bot_visualizejumppads, "bot_visualizejumppads", "0", 0);
+	trap_Cvar_Register(&bot_forceclustering, "bot_forceclustering", "0", 0);
+	trap_Cvar_Register(&bot_forcereachability, "bot_forcereachability", "0", 0);
+	trap_Cvar_Register(&bot_forcewrite, "bot_forcewrite", "0", 0);
+	trap_Cvar_Register(&bot_aasoptimize, "bot_aasoptimize", "0", 0);
+	trap_Cvar_Register(&bot_saveroutingcache, "bot_saveroutingcache", "0", 0);
+	trap_Cvar_Register(&bot_thinktime, "bot_thinktime", "100", 0);
+	trap_Cvar_Register(&bot_reloadcharacters, "bot_reloadcharacters", "0", 0);
+	trap_Cvar_Register(&bot_testichat, "bot_testichat", "0", 0);
+	trap_Cvar_Register(&bot_testrchat, "bot_testrchat", "0", 0);
+	trap_Cvar_Register(&bot_testsolid, "bot_testsolid", "0", 0);
+	trap_Cvar_Register(&bot_testclusters, "bot_testclusters", "0", 0);
+	trap_Cvar_Register(&bot_fastchat, "bot_fastchat", "0", 0);
+	trap_Cvar_Register(&bot_nochat, "bot_nochat", "0", 0);
+	trap_Cvar_Register(&bot_pause, "bot_pause", "0", 0);
+	trap_Cvar_Register(&bot_report, "bot_report", "0", 0);
+	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
+	trap_Cvar_Register(&bot_challenge, "bot_challenge", "0", 0);
 	trap_Cvar_Register(&bot_interbreedchar, "bot_interbreedchar", "", 0);
 	trap_Cvar_Register(&bot_interbreedbots, "bot_interbreedbots", "10", 0);
 	trap_Cvar_Register(&bot_interbreedcycle, "bot_interbreedcycle", "20", 0);
 	trap_Cvar_Register(&bot_interbreedwrite, "bot_interbreedwrite", "", 0);
+	trap_Cvar_Register(&bot_memorydump, "bot_memorydump", "0", 0);
+	trap_Cvar_Register(&bot_visualrange, "bot_visualrange", "100000", 0);
+	trap_Cvar_Register(&bot_checktime, "bot_checktime", "0.00001", 0);
+	trap_Cvar_Register(&bot_predictobstacles, "bot_predictobstacles", "1", 0);
+	trap_Cvar_Register(&bot_equalize, "bot_equalize", "1", 0);
+	trap_Cvar_Register(&bot_equalizer_aim, "bot_equalizer_aim", "0.75", 0);
+	trap_Cvar_Register(&bot_equalizer_react, "bot_equalizer_react", "0.55", 0);
+	trap_Cvar_Register(&bot_equalizer_fembon, "bot_equalizer_fembon", "8", 0);
+	trap_Cvar_Register(&bot_equalizer_teambon, "bot_equalizer_teambon", "5", 0); //10
+	trap_Cvar_Register(&bot_noshoot, "bot_noshoot", "0", 0);
+	trap_Cvar_Register(&bot_nowalk, "bot_nowalk", "1", 0);
+	trap_Cvar_Register(&bot_shownodechanges, "bot_shownodechanges", "0", 0);
+	trap_Cvar_Register(&bot_teambluestrategy, "bot_teambluestrategy", "0", 0);
+	trap_Cvar_Register(&bot_teamredstrategy, "bot_teamredstrategy", "0", 0);
+	trap_Cvar_Register(&bot_alt_aggressive, "bot_alt_aggressive", "1", 0);
+	trap_Cvar_Register(&bot_alt_attack, "bot_alt_attack", "1", 0);
+	trap_Cvar_Register(&bot_alt_pickup, "bot_alt_pickup", "1", 0);
+
+	level.botReportModificationCount = bot_report.modificationCount;
+// Tobias END
 	// if the game is restarted for a tournament
 	if (restart) {
 		return qtrue;

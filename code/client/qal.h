@@ -45,7 +45,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #endif
 #endif
 #include "qal_efx.h"
-// hack to enable compiling both on OpenAL SDK and OpenAL-soft.
+// hack to enable compiling both on OpenAL SDK and OpenAL-soft
 #ifndef ALC_ENUMERATE_ALL_EXT
 #define ALC_ENUMERATE_ALL_EXT 1
 #define ALC_DEFAULT_ALL_DEVICES_SPECIFIER	0x1012

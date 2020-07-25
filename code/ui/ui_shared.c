@@ -1607,7 +1607,6 @@ commandDef_t commandList[] = {
 };
 
 int scriptCommandCount = ARRAY_LEN(commandList);
-
 /*
 =======================================================================================================================================
 Item_RunScript
@@ -2977,7 +2976,6 @@ void Item_StartCapture(itemDef_t *item, int key) {
 
 			break;
 		}
-
 		case ITEM_TYPE_SLIDER:
 		{
 			flags = Item_Slider_OverSlider(item, DC->cursorx, DC->cursory);
@@ -4044,7 +4042,6 @@ static bind_t g_bindings[] = {
 };
 
 static const int g_bindCount = ARRAY_LEN(g_bindings);
-
 /*
 =======================================================================================================================================
 Controls_GetKeyAssignment
@@ -4588,7 +4585,7 @@ void Item_ListBox_Paint(itemDef_t *item) {
 
 				x += listPtr->elementWidth;
 				listPtr->endPos++;
-				// fit++;
+				//fit++;
 			}
 		} else {
 
@@ -4647,7 +4644,7 @@ void Item_ListBox_Paint(itemDef_t *item) {
 				}
 
 				y += listPtr->elementHeight;
-				// fit++;
+				//fit++;
 			}
 		} else {
 			x = item->window.rect.x + 1;

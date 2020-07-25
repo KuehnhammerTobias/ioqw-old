@@ -685,7 +685,7 @@ void Con_DrawSolidConsole(float frac) {
 	color[2] = 1.0f;
 	color[3] = 1.0f;
 
-	SCR_FillRect(0, y, SCREEN_WIDTH, 2, color);
+	SCR_FillRect(0, y, SCREEN_WIDTH, 0.33f, color);
 	// draw the version number
 	re.SetColor(g_color_table[ColorIndex(COLOR_WHITE)]);
 

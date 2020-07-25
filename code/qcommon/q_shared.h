@@ -648,6 +648,7 @@ void VectorToAngles(const vec3_t value1, vec3_t angles);
 void AnglesToAxis(const vec3_t angles, vec3_t axis[3]);
 void AxisClear(vec3_t axis[3]);
 void AxisCopy(vec3_t in[3], vec3_t out[3]);
+void SetMovedir(vec3_t angles, vec3_t movedir);
 void SetPlaneSignbits(struct cplane_s *out);
 int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
@@ -655,6 +656,7 @@ qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_
 qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, const vec3_t origin);
 float AngleMod(float a);
 float LerpAngle(float from, float to, float frac);
+float AngleDifference(float ang1, float ang2);
 float AngleSubtract(float a1, float a2);
 void AnglesSubtract(vec3_t v1, vec3_t v2, vec3_t v3);
 float AngleNormalize360(float angle);
@@ -674,6 +676,10 @@ void MatrixSetupTransformFromRotation(matrix_t m, const matrix_t rot, const vec3
 void MatrixTransformPoint2(const matrix_t m, vec3_t inout);
 // Tobias END
 void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+// optimized version of AngleVectors (when only right and up vectors are needed)
+void AngleVectorsRightUp(const vec3_t angles, vec3_t right, vec3_t up);
+// optimized version of AngleVectors (when only forward and right vectors are needed)
+void AngleVectorsForwardRight(const vec3_t angles, vec3_t forward, vec3_t right);
 // optimized version of AngleVectors (when only forward is needed)
 void AngleVectorsForward(const vec3_t angles, vec3_t forward);
 void PerpendicularVector(vec3_t dst, const vec3_t src);
@@ -1083,7 +1089,7 @@ typedef struct usercmd_s {
 	signed char forwardmove, rightmove, upmove;
 } usercmd_t;
 
-#define SCOUT_SPEED_SCALE 1.5
+#define SCOUT_SPEED_SCALE 1.5f
 // if entityState->solid == SOLID_BMODEL, modelindex is an inline model number
 #define SOLID_BMODEL 0xffffff
 

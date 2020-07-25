@@ -152,12 +152,11 @@ When building a pak file, make sure a config.cfg isn't present in it, or configs
 // every time a new pk3 file is built, this checksum must be updated.
 // the easiest way to get it is to just run the game and see what it spits out
 static const unsigned int pak_checksums[] = {
-	3897283467u,
-	2811757899u,
-	2971079541u,
-	2701660775u
+	4087071573u,
+	3709064859u,
+	908855077u,
+	977125798u
 };
-
 // if this is defined, the executable positively won't work with any paks other
 // than the demo pak, even if productid is present. This is only used for our
 // last demo release to prevent the mac and linux users from using the demo

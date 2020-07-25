@@ -1407,7 +1407,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header) {
 					EmitCommand(LAST_COMMAND_SUB_BL_2); // sub bl, 2
 					EmitString("39 44 9F 04"); // cmp eax, dword ptr 4[edi + ebx * 4]
 					EmitBranchConditions(vm, op);
-				break;
+					break;
 				case OP_EQF:
 				case OP_NEF:
 				case OP_LTF:
@@ -1651,7 +1651,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header) {
 #elif _WIN32
 	{
 		DWORD oldProtect = 0;
-		// remove write permissions.
+		// remove write permissions
 		if (!VirtualProtect(vm->codeBase, compiledOfs, PAGE_EXECUTE_READ, &oldProtect)) {
 			Com_Error(ERR_FATAL, "VM_CompileX86: VirtualProtect failed");
 		}

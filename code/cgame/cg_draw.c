@@ -2359,7 +2359,6 @@ static void CG_DrawIntermission(void) {
 	cg.scoreFadeTime = cg.time;
 	cg.scoreBoardShowing = CG_DrawScoreboard();
 }
-
 // Tobias DEBUG
 /*
 =======================================================================================================================================

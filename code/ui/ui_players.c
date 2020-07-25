@@ -1620,7 +1620,7 @@ void UI_PlayerInfo_SetInfo(playerInfo_t *pi, int legsAnim, int torsoAnim, vec3_t
 		}
 
 		pi->muzzleFlashTime = dp_realtime + UI_TIMER_MUZZLE_FLASH;
-		// FIXME play firing sound here
+		// FIXME: play firing sound here
 	}
 
 	currentAnim = pi->torsoAnim & ~ANIM_TOGGLEBIT;

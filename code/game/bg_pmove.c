@@ -727,7 +727,7 @@ static void PM_WalkMove(void) {
 		wishvel[i] = pml.forward[i] * fmove + pml.right[i] * smove;
 	}
 	// when going up or down slopes the wish velocity should Not be zero
-//	wishvel[2] = 0;
+	//wishvel[2] = 0;
 
 	VectorCopy(wishvel, wishdir);
 
@@ -765,7 +765,7 @@ static void PM_WalkMove(void) {
 		pm->ps->velocity[2] -= pm->ps->gravity * pml.frametime;
 	} else {
 		// don't reset the z velocity for slopes
-//		pm->ps->velocity[2] = 0;
+		//pm->ps->velocity[2] = 0;
 	}
 
 	vel = VectorLength(pm->ps->velocity);
@@ -1402,7 +1402,7 @@ static void PM_GroundTrace(void) {
 
 	pm->ps->groundEntityNum = trace.entityNum;
 	// don't reset the z velocity for slopes
-//	pm->ps->velocity[2] = 0;
+	//pm->ps->velocity[2] = 0;
 
 	PM_AddTouchEnt(trace.entityNum);
 }

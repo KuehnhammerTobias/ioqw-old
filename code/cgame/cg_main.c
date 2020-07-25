@@ -124,6 +124,11 @@ vmCvar_t cg_crosshairHealth;
 vmCvar_t cg_draw2D;
 vmCvar_t cg_drawStatus;
 vmCvar_t cg_animSpeed;
+// Tobias DEBUG
+vmCvar_t cg_drawDebug;
+vmCvar_t cg_drawStatusDebug;
+vmCvar_t cg_drawObstacleDebug;
+// Tobias END
 vmCvar_t cg_debugAnim;
 vmCvar_t cg_debugPosition;
 vmCvar_t cg_debugEvents;
@@ -243,9 +248,9 @@ static cvarTable_t cvarTable[] = {
 	{&cg_drawPickups, "cg_drawPickups", "1", CVAR_ARCHIVE},
 	{&cg_drawWeaponBar, "cg_drawWeaponBar", "1", CVAR_ARCHIVE},
 	{&cg_drawStatusHead, "cg_drawStatusHead", "1", CVAR_ARCHIVE},
-	{&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
+	{&cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE},
 	{&cg_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE},
-	{&cg_crosshairSize, "cg_crosshairSize", "12", CVAR_ARCHIVE},
+	{&cg_crosshairSize, "cg_crosshairSize", "10", CVAR_ARCHIVE},
 	{&cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE},
 	{&cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE},
 	{&cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE},
@@ -266,6 +271,11 @@ static cvarTable_t cvarTable[] = {
 	{&cg_bobyaw, "cg_bobyaw", "0.0015", CVAR_ARCHIVE},
 	{&cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT},
 	{&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
+// Tobias DEBUG
+	{&cg_drawDebug, "cg_drawDebug", "1", CVAR_ARCHIVE},
+	{&cg_drawStatusDebug, "cg_drawStatusDebug", "0", CVAR_ARCHIVE},
+	{&cg_drawObstacleDebug, "cg_drawObstacleDebug", "1", CVAR_ARCHIVE},
+// Tobias END
 	{&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
 	{&cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT},
 	{&cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT},
@@ -457,7 +467,6 @@ void QDECL CG_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Print(text);
 }
 
@@ -473,7 +482,6 @@ void QDECL CG_Error(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Error(text);
 }
 
@@ -489,7 +497,6 @@ void QDECL Com_Error(int level, const char *error, ...) {
 	va_start(argptr, error);
 	Q_vsnprintf(text, sizeof(text), error, argptr);
 	va_end(argptr);
-
 	trap_Error(text);
 }
 
@@ -505,7 +512,6 @@ void QDECL Com_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Print(text);
 }
 
@@ -1203,6 +1209,7 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_capture.tga");
 	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_missing.tga");
 	// task shaders
+	cgs.media.roamShader = trap_R_RegisterShaderNoMip("gfx/2d/defer.tga"); // Tobias DEBUG
 	cgs.media.patrolShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/patrol.tga");
 	cgs.media.assaultShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/assault.tga");
 	cgs.media.campShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/camp.tga");

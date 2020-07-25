@@ -44,33 +44,14 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "syn.h" // synonyms
 #include "match.h" // string matching types and vars
 #include "../../ui/menudef.h" // for the voice chats
-// from aasfile.h
-#define AREACONTENTS_MOVER 0x00000400
-#define AREACONTENTS_MODELNUMSHIFT 24
-#define AREACONTENTS_MAXMODELNUM 0xFF
-#define AREACONTENTS_MODELNUM (AREACONTENTS_MAXMODELNUM << AREACONTENTS_MODELNUMSHIFT)
 
 #define MAX_WAYPOINTS 128
 
 bot_waypoint_t botai_waypoints[MAX_WAYPOINTS];
 bot_waypoint_t *botai_freewaypoints;
-// NOTE: not using a cvars which can be updated because the game should be reloaded anyway
+// NOTE: not using a cvar which can be updated because the game should be reloaded anyway
 int gametype; // game type
 
-vmCvar_t bot_rocketjump;
-vmCvar_t bot_fastchat;
-vmCvar_t bot_nochat;
-vmCvar_t bot_testrchat;
-vmCvar_t bot_challenge;
-vmCvar_t bot_visualrange;
-vmCvar_t bot_predictobstacles;
-// Tobias DEBUG: new bot test cvars for debugging
-vmCvar_t bot_equalize;
-vmCvar_t bot_equalizer_aim;
-vmCvar_t bot_equalizer_react;
-vmCvar_t bot_equalizer_fembon;
-vmCvar_t bot_equalizer_teambon;
-// Tobias END
 vmCvar_t g_spSkill;
 
 extern vmCvar_t bot_developer;
@@ -456,7 +437,7 @@ void BotSetTeamStatus(bot_state_t *bs) {
 	int teamtask;
 	aas_entityinfo_t entinfo;
 
-	teamtask = TEAMTASK_PATROL;
+	teamtask = TEAMTASK_NONE; // Tobias DEBUG
 
 	switch (bs->ltgtype) {
 		case LTG_GETFLAG:
@@ -498,9 +479,16 @@ void BotSetTeamStatus(bot_state_t *bs) {
 		case LTG_CAMPORDER:
 			teamtask = TEAMTASK_CAMP;
 			break;
-		default:
+// Tobias DEBUG
+		case LTG_PATROL:
+		case LTG_GETITEM:
+		case LTG_KILL:
 			teamtask = TEAMTASK_PATROL;
 			break;
+		default:
+			teamtask = TEAMTASK_NONE; // roaming
+			break;
+// Tobias END
 	}
 
 	BotSetUserInfo(bs, "teamtask", va("%d", teamtask));
@@ -1648,12 +1636,16 @@ char *EasyClientName(int client, char *buf, int size) {
 			memmove(str2, str1 + 1, strlen(str1 + 1) + 1);
 		}
 	}
-	// remove Mr prefix
-	if ((name[0] == 'm' || name[0] == 'M') && (name[1] == 'r' || name[1] == 'R')) {
+	// remove Mr and Ms prefix
+	if ((name[0] == 'm' || name[0] == 'M') && (name[1] == 'r' || name[1] == 'R' || name[1] == 's' || name[1] == 'S')) {
 		memmove(name, name + 2, strlen(name + 2) + 1);
 	}
 	// only allow lower case alphabet characters
 	ptr = name;
+	// allow first character being upper case
+	if (*ptr >= 'A' && *ptr <= 'Z') {
+		ptr++;
+	}
 
 	while (*ptr) {
 		c = *ptr;
@@ -3918,11 +3910,11 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 	if (bs->crouch_time > FloatTime()) {
 		// get the start point shooting from
 		VectorCopy(bs->origin, start);
-
+		// get the crouch view height
 		start[2] += CROUCH_VIEWHEIGHT;
 		// only try to crouch if the enemy remains visible
 		BotAI_Trace(&bsptrace, start, mins, maxs, entinfo.origin, bs->client, MASK_SHOT);
-		// if the enemy is visible from the current position
+		// if the enemy remains visible from the predicted position
 		if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == attackentity) {
 			movetype = MOVE_CROUCH;
 		}
@@ -5120,10 +5112,11 @@ BotAimAtEnemy
 void BotAimAtEnemy(bot_state_t *bs) {
 	int i;
 	float dist, f, aim_skill, aim_accuracy, speed, reactiontime;
-	vec3_t dir, bestorigin, end, start, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
+	vec3_t origin, dir, bestorigin, end, start, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
 	vec3_t mins = {-4, -4, -4}, maxs = {4, 4, 4};
 	weaponinfo_t wi;
 	aas_entityinfo_t entinfo;
+	aas_clientmove_t move;
 	bot_goal_t goal;
 	bsp_trace_t trace;
 	vec3_t target;
@@ -5354,9 +5347,6 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			if (!(dist > 100 && VectorLengthSquared(dir) < Square(32))) {
 				// if skilled enough and if the weapon is ready to fire, do exact prediction
 				if (aim_skill > 0.8 && bs->cur_ps.weaponstate == WEAPON_READY) {
-					aas_clientmove_t move;
-					vec3_t origin;
-
 					VectorSubtract(entinfo.origin, bs->origin, dir);
 					// distance towards the enemy
 					dist = VectorLength(dir);
@@ -5981,26 +5971,6 @@ void BotMapScripts(bot_state_t *bs) {
 	}
 }
 
-static vec3_t VEC_UP = {0, -1, 0};
-static vec3_t MOVEDIR_UP = {0, 0, 1};
-static vec3_t VEC_DOWN = {0, -2, 0};
-static vec3_t MOVEDIR_DOWN = {0, 0, -1};
-/*
-=======================================================================================================================================
-BotSetMovedir
-=======================================================================================================================================
-*/
-void BotSetMovedir(vec3_t angles, vec3_t movedir) {
-
-	if (VectorCompare(angles, VEC_UP)) {
-		VectorCopy(MOVEDIR_UP, movedir);
-	} else if (VectorCompare(angles, VEC_DOWN)) {
-		VectorCopy(MOVEDIR_DOWN, movedir);
-	} else {
-		AngleVectorsForward(angles, movedir);
-	}
-}
-
 /*
 =======================================================================================================================================
 BotModelMinsMaxs
@@ -6091,7 +6061,7 @@ int BotFuncButtonActivateGoal(bot_state_t *bs, int bspent, bot_activategoal_t *a
 	// get the move direction from the angle
 	trap_AAS_FloatForBSPEpairKey(bspent, "angle", &angle);
 	VectorSet(angles, 0, angle, 0);
-	BotSetMovedir(angles, movedir);
+	SetMovedir(angles, movedir);
 	// button size
 	VectorSubtract(maxs, mins, size);
 	// button origin
@@ -8095,22 +8065,6 @@ void BotSetupDeathmatchAI(void) {
 
 	gametype = trap_Cvar_VariableIntegerValue("g_gametype");
 
-	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
-	trap_Cvar_Register(&bot_fastchat, "bot_fastchat", "0", 0);
-	trap_Cvar_Register(&bot_nochat, "bot_nochat", "0", 0);
-	trap_Cvar_Register(&bot_testrchat, "bot_testrchat", "0", 0);
-	trap_Cvar_Register(&bot_challenge, "bot_challenge", "0", 0);
-	trap_Cvar_Register(&bot_visualrange, "bot_visualrange", "100000", 0);
-	trap_Cvar_Register(&bot_predictobstacles, "bot_predictobstacles", "1", 0);
-// Tobias HACK
-// DEBUG
-	trap_Cvar_Register(&bot_equalize, "bot_equalize", "1", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_aim, "bot_equalizer_aim", "0.75", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_react, "bot_equalizer_react", "0.55", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_fembon, "bot_equalizer_fembon", "8", CVAR_USERINFO|CVAR_ARCHIVE);
-	trap_Cvar_Register(&bot_equalizer_teambon, "bot_equalizer_teambon", "5", CVAR_USERINFO|CVAR_ARCHIVE); //10
-// DEBUGEND
-// Tobias END
 	trap_Cvar_Register(&g_spSkill, "g_spSkill", "3", 0);
 
 	if (gametype == GT_CTF) {

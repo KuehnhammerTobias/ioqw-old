@@ -1453,7 +1453,6 @@ void CG_RegisterWeapon(int weaponNum) {
 			cgs.media.rocketExplosionShader = trap_R_RegisterShader("rocketExplosion");
 			break;
 		case WP_BEAMGUN:
-			//MAKERGB(weaponInfo->flashDlightColor, 0.45f, 0.7f, 1.0f);
 			MAKERGB(weaponInfo->flashDlightColor, 1.0f, 0.85f, 1.0f);
 			weaponInfo->readySound = trap_S_RegisterSound("sound/weapons/melee/fsthum.wav", qfalse);
 			weaponInfo->firingSound = trap_S_RegisterSound("sound/weapons/lightning/lg_hum.wav", qfalse);
