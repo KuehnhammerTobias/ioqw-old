@@ -38,25 +38,25 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 // travel types
 #define MAX_TRAVELTYPES 32
 
-#define TRAVEL_INVALID		 1 // temporary not possible
-#define TRAVEL_WALK			 2 // walking
-#define TRAVEL_CROUCH		 3 // crouching
-#define TRAVEL_BARRIERJUMP	 4 // jumping onto a barrier
-#define TRAVEL_JUMP			 5 // jumping
-#define TRAVEL_LADDER		 6 // climbing a ladder
-#define TRAVEL_WALKOFFLEDGE	 7 // walking of a ledge
-#define TRAVEL_SWIM			 8 // swimming
-#define TRAVEL_WATERJUMP	 9 // jump out of the water
-#define TRAVEL_TELEPORT		10 // teleportation
-#define TRAVEL_ELEVATOR		11 // travel by elevator
-#define TRAVEL_ROCKETJUMP	12 // rocket jumping required for travel
-#define TRAVEL_BFGJUMP		13 // bfg jumping required for travel
-#define TRAVEL_GRAPPLEHOOK	14 // grappling hook required for travel // Tobias TODO: Removing this breaks compatibility!
-#define TRAVEL_DOUBLEJUMP	15 // double jump
-#define TRAVEL_RAMPJUMP		16 // ramp jump
-#define TRAVEL_STRAFEJUMP	17 // strafe jump
-#define TRAVEL_JUMPPAD		18 // jump pad
-#define TRAVEL_FUNCBOB		19 // func bob
+#define TRAVEL_INVALID			 1 // temporary not possible
+#define TRAVEL_WALK				 2 // walking
+#define TRAVEL_CROUCH			 3 // crouching
+#define TRAVEL_BARRIERJUMP		 4 // jumping onto a barrier
+#define TRAVEL_JUMP				 5 // jumping
+#define TRAVEL_LADDER			 6 // climbing a ladder
+#define TRAVEL_WALKOFFLEDGE		 7 // walking of a ledge
+#define TRAVEL_SWIM				 8 // swimming
+#define TRAVEL_WATERJUMP		 9 // jump out of the water
+#define TRAVEL_TELEPORT			10 // teleportation
+#define TRAVEL_ELEVATOR			11 // travel by elevator
+#define TRAVEL_ROCKETJUMP		12 // rocket jumping required for travel
+#define TRAVEL_BFGJUMP			13 // bfg jumping required for travel
+#define TRAVEL_GRAPPLEHOOK		14 // grappling hook required for travel // Tobias TODO: Removing this breaks compatibility!
+#define TRAVEL_DOUBLEJUMP		15 // double jump
+#define TRAVEL_RAMPJUMP			16 // ramp jump
+#define TRAVEL_STRAFEJUMP		17 // strafe jump
+#define TRAVEL_JUMPPAD			18 // jump pad
+#define TRAVEL_FUNCBOB			19 // func bob
 // additional travel flags
 #define TRAVELTYPE_MASK 0xFFFFFF
 
@@ -71,19 +71,19 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define FACE_LIQUIDSURFACE	0x00000020 // face separating liquid and air
 #define FACE_BRIDGE			0x00000040 // can walk over this face if bridge is closed
 // area contents
-#define AREACONTENTS_WATER			0x00000001
-#define AREACONTENTS_LAVA			0x00000002
-#define AREACONTENTS_SLIME			0x00000004
-#define AREACONTENTS_CLUSTERPORTAL	0x00000008
-#define AREACONTENTS_TELEPORTAL		0x00000010
-#define AREACONTENTS_ROUTEPORTAL	0x00000020
-#define AREACONTENTS_TELEPORTER		0x00000040
-#define AREACONTENTS_JUMPPAD		0x00000080
-#define AREACONTENTS_DONOTENTER		0x00000100
-#define AREACONTENTS_VIEWPORTAL		0x00000200
-#define AREACONTENTS_MOVER			0x00000400
-#define AREACONTENTS_NOTTEAM1		0x00000800
-#define AREACONTENTS_NOTTEAM2		0x00010000
+#define AREACONTENTS_WATER				0x00000001
+#define AREACONTENTS_LAVA				0x00000002
+#define AREACONTENTS_SLIME				0x00000004
+#define AREACONTENTS_CLUSTERPORTAL		0x00000008
+#define AREACONTENTS_TELEPORTAL			0x00000010
+#define AREACONTENTS_ROUTEPORTAL		0x00000020
+#define AREACONTENTS_TELEPORTER			0x00000040
+#define AREACONTENTS_JUMPPAD			0x00000080
+#define AREACONTENTS_DONOTENTER			0x00000100
+#define AREACONTENTS_VIEWPORTAL			0x00000200
+#define AREACONTENTS_MOVER				0x00000400
+#define AREACONTENTS_NOTTEAM1			0x00000800
+#define AREACONTENTS_NOTTEAM2			0x00010000
 // number of model of the mover inside this area
 #define AREACONTENTS_MODELNUMSHIFT	24
 #define AREACONTENTS_MAXMODELNUM	0xFF

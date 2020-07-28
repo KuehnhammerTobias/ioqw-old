@@ -275,7 +275,7 @@ void AAS_JumpReachRunStart(aas_reachability_t *reach, vec3_t runstart) {
 	// movement prediction
 	AAS_PredictClientMovement(&move, -1, start, PRESENCE_NORMAL, qtrue, vec3_origin, cmdmove, 1, 2, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_GAP, 0, qfalse);
 	VectorCopy(move.endpos, runstart);
-	// don't enter slime or lava and don't fall from too high
+	// don't fall from too high, don't enter slime or lava and don't fall in gaps
 	if (move.stopevent & (SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE)) {
 		VectorCopy(start, runstart);
 	}
@@ -541,6 +541,7 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 	vec3_t up = {0, 0, 1};
 	aas_plane_t *plane, *plane2, *lplane;
 	aas_trace_t trace, steptrace;
+	aas_trace_t gaptrace;
 
 	if (frametime <= 0) {
 		frametime = 0.1f;
@@ -994,8 +995,6 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 			move->frames = n;
 			return qtrue;
 		} else if (stopevent & SE_GAP) {
-			aas_trace_t gaptrace;
-
 			VectorCopy(org, start);
 
 			start[2] += 24;

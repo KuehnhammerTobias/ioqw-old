@@ -67,7 +67,6 @@ int AAS_UpdateEntity(int entnum, bot_entitystate_t *state) {
 		ent->leaves = NULL;
 		return BLERR_NOERROR;
 	}
-
 	// number of the entity
 	ent->i.number = entnum;
 	// updated so set valid flag

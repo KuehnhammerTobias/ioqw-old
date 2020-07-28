@@ -1249,6 +1249,8 @@ int BotCheckBarrierCrouch(bot_movestate_t *ms, vec3_t dir, float speed) {
 /*
 =======================================================================================================================================
 BotCheckBarrierJump
+
+Tobias NOTE: Currently the Scout is not handled here... e.g.: sv_maxbarrier->value + 30.
 =======================================================================================================================================
 */
 int BotCheckBarrierJump(bot_movestate_t *ms, vec3_t dir, float speed, qboolean doMovement) {
@@ -1403,16 +1405,15 @@ int BotWalkInDirection(bot_movestate_t *ms, vec3_t dir, float speed, int type) {
 		predictSuccess = AAS_PredictClientMovement(&move, ms->entitynum, origin, presencetype, qtrue, velocity, cmdmove, cmdframes, maxframes, 0.1f, stopevent, 0, qfalse);
 		// check if prediction failed
 		if (!predictSuccess) {
-			//botimport.Print(PRT_MESSAGE, "client %d: prediction was stuck in loop\n", ms->client);
+			//botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "Client %d: prediction was stuck in loop.\n", ms->client);
 			return qfalse;
 		}
 		// don't fall from too high, don't enter slime or lava and don't fall in gaps
 		if (move.stopevent & (SE_HITGROUNDDAMAGE|SE_GAP|SE_ENTERSLIME|SE_ENTERLAVA)) {
-			//botimport.Print(PRT_MESSAGE, "client %d: predicted frame %d of %d, would be hurt\n", ms->client, move.frames, maxframes);
-			//if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, "hitground\n");
-			//if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, "slime\n");
-			//if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, "lava\n");
-			//if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, "client %d: predicted frame %d of %d, there is a gap\n", ms->client, move.frames, maxframes);
+			//if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "Client %d: predicted frame %d of %d, hit ground with damage.\n", ms->client, move.frames, maxframes);
+			//if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Client %d: predicted frame %d of %d, there is slime.\n", ms->client, move.frames, maxframes);
+			//if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, S_COLOR_RED "Client %d: predicted frame %d of %d, there is lava.\n", ms->client, move.frames, maxframes);
+			//if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Client %d: predicted frame %d of %d, there is a gap.\n", ms->client, move.frames, maxframes);
 			return qfalse;
 		}
 		// if ground was hit
@@ -1609,7 +1610,7 @@ bot_moveresult_t BotTravel_Walk(bot_movestate_t *ms, aas_reachability_t *reach) 
 	bot_moveresult_t_cleared(result);
 // Tobias NOTE: This is weird, why should we go to the reachability start first? Walk straight to the reachability end instead?
 /*
-	// first walk straight to the reachability start
+	// first move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
@@ -1640,56 +1641,7 @@ bot_moveresult_t BotTravel_Walk(bot_movestate_t *ms, aas_reachability_t *reach) 
 			EA_Crouch(ms->client);
 		}
 	}
-// Tobias NOTE: These code changes are very map dependant (q3dm6, q3dm7, q3dm12), maybe delete all this gap checking code at all (at least for QW maps, or keep it only for obstacles?)
-/*
-	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
 
-	if (ms->moveflags & MFL_WALK) {
-		if (gapdist > 0) {
-			speed = 200 - (180 - gapdist);
-		} else {
-			speed = 200;
-		}
-	} else {
-		if (gapdist > 0) {
-			speed = 400 - (360 - 2 * gapdist);
-		} else {
-			speed = 400;
-		}
-	}
-*/
-/*
-	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
-
-	if (ms->moveflags & MFL_WALK) {
-		speed = 200;
-	} else {
-		if (gapdist > 0) {
-			VectorNormalize(hordir);
-			// get the sideward vector
-			CrossProduct(hordir, up, sideward);
-			// start point
-			VectorMA(ms->origin, 100, sideward, start);
-			// if there is NO gap at the right side
-			if (!BotGapDistance(start, ms->velocity, hordir, ms->entitynum)) {
-				speed = 400;
-				EA_Move(ms->client, sideward, speed);
-#ifdef DEBUG
-				botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Found a gap at %i: Moving to the right side (Speed: %f)\n", gapdist, currentspeed);
-#endif // DEBUG
-			} else {
-				VectorNegate(sideward, sideward);
-				speed = 400;
-				EA_Move(ms->client, sideward, speed);
-#ifdef DEBUG
-				botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Found a gap at %i: Moving to the left side (Speed: %f)\n", gapdist, currentspeed);
-#endif // DEBUG
-			}
-		} else {
-			speed = 400;
-		}
-	}
-*/
 	gapdist = BotGapDistance(ms->origin, ms->velocity, hordir, ms->entitynum);
 
 	if (ms->moveflags & MFL_WALK) {
@@ -1724,14 +1676,13 @@ bot_moveresult_t BotTravel_Walk(bot_movestate_t *ms, aas_reachability_t *reach) 
 				BotCheckBlocked(ms, sideward, qtrue, &result);
 				// elementary action move in direction
 				EA_Move(ms->client, sideward, 400);
-				//VectorCopy(sideward, result.movedir); // Tobias NOTE: no need to save the movement direction here?
+				//VectorCopy(sideward, result.movedir); // Tobias NOTE: we don't have to look at this direction, so no need to save the movement direction here?
 #ifdef DEBUG
-				botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Found a gap at %i: Moving to the left side (Speed: %f)\n", gapdist, currentspeed);
+				botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Found a gap at %i: Moving to the right side (Speed: %f)\n", gapdist, currentspeed);
 #endif // DEBUG
 			}
 		}
 	}
-// Tobias END
 	// check if blocked
 	BotCheckBlocked(ms, hordir, qtrue, &result);
 	// elementary action move in direction
@@ -1825,7 +1776,7 @@ bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *
 	bot_moveresult_t_cleared(result);
 	aas_clientmove_t move;
 
-	// walk straight to the reachability start
+	// move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
@@ -1845,10 +1796,10 @@ bot_moveresult_t BotTravel_BarrierJump(bot_movestate_t *ms, aas_reachability_t *
 	AAS_PredictClientMovement(&move, ms->entitynum, end, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 2, 2, 0.1f, SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP, 0, qfalse);
 	// reduce the speed if the bot will fall into slime, lava or into a gap
 	if (move.stopevent & (SE_HITGROUNDDAMAGE|SE_ENTERLAVA|SE_ENTERSLIME|SE_GAP)) {
-		//if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, "hitground\n");
-		//if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, "lava\n");
-		//if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, "slime\n");
-		//if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, "gap\n");
+		//if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "Client %d: predicted frame %d of %d, hit ground with damage.\n", ms->client, move.frames, maxframes);
+		//if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Client %d: predicted frame %d of %d, there is slime.\n", ms->client, move.frames, maxframes);
+		//if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, S_COLOR_RED "Client %d: predicted frame %d of %d, there is lava.\n", ms->client, move.frames, maxframes);
+		//if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Client %d: predicted frame %d of %d, there is a gap.\n", ms->client, move.frames, maxframes);
 
 		if (ms->moveflags & MFL_WALK) {
 			speed = 200;
@@ -2097,7 +2048,7 @@ bot_moveresult_t BotTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachability_t 
 
 	dir[2] = 0;
 	reachhordist = VectorLength(dir);
-	// walk straight to the reachability start
+	// move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
@@ -2128,10 +2079,11 @@ bot_moveresult_t BotTravel_WalkOffLedge(bot_movestate_t *ms, aas_reachability_t 
 				speed = 200;
 #ifdef DEBUG
 				botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "|_x_  1A: < 20 Predict! rhdist = %1.0f, dist = %1.0f, Gap ? (%i), speed = %1.0f\n", reachhordist, dist, gapdist, DotProduct(ms->velocity, hordir));
-				if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "hitground\n");
-				if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "slime\n");
-				if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "lava\n");
-				if (move.stopevent & SE_TOUCHJUMPPAD) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "jumppad\n");
+				if (move.stopevent & SE_TOUCHJUMPPAD) botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "Client %d: predicted frame %d of %d, hit jumppad.\n", ms->client, move.frames, maxframes);
+				if (move.stopevent & SE_HITGROUNDDAMAGE) botimport.Print(PRT_MESSAGE, S_COLOR_MAGENTA "Client %d: predicted frame %d of %d, hit ground with damage.\n", ms->client, move.frames, maxframes);
+				if (move.stopevent & SE_ENTERSLIME) botimport.Print(PRT_MESSAGE, S_COLOR_GREEN "Client %d: predicted frame %d of %d, there is slime.\n", ms->client, move.frames, maxframes);
+				if (move.stopevent & SE_ENTERLAVA) botimport.Print(PRT_MESSAGE, S_COLOR_RED "Client %d: predicted frame %d of %d, there is lava.\n", ms->client, move.frames, maxframes);
+				if (move.stopevent & SE_GAP) botimport.Print(PRT_MESSAGE, S_COLOR_YELLOW "Client %d: predicted frame %d of %d, there is a gap.\n", ms->client, move.frames, maxframes);
 #endif
 			} else { // Tobias NOTE: this is the default case (no gaps anywhere, no jumppads or lava etc.)
 				speed = 400; // NEW
@@ -2640,7 +2592,7 @@ bot_moveresult_t BotTravel_Teleport(bot_movestate_t *ms, aas_reachability_t *rea
 	if (ms->moveflags & MFL_TELEPORTED) {
 		return result;
 	}
-	// walk straight to center of the teleporter
+	// move straight to center of the teleporter
 	VectorSubtract(reach->start, ms->origin, hordir);
 
 	if (!(ms->moveflags & MFL_SWIMMING)) {
@@ -3243,7 +3195,7 @@ bot_moveresult_t BotTravel_RocketJump(bot_movestate_t *ms, aas_reachability_t *r
 	float dist, speed;
 	bot_moveresult_t_cleared(result);
 
-	// walk straight to the reachability start
+	// move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
@@ -3283,12 +3235,13 @@ bot_moveresult_t BotTravel_RocketJump(bot_movestate_t *ms, aas_reachability_t *r
 	result.ideal_viewangles[PITCH] = 90;
 	// set the view angles directly
 	EA_View(ms->client, result.ideal_viewangles);
-	// view is important for the movement
+	// set the movement view flag (view is important for the movement)
 	result.flags |= MOVERESULT_MOVEMENTVIEWSET;
 	// select the rocket launcher
 	EA_SelectWeapon(ms->client, (int)weapindex_rocketlauncher->value);
 	// weapon is used for movement
 	result.weapon = (int)weapindex_rocketlauncher->value;
+	// set the movement view flag
 	result.flags |= MOVERESULT_MOVEMENTWEAPON;
 
 	VectorCopy(hordir, result.movedir);
@@ -3305,17 +3258,19 @@ bot_moveresult_t BotTravel_BFGJump(bot_movestate_t *ms, aas_reachability_t *reac
 	float dist, speed;
 	bot_moveresult_t_cleared(result);
 
+	// move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
 
 	dist = VectorNormalize(hordir);
-	// look in the movement direction
+	// set the ideal view angles (look in the movement direction)
 	VectorToAngles(hordir, result.ideal_viewangles);
 	// look straight down
 	result.ideal_viewangles[PITCH] = 90;
 
 	if (dist < 5 && fabs(AngleDiff(result.ideal_viewangles[0], ms->viewangles[0])) < 5 && fabs(AngleDiff(result.ideal_viewangles[1], ms->viewangles[1])) < 5) {
+		// move straight to the reachability end
 		hordir[0] = reach->end[0] - ms->origin[0];
 		hordir[1] = reach->end[1] - ms->origin[1];
 		hordir[2] = 0;
@@ -3344,12 +3299,13 @@ bot_moveresult_t BotTravel_BFGJump(bot_movestate_t *ms, aas_reachability_t *reac
 	result.ideal_viewangles[PITCH] = 90;
 	// set the view angles directly
 	EA_View(ms->client, result.ideal_viewangles);
-	// view is important for the movement
+	// set the movement view flag (view is important for the movement)
 	result.flags |= MOVERESULT_MOVEMENTVIEWSET;
 	// select the rocket launcher
 	EA_SelectWeapon(ms->client, (int)weapindex_bfg10k->value);
 	// weapon is used for movement
 	result.weapon = (int)weapindex_bfg10k->value;
+	// set the movement view flag
 	result.flags |= MOVERESULT_MOVEMENTWEAPON;
 	// save the movement direction
 	VectorCopy(hordir, result.movedir);
@@ -3398,7 +3354,7 @@ bot_moveresult_t BotTravel_JumpPad(bot_movestate_t *ms, aas_reachability_t *reac
 	vec3_t hordir;
 	bot_moveresult_t_cleared(result);
 
-	// walk straight to the reachability start
+	// move straight to the reachability start
 	hordir[0] = reach->start[0] - ms->origin[0];
 	hordir[1] = reach->start[1] - ms->origin[1];
 	hordir[2] = 0;
@@ -3505,7 +3461,7 @@ bot_moveresult_t BotMoveInGoalArea(bot_movestate_t *ms, bot_goal_t *goal) {
 	//AAS_ClearShownDebugLines();
 	//AAS_DebugLine(ms->origin, goal->origin, LINECOLOR_RED);
 #endif // DEBUG
-	// walk straight to the goal origin
+	// move straight to the goal origin
 	dir[0] = goal->origin[0] - ms->origin[0];
 	dir[1] = goal->origin[1] - ms->origin[1];
 

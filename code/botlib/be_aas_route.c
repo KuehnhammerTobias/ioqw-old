@@ -78,6 +78,7 @@ AAS_RoutingInfo
 =======================================================================================================================================
 */
 void AAS_RoutingInfo(void) {
+
 	botimport.Print(PRT_MESSAGE, "%d area cache updates\n", numareacacheupdates);
 	botimport.Print(PRT_MESSAGE, "%d portal cache updates\n", numportalcacheupdates);
 	botimport.Print(PRT_MESSAGE, "%d bytes routing cache\n", routingcachesize);

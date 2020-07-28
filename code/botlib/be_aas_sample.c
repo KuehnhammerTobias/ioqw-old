@@ -672,7 +672,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype, int 
 		// bk010221 - old location of FPE hack and divide by zero expression
 		// if the whole to be traced line is totally at the front of this node
 		// only go down the tree with the front child
-		if ((front >= -ON_EPSILON && back >= -ON_EPSILON)) {
+		if (front >= -ON_EPSILON && back >= -ON_EPSILON) {
 			// keep the current start and end point on the stack and go down the tree with the front child
 			tstack_p->nodenum = aasnode->children[0];
 			tstack_p++;
@@ -954,7 +954,7 @@ A simple cross product.
 =======================================================================================================================================
 */
 // void AAS_OrthogonalToVectors(vec3_t v1, vec3_t v2, vec3_t res)
-#define AAS_OrthogonalToVectors(v1, v2, res) \
+#define AAS_OrthogonalToVectors(v1, v2, res)\
 	(res)[0] = ((v1)[1] * (v2)[2]) - ((v1)[2] * (v2)[1]);\
 	(res)[1] = ((v1)[2] * (v2)[0]) - ((v1)[0] * (v2)[2]);\
 	(res)[2] = ((v1)[0] * (v2)[1]) - ((v1)[1] * (v2)[0]);
