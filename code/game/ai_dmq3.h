@@ -122,8 +122,6 @@ qboolean BotEntityVisible(playerState_t *ps, float fov, int ent);
 void BotAimAtEnemy(bot_state_t *bs);
 // check if the bot should attack
 void BotCheckAttack(bot_state_t *bs);
-// check if the bot is blocking a teammate
-void BotCheckBlockedTeammates(bot_state_t *bs);
 // AI when the bot is blocked
 void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, bot_aienter_t activatedonefunc);
 // AI to predict obstacles
@@ -134,6 +132,8 @@ void BotEnableActivateGoalAreas(bot_activategoal_t *activategoal, int enable);
 int BotPopFromActivateGoalStack(bot_state_t *bs);
 // clear the activate goal stack
 void BotClearActivateGoalStack(bot_state_t *bs);
+// check if the bot is blocking a teammate
+void BotCheckBlockedTeammates(bot_state_t *bs);
 // returns the team the bot is in
 int BotTeam(bot_state_t *bs);
 // returns the opposite team of the bot

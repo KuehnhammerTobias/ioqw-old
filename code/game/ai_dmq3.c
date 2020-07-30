@@ -3865,7 +3865,7 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 	}
 	// if the bot is really stupid
 	if (attack_skill < 0.2) {
-		// check blocked teammates
+		// check if the bot is blocking team mates
 		BotCheckBlockedTeammates(bs);
 		return moveresult;
 	}
@@ -6708,45 +6708,6 @@ void BotPrintActivateGoalInfo(bot_state_t *bs, bot_activategoal_t *activategoal,
 
 /*
 =======================================================================================================================================
-BotEntityAvoidanceMove
-=======================================================================================================================================
-*/
-void BotEntityAvoidanceMove(bot_state_t *bs, bot_moveresult_t *moveresult) {
-	vec3_t hordir, angles;
-	int movetype;
-
-	// just some basic dynamic obstacle avoidance code
-	hordir[0] = moveresult->movedir[0];
-	hordir[1] = moveresult->movedir[1];
-	hordir[2] = 0;
-	// if no direction just take a random direction
-	if (VectorNormalize(hordir) < 0.1) {
-		VectorSet(angles, 0, 360 * random(), 0);
-		AngleVectorsForward(angles, hordir);
-	}
-
-	if (moveresult->flags & MOVERESULT_BARRIER_JUMP) {
-		movetype = MOVE_JUMP;
-#ifdef OBSTACLEDEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotEntityAvoidanceMove: Jump\n");
-#endif
-	} else if (moveresult->flags & MOVERESULT_BARRIER_CROUCH) {
-		movetype = MOVE_CROUCH;
-#ifdef OBSTACLEDEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotEntityAvoidanceMove: Crouch\n");
-#endif
-	} else {
-		movetype = MOVE_WALK;
-#ifdef OBSTACLEDEBUG
-		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotEntityAvoidanceMove: Walk\n");
-#endif
-	}
-
-	trap_BotMoveInDirection(bs->ms, hordir, 400, movetype);
-}
-
-/*
-=======================================================================================================================================
 BotRandomMove
 =======================================================================================================================================
 */
@@ -6775,142 +6736,41 @@ void BotRandomMove(bot_state_t *bs, bot_moveresult_t *moveresult, int speed) {
 
 /*
 =======================================================================================================================================
-BotCheckBlockedTeammates
+BotObstacleAvoidanceMove
 =======================================================================================================================================
 */
-void BotCheckBlockedTeammates(bot_state_t *bs) {
-	bot_moveresult_t moveresult;
-	int movetype, i, mindist;
-	aas_entityinfo_t entinfo;
-	gentity_t *ent;
-	float speed, obtrusiveness;
-	vec3_t mins, maxs, end, v3, v2, v1, sideward, angles, up = {0, 0, 1};
-	bsp_trace_t trace;
+void BotObstacleAvoidanceMove(bot_state_t *bs, bot_moveresult_t *moveresult) {
+	vec3_t hordir, angles;
+	int movetype;
 
-	if (gametype < GT_TEAM) {
-		return;
+	// just some basic dynamic obstacle avoidance code
+	hordir[0] = moveresult->movedir[0];
+	hordir[1] = moveresult->movedir[1];
+	hordir[2] = 0;
+	// if no direction just take a random direction
+	if (VectorNormalize(hordir) < 0.1) {
+		VectorSet(angles, 0, 360 * random(), 0);
+		AngleVectorsForward(angles, hordir);
 	}
 
-	if (BotCTFCarryingFlag(bs)) {
-		return;
-	}
-
-	if (Bot1FCTFCarryingFlag(bs)) {
-		return;
-	}
-
-	if (BotHarvesterCarryingCubes(bs)) {
-		return;
-	}
-
-	obtrusiveness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_OBTRUSIVENESS, 0, 1);
-
-	VectorSet(bs->notblocked_dir, 0, 0, 0);
-
-	for (i = 0; i < level.maxclients; i++) {
-		if (i == bs->client) {
-			continue;
-		}
-		// ignore enemies
-		if (!BotSameTeam(bs, i)) {
-			continue;
-		}
-		// get the entity information
-		BotEntityInfo(i, &entinfo);
-		// if this player is active
-		if (!entinfo.valid) {
-			continue;
-		}
-		// if the entity isn't the bot self
-		if (entinfo.number == bs->entitynum) {
-			continue;
-		}
-		// if the entity isn't dead
-		if (EntityIsDead(&entinfo)) {
-			continue;
-		}
-
-		ent = &g_entities[i];
-/*
-		if (VectorLengthSquared(ent->client->ps.velocity) <= 0) {
-			continue;
-		}
-*/
-		// set some movement parameters
+	if (moveresult->flags & MOVERESULT_BARRIER_JUMP) {
+		movetype = MOVE_JUMP;
+#ifdef OBSTACLEDEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotObstacleAvoidanceMove: Jump\n");
+#endif
+	} else if (moveresult->flags & MOVERESULT_BARRIER_CROUCH) {
+		movetype = MOVE_CROUCH;
+#ifdef OBSTACLEDEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotObstacleAvoidanceMove: Crouch\n");
+#endif
+	} else {
 		movetype = MOVE_WALK;
-		mindist = 8;
-		speed = 200;
-		// human players and facing teammates need more space
-		if (!(ent->r.svFlags & SVF_BOT) || BotEntityVisible(&bs->cur_ps, 90, i)) {
-			mindist = 32;
-		}
-		// teammates with an important item needs even more space, and stay away from dangerous teammates (mined/burning players).
-		if (EntityCarriesFlag(&entinfo) || EntityCarriesCubes(&entinfo) || bs->inventory[INVENTORY_SCOUT] || (entinfo.flags & EF_TICKING)) {
-			mindist = 128;
-			speed = 400;
-		}
-
-		mindist += 128 - (128 * obtrusiveness);
-		// safety check, don't force to reach the goal
-		if (mindist >= bs->formation_dist) {
-			bs->formation_dist = mindist;
-		}
-		// calculate the direction towards the teammate
-		v2[2] = 0;
-
-		VectorSubtract(entinfo.origin, bs->origin, v2);
-		VectorNormalize(v2);
-		// now check if the teammate is blocked, increase the distance accordingly
-		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
-		VectorMA(bs->origin, mindist, v2, end);
-		BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-		// if the teammate is too close (blocked)
-		if (trace.entityNum == i && (trace.startsolid || trace.fraction < 1.0)) {
-			// stop crouching to gain speed
-			bs->crouch_time = FloatTime() - 1;
-			// look into the direction of the blocked teammate
-			VectorToAngles(v2, bs->ideal_viewangles);
-			// get the sideward vector
-			CrossProduct(up, v2, sideward);
-			// get the direction the blocked player is moving
-			v1[2] = 0;
-
-			VectorNormalize2(ent->client->ps.velocity, v1);
-			VectorCopy(ent->client->ps.velocity, v1);
-			// the blocked player is moving to his left side, so move to his right side (and vice versa)
-			if (DotProduct(v1, sideward) > -50.0f) {
-				// flip the direction
-				VectorNegate(sideward, sideward);
-			}
-			// also go backwards a little
-			VectorMA(sideward, -1, v2, sideward);
-			// move sidwards
-			if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
-				// flip the direction
-				VectorNegate(sideward, sideward);
-				// move in the other direction
-				if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
-					// try to step back
-					if (!trap_BotMoveInDirection(bs->ms, v2, speed, movetype)) {
-						if (DotProduct(bs->notblocked_dir, bs->notblocked_dir) < 0.1) {
-							VectorSet(angles, 0, 360 * random(), 0);
-							AngleVectorsForward(angles, v3);
-						} else {
-							VectorCopy(bs->notblocked_dir, v3);
-						}
-
-						if (!trap_BotMoveInDirection(bs->ms, v3, speed, movetype)) {
-							VectorSet(bs->notblocked_dir, 0, 0, 0);
-							// move in a random direction in the hope to get out
-							BotRandomMove(bs, &moveresult, speed);
-						} else {
-							VectorCopy(v3, bs->notblocked_dir);
-						}
-					}
-				}
-			}
-		}
+#ifdef OBSTACLEDEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "BotObstacleAvoidanceMove: Walk\n");
+#endif
 	}
+
+	trap_BotMoveInDirection(bs->ms, hordir, 400, movetype);
 }
 
 /*
@@ -7007,7 +6867,7 @@ void BotAIBlocked(bot_state_t *bs, bot_moveresult_t *moveresult, bot_aienter_t a
 					// enable any routing areas that were disabled
 					BotEnableActivateGoalAreas(&activategoal, qtrue);
 					// try to crouch through or jump over obstacles
-					BotEntityAvoidanceMove(bs, moveresult); // Tobias NOTE: why has this to be done here, inside (bspent/activatedonefunc)?
+					BotObstacleAvoidanceMove(bs, moveresult); // Tobias NOTE: why has this to be done here, inside (bspent/activatedonefunc)?
 					return;
 				}
 			}
@@ -7275,6 +7135,153 @@ void BotCheckConsoleMessages(bot_state_t *bs) {
 		}
 		// remove the console message
 		trap_BotRemoveConsoleMessage(bs->cs, handle);
+	}
+}
+
+/*
+=======================================================================================================================================
+BotCheckBlockedTeammates
+=======================================================================================================================================
+*/
+void BotCheckBlockedTeammates(bot_state_t *bs) {
+	bot_moveresult_t moveresult;
+	int movetype, i, mindist, speed;
+	aas_entityinfo_t entinfo;
+	gentity_t *ent;
+	float obtrusiveness;
+	vec3_t mins, maxs, end, v3, v2, v1, sideward, angles, up = {0, 0, 1};
+	bsp_trace_t trace;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
+
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	if (gametype < GT_TEAM) {
+		return;
+	}
+
+	if (BotCTFCarryingFlag(bs)) {
+		return;
+	}
+
+	if (Bot1FCTFCarryingFlag(bs)) {
+		return;
+	}
+
+	if (BotHarvesterCarryingCubes(bs)) {
+		return;
+	}
+
+	obtrusiveness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_OBTRUSIVENESS, 0, 1);
+
+	VectorSet(bs->notblocked_dir, 0, 0, 0);
+
+	for (i = 0; i < level.maxclients; i++) {
+		if (i == bs->client) {
+			continue;
+		}
+		// if on the same team
+		if (!BotSameTeam(bs, i)) {
+			continue;
+		}
+		// get the entity information
+		BotEntityInfo(i, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			continue;
+		}
+		// if the entity isn't the bot self
+		if (entinfo.number == bs->entitynum) {
+			continue;
+		}
+		// if the entity isn't dead
+		if (EntityIsDead(&entinfo)) {
+			continue;
+		}
+
+		ent = &g_entities[i];
+/*
+		if (VectorLengthSquared(ent->client->ps.velocity) <= 0) {
+			continue;
+		}
+*/
+		// set some movement parameters
+		movetype = MOVE_WALK;
+		mindist = 8;
+		speed = 200;
+		// human players and facing teammates need more space
+		if (!(ent->r.svFlags & SVF_BOT) || BotEntityVisible(&bs->cur_ps, 90, i)) {
+			mindist = 32;
+		}
+		// teammates with an important item needs even more space, and stay away from dangerous teammates (mined/burning players).
+		if (EntityCarriesFlag(&entinfo) || EntityCarriesCubes(&entinfo) || bs->inventory[INVENTORY_SCOUT] || (entinfo.flags & EF_TICKING)) {
+			mindist = 128;
+			speed = 400;
+		}
+
+		mindist += 128 - (128 * obtrusiveness);
+		// safety check, don't force to reach the goal
+		if (mindist >= bs->formation_dist) {
+			bs->formation_dist = mindist;
+		}
+#ifdef OBSTACLEDEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: teammate speed = %f, dist = %i, required speed = %i, required mindist = %i\n", netname, VectorLengthSquared(ent->client->ps.velocity), squaredist, speed, mindist);
+#endif
+		// calculate the direction towards the teammate
+		v2[2] = 0;
+
+		VectorSubtract(entinfo.origin, bs->origin, v2);
+		VectorNormalize(v2);
+		// now check if the teammate is blocked, increase the distance accordingly
+		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
+		VectorMA(bs->origin, mindist, v2, end);
+		BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+		// if the teammate is too close (blocked)
+		if (trace.entityNum == i && (trace.startsolid || trace.fraction < 1.0f)) {
+			// stop crouching to gain speed
+			bs->crouch_time = FloatTime() - 1;
+			// look into the direction of the blocked teammate
+			VectorToAngles(v2, bs->ideal_viewangles);
+			// get the sideward vector
+			CrossProduct(up, v2, sideward);
+			// get the direction the blocked player is moving
+			v1[2] = 0;
+
+			VectorNormalize2(ent->client->ps.velocity, v1);
+			VectorCopy(ent->client->ps.velocity, v1);
+			// the blocked player is moving to his left side, so move to his right side (and vice versa)
+			if (DotProduct(v1, sideward) > -50.0f) {
+				// flip the direction
+				VectorNegate(sideward, sideward);
+			}
+			// also go backwards a little
+			VectorMA(sideward, -1, v2, sideward);
+			// move sidwards
+			if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
+				// flip the direction
+				VectorNegate(sideward, sideward);
+				// move in the other direction
+				if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
+					// try to step back
+					if (!trap_BotMoveInDirection(bs->ms, v2, speed, movetype)) {
+						if (DotProduct(bs->notblocked_dir, bs->notblocked_dir) < 0.1) {
+							VectorSet(angles, 0, 360 * random(), 0);
+							AngleVectorsForward(angles, v3);
+						} else {
+							VectorCopy(bs->notblocked_dir, v3);
+						}
+
+						if (!trap_BotMoveInDirection(bs->ms, v3, speed, movetype)) {
+							VectorSet(bs->notblocked_dir, 0, 0, 0);
+							// move in a random direction in the hope to get out
+							BotRandomMove(bs, &moveresult, speed);
+						} else {
+							VectorCopy(v3, bs->notblocked_dir);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
