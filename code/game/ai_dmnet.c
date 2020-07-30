@@ -127,7 +127,7 @@ int BotGetAirGoal(bot_state_t *bs, bot_goal_t *goal) {
 
 		if (areanum) {
 			VectorCopy(bsptrace.endpos, goal->origin);
-			goal->origin[2] -= 2;
+			goal->origin[2] += 32; // Tobias CHECK: why 32 now? Is this too much (was 2)
 			goal->areanum = areanum;
 			goal->mins[0] = -15;
 			goal->mins[1] = -15;
@@ -151,7 +151,7 @@ int BotGetAirGoal(bot_state_t *bs, bot_goal_t *goal) {
 BotGoForAir
 =======================================================================================================================================
 */
-int BotGoForAir(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
+int BotGoForAir(bot_state_t *bs, int tfl, bot_goal_t *ltg, int range) {
 	bot_goal_t goal;
 
 	// if the bot needs air
@@ -187,8 +187,8 @@ int BotGoForAir(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
 BotNearbyGoal
 =======================================================================================================================================
 */
-int BotNearbyGoal(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
-	int ret, dist;
+const int BotNearbyGoal(bot_state_t *bs, int tfl, bot_goal_t *ltg, int range) {
+	int ret;
 // Tobias DEBUG
 #ifdef DEBUG
 	bot_goal_t goal;
@@ -200,20 +200,15 @@ int BotNearbyGoal(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
 #endif
 // Tobias END
 	// check if the bot should go for air
-	if (BotGoForAir(bs, tfl, ltg, range)) {
+	if (BotGoForAir(bs, tfl, ltg, 10)) {
 		return qtrue;
 	}
 	// if doing something important the bot shouldn't be distracted too much
-	if (BotHasEmergencyGoal(bs)) {
-		if (!BotFeelingBad(bs)) {
-			dist = 900;
-		} else {
-			dist = 300;
-		}
+	if (BotOnlyPickupImportantItems(bs)) {
 		// if the bot is just a few secs away from team goal area number
-		if (trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < dist) { // Tobias NOTE: this is wrong, and it was always wrong, teamgoal.areanum is NOT always a base!
+		if (trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < 300) { // Tobias NOTE: this is wrong, and it was always wrong, teamgoal.areanum is NOT always a base!
 			// make the range really small
-			range = 20;
+			range = 10;
 		}
 	}
 // Tobias DEBUG
@@ -345,7 +340,7 @@ int BotGetItemLongTermGoal(bot_state_t *bs, int tfl, bot_goal_t *goal) {
 			bs->ltg_time = FloatTime() + 20;
 		} else { // the bot gets sorta stuck with all the avoid timings, shouldn't happen though
 #ifdef DEBUG
-			char netname[128];
+			char netname[MAX_NETNAME];
 
 			BotAI_Print(PRT_MESSAGE, "%s: no valid ltg (probably stuck)\n", ClientName(bs->client, netname, sizeof(netname)));
 #endif
@@ -391,14 +386,22 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		}
 		// if trying to help the team mate for more than a minute
 		if (bs->teamgoal_time < FloatTime()) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// if the team mate IS visible for quite some time
 		if (bs->teammatevisible_time < FloatTime() - 10) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// get the entity information
 		BotEntityInfo(bs->teammate, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			bs->ltg_time = 0;
+			bs->ltgtype = 0;
+			return qfalse;
+		}
 		// if the team mate is visible
 		if (BotEntityVisible(&bs->cur_ps, 360, bs->teammate)) {
 			// if close just stand still there
@@ -446,10 +449,18 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		if (bs->teamgoal_time < FloatTime()) {
 			BotAI_BotInitialChat(bs, "accompany_stop", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
 			trap_BotEnterChat(bs->cs, bs->teammate, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// get the entity information
 		BotEntityInfo(bs->teammate, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			bs->ltg_time = 0;
+			bs->ltgtype = 0;
+			return qfalse;
+		}
+
 		VectorSubtract(entinfo.origin, bs->origin, dir);
 
 		teammates = BotCountAllTeamMates(bs, 256);
@@ -485,9 +496,9 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 						// get the crouch view height
 						start[2] += CROUCH_VIEWHEIGHT;
 						// only try to crouch if the team mate remains visible
-						BotAI_Trace(&bsptrace, start, NULL, NULL, entinfo.origin, bs->client, MASK_SHOT);
+						BotAI_Trace(&bsptrace, start, mins, maxs, entinfo.origin, bs->client, MASK_SHOT);
 						// if the team mate remains visible from the predicted position
-						if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == bs->teammate) {
+						if (bsptrace.fraction >= 1.0f || bsptrace.entityNum == bs->teammate) {
 							trap_EA_Crouch(bs->client);
 						}
 					// else do some model taunts
@@ -548,6 +559,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		if (bs->teammatevisible_time < FloatTime() - 60) {
 			BotAI_BotInitialChat(bs, "accompany_cannotfind", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
 			trap_BotEnterChat(bs->cs, bs->teammate, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 			// just to make sure the bot won't spam this message
 			bs->teammatevisible_time = FloatTime();
@@ -578,6 +590,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			trap_BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "defend_stop", buf, NULL);
 			trap_BotEnterChat(bs->cs, 0, CHAT_TEAM);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// if very close... go away for some time
@@ -610,10 +623,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			EasyClientName(bs->teamgoal.entitynum, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "kill_done", buf, NULL);
 			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// stop after some time
 		if (bs->teamgoal_time < FloatTime()) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// just roam around
@@ -634,6 +649,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		memcpy(goal, &bs->teamgoal, sizeof(bot_goal_t));
 		// stop after some time
 		if (bs->teamgoal_time < FloatTime()) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 
@@ -641,11 +657,13 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			trap_BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "getitem_notthere", buf, NULL);
 			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		} else if (BotReachedGoal(bs, goal)) {
 			trap_BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "getitem_gotit", buf, NULL);
 			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 
@@ -673,12 +691,14 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
 			}
 
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 		// if the bot decided to camp
 		if (!bs->ordered) {
 			// if the bot should stop camping
 			if (!BotCanCamp(bs)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 		}
@@ -705,6 +725,10 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				VectorToAngles(dir, bs->ideal_viewangles);
 				bs->ideal_viewangles[2] *= 0.5;
 			}
+			// don't crouch when swimming
+			if (trap_AAS_Swimming(bs->origin)) {
+				bs->crouch_time = FloatTime() - 1;
+			}
 			// check if the bot wants to crouch, don't crouch if crouched less than 5 seconds ago
 			if (bs->crouch_time < FloatTime() - 5) {
 				croucher = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CROUCHER, 0, 1);
@@ -712,10 +736,6 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				if (random() < bs->thinktime * croucher) {
 					bs->crouch_time = FloatTime() + 5 + croucher * 15;
 				}
-			}
-			// don't crouch when swimming
-			if (trap_AAS_Swimming(bs->origin)) {
-				bs->crouch_time = FloatTime() - 1;
 			}
 			// if the bot wants to crouch
 			if (bs->crouch_time > FloatTime()) {
@@ -732,6 +752,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					}
 				}
 
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// FIXME: move around a bit
@@ -765,6 +786,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		}
 
 		if (!bs->curpatrolpoint) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 			return qfalse;
 		}
@@ -790,10 +812,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		if (bs->teamgoal_time < FloatTime()) {
 			BotAI_BotInitialChat(bs, "patrol_stop", NULL);
 			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 
 		if (!bs->curpatrolpoint) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 			return qfalse;
 		}
@@ -821,6 +845,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &ctf_redflag, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
@@ -836,10 +861,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 						break;
 				}
 
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// stop after 3 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 
@@ -857,15 +884,18 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
 			// if not carrying the flag anymore
 			if (!BotCTFCarryingFlag(bs)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// quit rushing after 2 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// if touching the base flag the bot should loose the enemy flag
@@ -876,6 +906,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					bs->rushbaseaway_time = FloatTime() + 5 + 10 * random();
 					// FIXME: add chat to tell the others to get back the flag
 				} else {
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 				}
 			}
@@ -901,15 +932,18 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &ctf_redflag, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
 			// if touching the flag
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// stop after 3 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 
@@ -929,10 +963,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			memcpy(goal, &ctf_neutralflag, sizeof(bot_goal_t));
 			// if touching the flag
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// stop after 3 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 
@@ -949,19 +985,23 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &ctf_redflag, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
 			// if not carrying the flag anymore
 			if (!Bot1FCTFCarryingFlag(bs)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// quit rushing after 2 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// if touching the base flag the bot should loose flag
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 
@@ -986,11 +1026,13 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &ctf_redflag, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
 			// quit rushing after 2 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// if touching the base flag the bot should loose the flag
@@ -1011,6 +1053,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			}
 			// stop after some time
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// just roam around
@@ -1034,6 +1077,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &redobelisk, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
@@ -1053,6 +1097,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			}
 			// quit rushing after 2 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 
@@ -1112,11 +1157,13 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 					memcpy(goal, &redobelisk, sizeof(bot_goal_t));
 					break;
 				default:
+					bs->ltg_time = 0;
 					bs->ltgtype = 0;
 					return qfalse;
 			}
 			// quit rushing after 2 minutes
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// if touching the goal
@@ -1139,6 +1186,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			memcpy(goal, &neutralobelisk, sizeof(bot_goal_t));
 			// stop after some time
 			if (bs->teamgoal_time < FloatTime()) {
+				bs->ltg_time = 0;
 				bs->ltgtype = 0;
 			}
 			// if touching the goal
@@ -1551,9 +1599,17 @@ AIEnter_Wait
 =======================================================================================================================================
 */
 void AIEnter_Wait(bot_state_t *bs, char *s) {
+	bot_goal_t goal;
+	char buf[144];
 
-	BotRecordNodeSwitch(bs, "waiting", "", s);
-	bs->wait_time = FloatTime();
+	if (trap_BotGetTopGoal(bs->gs, &goal)) {
+		trap_BotGoalName(goal.number, buf, 144);
+		BotRecordNodeSwitch(bs, S_COLOR_BLUE "WAIT", buf, s);
+	} else {
+		BotRecordNodeSwitch(bs, S_COLOR_BLUE "WAIT", "No goal", s);
+	}
+
+	bs->wait_time = FloatTime(); // Tobias NOTE: setting the wait time here?
 	bs->ainode = AINode_Wait;
 }
 
@@ -1584,6 +1640,14 @@ int AINode_Wait(bot_state_t *bs) {
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
+	}
+
+	if (BotCanAndWantsToRocketJump(bs)) {
+		bs->tfl |= TFL_ROCKETJUMP;
 	}
 	// map specific code
 	BotMapScripts(bs);
@@ -1696,6 +1760,10 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
 	}
 	// map specific code
 	BotMapScripts(bs);
@@ -1920,7 +1988,11 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 	bot_goal_t goal;
 	vec3_t target, dir;
 	bot_moveresult_t moveresult;
+// Tobias DEBUG
+	float checkcvar;
 
+	checkcvar = bot_checktime.value;
+// Tobias END
 	if (BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "SEEK NBG: joined observer.");
 		return qfalse;
@@ -1935,9 +2007,18 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "SEEK NBG: bot dead.");
 		return qfalse;
 	}
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Seek_NBG)) {
+		AIEnter_Wait(bs, "SEEK NBG: waiting.");
+		return qfalse;
+	}
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
 	}
 
 	if (BotCanAndWantsToRocketJump(bs)) {
@@ -1961,14 +2042,9 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		trap_BotPopGoal(bs->gs);
 		// check for new nearby items right away
 		// NOTE: we can NOT reset the check_time to zero because it would create an endless loop of node switches
-		bs->check_time = FloatTime() + 0.05;
+		bs->check_time = FloatTime() + checkcvar; // Tobias DEBUG
 		// go back to seek ltg
 		AIEnter_Seek_LTG(bs, "SEEK NBG: time out.");
-		return qfalse;
-	}
-	// if the bot is waiting for something
-	if (BotAIWaiting(bs, &goal, AIEnter_Seek_NBG)) {
-		AIEnter_Wait(bs, "SEEK NBG: waiting.");
 		return qfalse;
 	}
 	// predict obstacles
@@ -2087,12 +2163,21 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
 	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
+	}
 
 	if (BotCanAndWantsToRocketJump(bs)) {
 		bs->tfl |= TFL_ROCKETJUMP;
 	}
 	// get the team goals
 	BotTeamGoals(bs, qfalse);
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Seek_LTG)) {
+		AIEnter_Wait(bs, "SEEK LTG: waiting.");
+		return qfalse;
+	}
 	// map specific code
 	BotMapScripts(bs);
 	// no enemy
@@ -2114,7 +2199,7 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	}
 	// check for nearby goals periodicly
 	if (bs->check_time < FloatTime()) {
-		bs->check_time = FloatTime() + 0.05;
+		bs->check_time = FloatTime() + checkcvar; // Tobias DEBUG
 		// check if the bot wants to camp
 		BotWantsToCamp(bs);
 		// if carrying a flag and the own flag is at base, or if the bot is trying to get the flag and the own flag is NOT at base the bot shouldn't be distracted too much and should ignore some items
@@ -2139,11 +2224,6 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	// get the current long term goal after checking for NBG's
 	if (!BotLongTermGoal(bs, bs->tfl, qfalse, &goal)) {
 		return qtrue;
-	}
-	// if the bot is waiting for something
-	if (BotAIWaiting(bs, &goal, AIEnter_Seek_LTG)) {
-		AIEnter_Wait(bs, "SEEK LTG: waiting.");
-		return qfalse;
 	}
 	// predict obstacles
 	if (BotAIPredictObstacles(bs, &goal, AIEnter_Seek_LTG)) {
@@ -2246,7 +2326,17 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	vec3_t target;
 	aas_entityinfo_t entinfo;
 	bot_moveresult_t moveresult;
+// Tobias DEBUG
+	float checkcvar;
+	float battleSense;
+#ifdef DEBUG
+	int tt_nbg;
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	checkcvar = bot_checktime.value;
+// Tobias END
 	range = trap_Characteristic_BInteger(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 10000);
 
 	if (BotIsObserver(bs)) {
@@ -2263,12 +2353,6 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 		AIEnter_Respawn(bs, "BATTLE FIGHT: bot dead.");
 		return qfalse;
 	}
-	// if there is another better enemy
-	if (BotFindEnemy(bs, bs->enemy)) {
-#ifdef DEBUG
-		BotAI_Print(PRT_MESSAGE, "AINode_Battle_Fight: found new better enemy.\n");
-#endif
-	}
 	// if no enemy
 	if (bs->enemy < 0) {
 		AIEnter_Seek_LTG(bs, "BATTLE FIGHT: no enemy.");
@@ -2283,6 +2367,12 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 		BotAI_Print(PRT_MESSAGE, "AINode_Battle_Fight: entity invalid -> seek ltg.\n");
 #endif
 		return qfalse;
+	}
+	// if there is another better enemy
+	if (BotFindEnemy(bs, bs->enemy)) {
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, "AINode_Battle_Fight: found new better enemy.\n");
+#endif
 	}
 	// if the enemy is dead
 	if (bs->enemydeath_time) {
@@ -2329,8 +2419,10 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
 	}
-	// update the attack inventory values
-	BotUpdateBattleInventory(bs, bs->enemy);
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
+	}
 	// if the enemy is not visible
 	if (!BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		// if the enemy is NOT visible for 1 second
@@ -2372,7 +2464,15 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, NULL);
 	// aim at the enemy
-	BotAimAtEnemy(bs);
+// Tobias DEBUG
+	battleSense = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_BATTLE_SENSE, 0, 1);
+
+	if (battleSense < 0.5) {
+		BotAimAtEnemy(bs);
+	} else {
+		BotAimAtEnemy_Alt(bs);
+	}
+// DEBUG
 	// attack the enemy if possible
 	BotCheckAttack(bs);
 	// if the bot wants to retreat
@@ -2416,7 +2516,17 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 	vec3_t target, dir;
 	bot_moveresult_t moveresult;
 	int range;
+// Tobias DEBUG
+	float checkcvar;
+	float battleSense;
+#ifdef DEBUG
+	int tt_nbg;
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	checkcvar = bot_checktime.value;
+// Tobias END
 	range = trap_Characteristic_BInteger(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 10000);
 
 	if (BotIsObserver(bs)) {
@@ -2457,9 +2567,18 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
 	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
+	}
 
 	if (BotCanAndWantsToRocketJump(bs)) {
 		bs->tfl |= TFL_ROCKETJUMP;
+	}
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Chase)) {
+		AIEnter_Wait(bs, "BATTLE CHASE: waiting.");
+		return qfalse;
 	}
 	// map specific code
 	BotMapScripts(bs);
@@ -2470,8 +2589,6 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 	VectorCopy(bs->lastenemyorigin, goal.origin);
 	VectorSet(goal.mins, -8, -8, -8);
 	VectorSet(goal.maxs, 8, 8, 8);
-	// update the attack inventory values
-	BotUpdateBattleInventory(bs, bs->enemy);
 	// if the last seen enemy spot is reached the enemy could not be found
 	if (trap_BotTouchingGoal(bs->origin, &goal)) {
 		bs->chase_time = 0;
@@ -2494,11 +2611,8 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 			return qfalse;
 		}
 	}
-	// if the bot is waiting for something
-	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Chase)) {
-		AIEnter_Wait(bs, "BATTLE CHASE: waiting.");
-		return qfalse;
-	}
+	// update the attack inventory values
+	BotUpdateBattleInventory(bs, bs->enemy);
 	// predict obstacles
 	if (BotAIPredictObstacles(bs, &goal, AIEnter_Battle_Chase)) {
 		return qfalse;
@@ -2521,7 +2635,15 @@ int AINode_Battle_Chase(bot_state_t *bs) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);
 	} else if (!(bs->flags & BFL_IDEALVIEWSET)) {
 		if (bs->chase_time > FloatTime() - 2) {
-			BotAimAtEnemy(bs);
+// Tobias DEBUG
+			battleSense = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_BATTLE_SENSE, 0, 1);
+
+			if (battleSense < 0.5) {
+				BotAimAtEnemy(bs);
+			} else {
+				BotAimAtEnemy_Alt(bs);
+			}
+// DEBUG
 		} else {
 			if (trap_BotMovementViewTarget(bs->ms, &goal, bs->tfl, 300, target)) {
 				VectorSubtract(target, bs->origin, dir);
@@ -2573,7 +2695,17 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 	vec3_t target, dir;
 	float attack_skill;
 	int areanum, range;
+// Tobias DEBUG
+	float checkcvar;
+	float battleSense;
+#ifdef DEBUG
+	int tt_nbg;
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	checkcvar = bot_checktime.value;
+// Tobias END
 	range = trap_Characteristic_BInteger(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 10000);
 
 	if (BotIsObserver(bs)) {
@@ -2616,11 +2748,20 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		BotAI_Print(PRT_MESSAGE, "AINode_Battle_Retreat: found new better enemy.\n");
 #endif
 	}
+	// if the bot is waiting for something
+	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Retreat)) {
+		AIEnter_Wait(bs, "BATTLE RETREAT: waiting.");
+		return qfalse;
+	}
 	// get the team goals
 	BotTeamGoals(bs, qtrue);
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
 	}
 	// map specific code
 	BotMapScripts(bs);
@@ -2691,11 +2832,6 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		AIEnter_Battle_SuicidalFight(bs, "battle retreat: no way out");
 		return qfalse;
 	}
-	// if the bot is waiting for something
-	if (BotAIWaiting(bs, &goal, AIEnter_Battle_Retreat)) {
-		AIEnter_Wait(bs, "BATTLE RETREAT: waiting.");
-		return qfalse;
-	}
 	// predict obstacles
 	if (BotAIPredictObstacles(bs, &goal, AIEnter_Battle_Retreat)) {
 		return qfalse;
@@ -2719,7 +2855,15 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 		// if the bot is skilled enough
 		if (attack_skill > 0.3) {
 			//&& BotEntityVisible(&bs->cur_ps, 360, bs->enemy)
-			BotAimAtEnemy(bs);
+// Tobias DEBUG
+			battleSense = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_BATTLE_SENSE, 0, 1);
+
+			if (battleSense < 0.5) {
+				BotAimAtEnemy(bs);
+			} else {
+				BotAimAtEnemy_Alt(bs);
+			}
+// DEBUG
 		} else {
 			if (trap_BotMovementViewTarget(bs->ms, &goal, bs->tfl, 300, target)) {
 				VectorSubtract(target, bs->origin, dir);
@@ -2771,6 +2915,7 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	bot_moveresult_t moveresult;
 	float attack_skill;
 	vec3_t target, dir;
+	float battleSense;
 
 	if (BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "BATTLE NBG: joined observer.");
@@ -2809,6 +2954,10 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	// if in lava or slime the bot should be able to get out
 	if (BotInLavaOrSlime(bs)) {
 		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
 	}
 
 	if (BotCanAndWantsToRocketJump(bs)) {

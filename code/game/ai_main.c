@@ -182,19 +182,13 @@ int BotAI_GetClientState(int clientNum, playerState_t *state) {
 	if (!ent->inuse) {
 		return qfalse;
 	}
-/* // Tobias CHECK: was this the reason why monster did crash the game in the past? Well, now it only spams the scoreboard with error messages at intermission.
+
 	if (!ent->r.linked) {
 		return qfalse;
 	}
-*/
-	if (gametype <= GT_HARVESTER) { // Tobias CHECK: yeah, this is ugly, is it safe to remove this extra check? Monsters will never spawn in arena gametypes.
-		if (!ent->client) {
-			return qfalse;
-		}
 
-		if (ent->client->pers.connected != CON_CONNECTED) {
-			return qfalse;
-		}
+	if (ent->client->pers.connected != CON_CONNECTED) {
+		return qfalse;
 	}
 
 	ps = G_GetEntityPlayerState(ent);
@@ -788,6 +782,97 @@ float BotChangeViewAngle(float angle, float ideal_angle, float speed) {
 
 /*
 =======================================================================================================================================
+BotViewReaction
+=======================================================================================================================================
+*/
+static void BotViewReaction(bot_state_t *bs, vec3_t perceivedViewDistortion) {
+	float currenttime, reactiontime, upper_timelimit, lower_timelimit, besttime, upper_timelimit2, lower_timelimit2, t;
+	int bestentry, numentries, numentries2, i;
+	vec3_t diff, avgAngles, avgPrcvAngles, avgAngles2;
+
+	currenttime = FloatTime();
+
+	if (bs->viewhistory.lastUpdateTime <= currenttime - 0.001) {
+		bs->viewhistory.lastUpdateTime = currenttime;
+		// save viewangles
+		bs->viewhistory.entryTab[bs->viewhistory.oldestEntry].time = currenttime;
+
+		VectorCopy(bs->ideal_viewangles, bs->viewhistory.entryTab[bs->viewhistory.oldestEntry].ideal_view);
+		VectorSubtract(bs->viewangles, bs->viewhistory.lastviewcommand, diff);
+		VectorCopy(diff, bs->viewhistory.entryTab[bs->viewhistory.oldestEntry].viewdistortion);
+
+		bs->viewhistory.oldestEntry++;
+
+		if (bs->viewhistory.oldestEntry >= VIEWHISTORY_SIZE) {
+			bs->viewhistory.oldestEntry = 0;
+		}
+	}
+
+	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
+
+	upper_timelimit = currenttime;
+	lower_timelimit = upper_timelimit - 2 * reactiontime;
+
+	upper_timelimit2 = currenttime;
+	lower_timelimit2 = upper_timelimit2 - 4 * reactiontime;
+
+	besttime = 0;
+	bestentry = -1;
+
+	VectorClear(avgAngles);
+	VectorClear(avgPrcvAngles);
+	VectorClear(avgAngles2);
+
+	numentries = numentries2 = 0;
+
+	for (i = 0; i < VIEWHISTORY_SIZE; i++) {
+		t = bs->viewhistory.entryTab[i].time;
+
+		if (t <= upper_timelimit) {
+			if (t > besttime) {
+				besttime = t;
+				bestentry = i;
+			}
+
+			if (t >= lower_timelimit) {
+				numentries++;
+				AnglesSubtract(bs->viewhistory.entryTab[i].ideal_view, avgAngles, diff);
+				VectorMA(avgAngles, 1.0 / numentries, diff, avgAngles);
+				AnglesSubtract(bs->viewhistory.entryTab[i].viewdistortion, avgPrcvAngles, diff);
+				VectorMA(avgPrcvAngles, 1.0 / numentries, diff, avgPrcvAngles);
+			}
+		}
+
+		if (t <= upper_timelimit2) {
+			if (t >= lower_timelimit2) {
+				numentries2++;
+				AnglesSubtract(bs->viewhistory.entryTab[i].ideal_view, avgAngles2, diff);
+				VectorMA(avgAngles2, 1.0 / numentries2, diff, avgAngles2);
+			}
+		}
+	}
+
+	if (numentries <= 0) {
+		if (bestentry >= 0) {
+			VectorCopy(bs->viewhistory.entryTab[bestentry].ideal_view, avgAngles);
+			VectorCopy(bs->viewhistory.entryTab[bestentry].viewdistortion, avgPrcvAngles);
+		} else {
+			VectorCopy(bs->viewangles, avgAngles);
+		}
+	}
+
+	if (numentries2 > 0) {
+		// predict the ideal view angles
+		AnglesSubtract(avgAngles, avgAngles2, diff);
+		VectorMA(avgAngles, 1, diff, avgAngles);
+	}
+
+	VectorCopy(avgAngles, bs->viewhistory.real_viewangles);
+	VectorCopy(avgPrcvAngles, perceivedViewDistortion);
+}
+
+/*
+=======================================================================================================================================
 BotChangeViewAngles
 =======================================================================================================================================
 */
@@ -1116,6 +1201,28 @@ int BotAI(int client, float thinktime) {
 		BotAI_Print(PRT_FATAL, "BotAI: failed to get player state for player %d\n", client);
 		return qfalse;
 	}
+	// add the delta angles to the bot's current view angles
+	for (j = 0; j < 3; j++) {
+		bs->viewangles[j] = AngleMod(bs->viewangles[j] + SHORT2ANGLE(bs->cur_ps.delta_angles[j]));
+	}
+	// increase the local time of the bot
+	bs->thinktime = thinktime;
+	// origin of the bot
+	VectorCopy(bs->cur_ps.origin, bs->origin);
+	// eye coordinates of the bot
+	VectorCopy(bs->cur_ps.origin, bs->eye);
+
+	bs->eye[2] += bs->cur_ps.viewheight;
+	// get the area the bot is in
+	bs->areanum = BotPointAreaNum(bs->origin);
+	// the real AI
+	BotDeathmatchAI(bs, thinktime);
+	// set the weapon selection every AI frame
+	trap_EA_SelectWeapon(bs->client, bs->weaponnum);
+	// subtract the delta angles
+	for (j = 0; j < 3; j++) {
+		bs->viewangles[j] = AngleMod(bs->viewangles[j] - SHORT2ANGLE(bs->cur_ps.delta_angles[j]));
+	}
 	// retrieve any waiting server commands
 	while (trap_BotGetServerCommand(client, buf, sizeof(buf))) {
 		// have buf point to the command and args to the command arguments
@@ -1159,28 +1266,6 @@ int BotAI(int client, float thinktime) {
 		} else if (!Q_stricmp(buf, "clientLevelShot")) {
 			/*ignore*/
 		}
-	}
-	// add the delta angles to the bot's current view angles
-	for (j = 0; j < 3; j++) {
-		bs->viewangles[j] = AngleMod(bs->viewangles[j] + SHORT2ANGLE(bs->cur_ps.delta_angles[j]));
-	}
-	// increase the local time of the bot
-	bs->thinktime = thinktime;
-	// origin of the bot
-	VectorCopy(bs->cur_ps.origin, bs->origin);
-	// eye coordinates of the bot
-	VectorCopy(bs->cur_ps.origin, bs->eye);
-
-	bs->eye[2] += bs->cur_ps.viewheight;
-	// get the area the bot is in
-	bs->areanum = BotPointAreaNum(bs->origin);
-	// the real AI
-	BotDeathmatchAI(bs, thinktime);
-	// set the weapon selection every AI frame
-	trap_EA_SelectWeapon(bs->client, bs->weaponnum);
-	// subtract the delta angles
-	for (j = 0; j < 3; j++) {
-		bs->viewangles[j] = AngleMod(bs->viewangles[j] - SHORT2ANGLE(bs->cur_ps.delta_angles[j]));
 	}
 	// everything was ok
 	return qtrue;

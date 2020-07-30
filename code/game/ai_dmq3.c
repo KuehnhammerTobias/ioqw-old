@@ -633,6 +633,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 		BotEntityInfo(bs->teammate, &entinfo);
 		// if the team mate being accompanied no longer carries the flag
 		if (!EntityCarriesFlag(&entinfo)) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 	}
@@ -776,6 +777,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 	}
 	// if the bot decided to do something on its own and has a last ordered goal
 	if (!bs->ordered && bs->lastgoal_ltgtype) {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 	}
 	// if already a CTF or team goal
@@ -842,6 +844,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 
 		BotSetTeamStatus(bs);
 	} else {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 		// set the time the bot will stop roaming
 		bs->ctfroam_time = FloatTime() + CTF_ROAM_TIME;
@@ -914,6 +917,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 		BotEntityInfo(bs->teammate, &entinfo);
 		// if the team mate being accompanied no longer carries the flag
 		if (!EntityCarriesFlag(&entinfo)) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 	}
@@ -1027,6 +1031,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 	}
 	// if the bot decided to do something on its own and has a last ordered goal
 	if (!bs->ordered && bs->lastgoal_ltgtype) {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 	}
 	// if already a CTF or team goal
@@ -1092,6 +1097,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 
 		BotSetTeamStatus(bs);
 	} else {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 		// set the time the bot will stop roaming
 		bs->ctfroam_time = FloatTime() + CTF_ROAM_TIME;
@@ -1213,6 +1219,7 @@ void BotObeliskSeekGoals(bot_state_t *bs) {
 
 		BotSetTeamStatus(bs);
 	} else {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 		// set the time the bot will stop roaming
 		bs->ctfroam_time = FloatTime() + CTF_ROAM_TIME;
@@ -1289,6 +1296,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 		BotEntityInfo(bs->teammate, &entinfo);
 		// if the team mate being accompanied no longer carries the flag
 		if (!EntityCarriesCubes(&entinfo)) {
+			bs->ltg_time = 0;
 			bs->ltgtype = 0;
 		}
 	}
@@ -1385,6 +1393,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 
 		BotSetTeamStatus(bs);
 	} else {
+		bs->ltg_time = 0;
 		bs->ltgtype = 0;
 		// set the time the bot will stop roaming
 		bs->ctfroam_time = FloatTime() + CTF_ROAM_TIME;
@@ -1851,31 +1860,27 @@ void BotSetupForMovement(bot_state_t *bs) {
 	initmove.entitynum = bs->entitynum;
 	initmove.client = bs->client;
 	initmove.thinktime = bs->thinktime;
-
-	VectorClear(initmove.viewoffset);
 	// set presence type
 	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
 		initmove.presencetype = PRESENCE_CROUCH;
 	} else {
 		initmove.presencetype = PRESENCE_NORMAL;
 	}
-
-	initmove.viewoffset[2] += bs->cur_ps.viewheight;
 	// set the onground flag
 	if (bs->cur_ps.groundEntityNum != ENTITYNUM_NONE) {
 		initmove.or_moveflags |= MFL_ONGROUND;
+	}
+	// set the walk flag
+	if (BotWantsToWalk(bs)) {
+		initmove.or_moveflags |= MFL_WALK;
 	}
 	// set the waterjump flag
 	if ((bs->cur_ps.pm_flags & PMF_TIME_WATERJUMP) && (bs->cur_ps.pm_time > 0)) {
 		initmove.or_moveflags |= MFL_WATERJUMP;
 	}
 	// set the scout flag
-	if (bs->inventory[INVENTORY_SCOUT]) {
+	if (BotHasScout(bs)) {
 		initmove.or_moveflags |= MFL_SCOUT;
-	}
-	// set the walk flag
-	if (BotWantsToWalk(bs)) {
-		initmove.or_moveflags |= MFL_WALK;
 	}
 	// set the teleported flag
 	if ((bs->cur_ps.pm_flags & PMF_TIME_KNOCKBACK) && (bs->cur_ps.pm_time > 0)) {
@@ -3250,7 +3255,7 @@ static qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 BotAIWaiting
 =======================================================================================================================================
 */
-qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal) {
+qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal, bot_aienter_t activatedonefunc) {
 
 	// never wait if there is an enemy
 	if (bs->enemy >= 0) {
@@ -3260,10 +3265,21 @@ qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal) {
 	if (level.clients[bs->client].lasthurt_time > level.time - 1000) {
 		return qfalse;
 	}
+	// never wait when standing in lava or slime
+	if (BotInLavaOrSlime(bs)) {
+		return qfalse;
+	}
+	// never wait if the bot is in water
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		return qfalse;
+	}
 	// if the bot is waiting for a teammate to pick up items
 	if (BotAvoidItemPickup(bs, goal)) {
 		// pop the current goal from the stack
 		trap_BotPopGoal(bs->gs); // Tobias NOTE: without this we get an "goal heap overflow" error, why?
+		// reset the avoid goals and the avoid reach
+		trap_BotResetAvoidGoals(bs->gs); // Tobias NOTE: is this really needed?
+		trap_BotResetAvoidReach(bs->ms); // Tobias NOTE: is this really needed?
 		return qtrue;
 	}
 
@@ -3340,6 +3356,380 @@ static qboolean BotHasEmergencyGoal(bot_state_t *bs) {
 
 /*
 =======================================================================================================================================
+BotNearbyGoalPickupRange_NoLTG
+
+Used to determine the range for how far the bot should check for picking up items.
+Used for AI node 'BATTLE FIGHT' and AI node 'BATTLE CHASE'.
+=======================================================================================================================================
+*/
+const int BotNearbyGoalPickupRange_NoLTG(bot_state_t *bs) {
+	float selfpreservation, nbg_multiplier;
+	int range;
+	aas_entityinfo_t entinfo;
+	vec3_t dir, angles;
+// Tobias DEBUG
+#ifdef DEBUG
+	char buf1[MAX_INFO_STRING];
+	char action[MAX_MESSAGE_SIZE];
+	char netname[MAX_NETNAME];
+
+	ClientName(bs->client, netname, sizeof(netname));
+
+	nbg_multiplier = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 100);
+
+	if (nbg_multiplier == 0.0) {
+		range = 150;
+		// FIGHT is drawn in RED
+		if (bs->ainode == AINode_Battle_Fight) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Range = %i.\n", netname, range);
+		// CHASE is drawn in CYAN
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: Range = %i.\n", netname, range);
+		}
+
+		return range;
+	}
+#endif
+// Tobias END
+	selfpreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_SELFPRESERVATION, 0, 1);
+	nbg_multiplier = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 100);
+	// default range
+	range = 100;
+	// current enemy
+	if (bs->enemy >= 0) {
+		// get the entity information
+		BotEntityInfo(bs->enemy, &entinfo);
+		// if the entity information is valid
+		if (entinfo.valid) {
+			// if the bot is using the gauntlet
+			if (bs->weaponnum == WP_GAUNTLET) {
+				// if the enemy is near enough, check if we can attack the enemy from behind
+				if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+					VectorSubtract(bs->origin, entinfo.origin, dir);
+					VectorToAngles(dir, angles);
+					// if not in the enemy's field of vision, attack!
+					if (!InFieldOfVision(entinfo.angles, 180, angles)) {
+// Tobias DEBUG
+#ifdef DEBUG
+						BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: BACKSTABBING! Range = %i.\n", netname, range);
+#endif
+// Tobias END
+						return 10;
+					}
+				}
+			}
+			// if the bot is out for revenge
+			if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+				range -= 20;
+			}
+		}
+	}
+	// if the bot is using the gauntlet
+	if (bs->weaponnum == WP_GAUNTLET) {
+		return 300;
+	}
+	// if the bot has the quad damage powerup
+	if (bs->inventory[INVENTORY_QUAD]) {
+		range -= 50;
+	}
+	// if the bot has the invisibility powerup
+	if (bs->inventory[INVENTORY_INVISIBILITY]) {
+		range -= 50;
+	}
+	// if the bot has the doubler powerup
+	if (bs->inventory[INVENTORY_DOUBLER]) {
+		range -= 50;
+	}
+	// if the bot has the scout powerup
+	if (bs->inventory[INVENTORY_SCOUT]) {
+		range += 50;
+	}
+	// if the bot can use the machine gun
+	if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
+		range -= 10;
+	}
+	// if the bot can use the chain gun
+	if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
+		range -= 50;
+	}
+		// if the bot can use the shot gun
+	if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the nail gun
+	if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the rocket launcher
+	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the beam gun
+	if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
+		range -= 10;
+	}
+	// if the bot can use the railgun
+	if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
+		range -= 50;
+	}
+	// if the bot can use the plasma gun
+	if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
+		range -= 10;
+	}
+	// if the bot can use the bfg
+	if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
+		range -= 10;
+	}
+	// if the bot is low on health
+	if (selfpreservation < 0.9) {
+		range -= bs->inventory[INVENTORY_HEALTH];
+	}
+	// if the bot accompanies someone
+	if (bs->ltgtype == LTG_TEAMACCOMPANY && !BotTeamFlagCarrierVisible(bs)) {
+		range *= 4;
+		// if the team mate isn't visible for quite some time
+		if (bs->teammatevisible_time < FloatTime() - 5) {
+			range *= 0.25;
+		}
+	}
+
+	range *= nbg_multiplier;
+	// just for safety sake
+	if (range < 10) {
+		range = 10;
+	}
+// Tobias DEBUG
+#ifdef DEBUG
+	// FIGHT is drawn in RED
+	if (bs->ainode == AINode_Battle_Fight) {
+		if (bot_report.integer) {
+			trap_GetConfigstring(CS_BOTINFO + bs->client, buf1, sizeof(buf1));
+			Q_strncpyz(action, Info_ValueForKey(buf1, "a"), sizeof(action));
+
+			if (!*buf1) {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Range = %i.\n", netname, range);
+			} else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: %s Range = %i.\n", netname, action, range);
+			}
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Range = %i.\n", netname, range);
+		}
+	// CHASE is drawn in CYAN
+	} else {
+		if (bot_report.integer) {
+			trap_GetConfigstring(CS_BOTINFO + bs->client, buf1, sizeof(buf1));
+			Q_strncpyz(action, Info_ValueForKey(buf1, "a"), sizeof(action));
+
+			if (!*buf1) {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: Range = %i.\n", netname, range);
+			} else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: %s Range = %i.\n", netname, action, range);
+			}
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: Range = %i.\n", netname, range);
+		}
+	}
+#endif
+// Tobias END
+	return (int)range;
+}
+
+/*
+=======================================================================================================================================
+BotNearbyGoalPickupRange_LTG
+
+Used to determine the range for how far the bot should check for picking up items.
+Used for AI node 'SEEK LTG' and AI node 'BATTLE RETREAT'.
+=======================================================================================================================================
+*/
+const int BotNearbyGoalPickupRange_LTG(bot_state_t *bs) {
+	float selfpreservation, nbg_multiplier;
+	int range;
+// Tobias DEBUG
+#ifdef DEBUG
+	char buf1[MAX_INFO_STRING];
+	char action[MAX_MESSAGE_SIZE];
+	char netname[MAX_NETNAME];
+
+	ClientName(bs->client, netname, sizeof(netname));
+
+	nbg_multiplier = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 100);
+
+	if (nbg_multiplier == 0.0) {
+		range = 150;
+		// RETREAT is drawn in YELLOW
+		if (bs->ainode == AINode_Battle_Retreat) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Range = %i.\n", netname, range);
+		// SEEK LTG is drawn in GREEN
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Range = %i.\n", netname, range);
+		}
+
+		return range;
+	}
+#endif
+// Tobias END
+	selfpreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_SELFPRESERVATION, 0, 1);
+	nbg_multiplier = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 100);
+	// Tobias NOTE: this represents the old behaviour (FIXME: remove this?)
+	// if the bot is carrying a flag or cubes and should rush to base as fast as possible
+	if (BotHasEmergencyGoal(bs)) {
+		return 50;
+	} else if (bs->ltgtype == LTG_DEFENDKEYAREA) {
+		return 400;
+	} else {
+		range = 200;
+	}
+	// Tobias END
+	// if the bot is using the gauntlet
+	if (bs->weaponnum == WP_GAUNTLET) {
+		return 300;
+	}
+	// if the bot has the quad damage powerup
+	if (bs->inventory[INVENTORY_QUAD]) {
+		range -= 50;
+	}
+	// if the bot has the invisibility powerup
+	if (bs->inventory[INVENTORY_INVISIBILITY]) {
+		range -= 50;
+	}
+	// if the bot has the doubler powerup
+	if (bs->inventory[INVENTORY_DOUBLER]) {
+		range -= 50;
+	}
+	// if the bot has the scout powerup
+	if (bs->inventory[INVENTORY_SCOUT]) {
+		range += 50;
+	}
+	// if the bot can use the machine gun
+	if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
+		range -= 10;
+	}
+	// if the bot can use the chain gun
+	if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
+		range -= 50;
+	}
+		// if the bot can use the shot gun
+	if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the nail gun
+	if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the rocket launcher
+	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
+		range -= 10;
+	}
+	// if the bot can use the beam gun
+	if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
+		range -= 10;
+	}
+	// if the bot can use the railgun
+	if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
+		range -= 50;
+	}
+	// if the bot can use the plasma gun
+	if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
+		range -= 10;
+	}
+	// if the bot can use the bfg
+	if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
+		range -= 10;
+	}
+	// if the bot is low on health
+	if (selfpreservation < 0.9) {
+		range -= bs->inventory[INVENTORY_HEALTH];
+	}
+	// if the bot accompanies someone
+	if (bs->ltgtype == LTG_TEAMACCOMPANY && !BotTeamFlagCarrierVisible(bs)) {
+		range *= 2;
+		// if the team mate isn't visible for quite some time
+		if (bs->teammatevisible_time < FloatTime() - 5) {
+			range *= 0.5;
+		}
+	}
+
+	range *= nbg_multiplier;
+	// just for safety sake
+	if (range < 10) {
+		range = 10;
+	}
+// Tobias DEBUG
+#ifdef DEBUG
+	// RETREAT is drawn in YELLOW
+	if (bs->ainode == AINode_Battle_Retreat) {
+		if (bot_report.integer) {
+			trap_GetConfigstring(CS_BOTINFO + bs->client, buf1, sizeof(buf1));
+			Q_strncpyz(action, Info_ValueForKey(buf1, "a"), sizeof(action));
+
+			if (!*buf1) {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Range = %i.\n", netname, range);
+			} else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: %s Range = %i.\n", netname, action, range);
+			}
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Range = %i.\n", netname, range);
+		}
+	// SEEK LTG is drawn in GREEN
+	} else {
+		if (bot_report.integer) {
+			trap_GetConfigstring(CS_BOTINFO + bs->client, buf1, sizeof(buf1));
+			Q_strncpyz(action, Info_ValueForKey(buf1, "a"), sizeof(action));
+
+			if (!*buf1) {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Range = %i.\n", netname, range);
+			} else {
+				BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: %s Range = %i.\n", netname, action, range);
+			}
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Range = %i.\n", netname, range);
+		}
+	}
+#endif
+// Tobias END
+	return (int)range;
+}
+
+/*
+=======================================================================================================================================
+BotOnlyPickupImportantItems
+
+Only pick up items that are really needed (health items if low on health, useful ammo etc.). The goal is to not waste time by picking
+up 'useless' items (bots will not collect ammo for weapons they don't own etc). This will attract bots to move faster to their own base
+if they are carrying a flag. They will also less likely lose line of sight when chasing an enemy.
+In those cases the bot will only pick up items that are useful and he will only pick up those items if they are in a closer range.
+
+1.DONE: If the bot is standing in lava or slime.
+2.DONE: If the bot needs air.
+3.DONE: If the bot is carrying a flag or cubes and should rush to base as fast as possible (CHECK TODO's).
+
+TODO: If chasing the enemy and view will be lost when going for NBGs.
+TODO: Only if healthy enough, and at least some good weapon with ammo (per gametype?).
+=======================================================================================================================================
+*/
+qboolean BotOnlyPickupImportantItems(bot_state_t *bs) {
+
+	// when standing in lava or slime, get out of this hell
+	if (BotInLavaOrSlime(bs)) {
+		return qtrue;
+	}
+	// if the bot needs air
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		if (bs->lastair_time < FloatTime() - 15) {
+			return qtrue;
+		}
+	}
+	// if the bot is carrying a flag or cubes and should rush to base as fast as possible
+	if (BotHasEmergencyGoal(bs)) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+/*
+=======================================================================================================================================
 BotWantsToRetreat
 =======================================================================================================================================
 */
@@ -3349,6 +3739,12 @@ const int BotWantsToRetreat(bot_state_t *bs) {
 	// retreat when standing in lava or slime
 	if (BotInLavaOrSlime(bs)) {
 		return qtrue;
+	}
+	// not enough air, so retreat
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		if (bs->lastair_time < FloatTime() - 15) {
+			return qtrue;
+		}
 	}
 
 	if (bs->enemy >= 0) {
@@ -3416,12 +3812,6 @@ const int BotWantsToRetreat(bot_state_t *bs) {
 		default:
 			break;
 	}
-	// not enough air, so retreat
-	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
-		if (bs->lastair_time < FloatTime() - 15) {
-			return qtrue;
-		}
-	}
 
 	if (!BotAggression(bs)) {
 		return qtrue;
@@ -3441,6 +3831,12 @@ const int BotWantsToChase(bot_state_t *bs) {
 	// don't chase if in lava or slime
 	if (BotInLavaOrSlime(bs)) {
 		return qfalse;
+	}
+	// don't chase if not enough air
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		if (bs->lastair_time < FloatTime() - 15) {
+			return qfalse;
+		}
 	}
 
 	if (bs->enemy >= 0) {
@@ -3508,12 +3904,6 @@ const int BotWantsToChase(bot_state_t *bs) {
 		default:
 			break;
 	}
-	// enough air, so go chasing
-	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
-		if (bs->lastair_time > FloatTime() - 15) {
-			return qtrue;
-		}
-	}
 
 	if (BotAggression(bs)) {
 		return qtrue;
@@ -3539,6 +3929,10 @@ BotCanAndWantsToRocketJump
 int BotCanAndWantsToRocketJump(bot_state_t *bs) {
 	float rocketjumper;
 
+	// if rocket jumping is disabled
+	if (!bot_rocketjump.integer) {
+		return qfalse;
+	}
 	// if no rocket launcher
 	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] <= 0) {
 		return qfalse;
@@ -3567,6 +3961,21 @@ int BotCanAndWantsToRocketJump(bot_state_t *bs) {
 	rocketjumper = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WEAPONJUMPING, 0, 1);
 
 	if (rocketjumper < 0.5) {
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+/*
+=======================================================================================================================================
+BotHasScout
+=======================================================================================================================================
+*/
+int BotHasScout(bot_state_t *bs) {
+
+	// if no scout powerup
+	if (!bs->inventory[INVENTORY_SCOUT]) {
 		return qfalse;
 	}
 
@@ -3884,14 +4293,18 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 	// walk, crouch or jump
 	movetype = MOVE_WALK;
 	// for long range attacks the bots should crouch more often
-	if (dist > 2048) {
-		croucher += 0.5;
+	if (bs->croucher > 0.1f && dist > 4096 - (2048 * bs->croucher)) {
+		croucher += 0.5f;
 	} else if (BotWantsToRetreat(bs)) {
-		croucher = 0;
+		croucher = 0.0f;
 	}
 	// don't jump if the enemy is quite far away
-	if (dist > 1024) {
-		jumper = 0;
+	if (dist > 1024 + (1024 * bs->jumper)) {
+		jumper = 0.0f;
+	}
+	// don't crouch when swimming
+	if (trap_AAS_Swimming(bs->origin)) {
+		bs->crouch_time = FloatTime() - 1;
 	}
 
 	if (bs->crouch_time < FloatTime() - 1) {
@@ -3902,10 +4315,6 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 			bs->crouch_time = FloatTime() + croucher * 5;
 		}
 	}
-	// don't crouch when swimming
-	if (trap_AAS_Swimming(bs->origin)) {
-		bs->crouch_time = FloatTime() - 1;
-	}
 	// if the bot wants to crouch
 	if (bs->crouch_time > FloatTime()) {
 		// get the start point shooting from
@@ -3915,7 +4324,7 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 		// only try to crouch if the enemy remains visible
 		BotAI_Trace(&bsptrace, start, mins, maxs, entinfo.origin, bs->client, MASK_SHOT);
 		// if the enemy remains visible from the predicted position
-		if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == attackentity) {
+		if (bsptrace.fraction >= 1.0f || bsptrace.entityNum == attackentity) {
 			movetype = MOVE_CROUCH;
 		}
 	}
@@ -4244,6 +4653,11 @@ static qboolean BotEntityIndirectlyVisible(bot_state_t *bs, int ent) {
 	gentity_t *tent;
 	qboolean checkStatus, vis;
 
+	// if not in teamplay mode
+	if (gametype < GT_TEAM) {
+		return qfalse;
+	}
+
 	if (ent < 0 || ent >= ENTITYNUM_MAX_NORMAL) {
 		return qfalse;
 	}
@@ -4352,6 +4766,11 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			goal = &blueobelisk;
 		} else {
 			goal = &redobelisk;
+		}
+		// if the obelisk is respawning
+		if (g_entities[goal->entitynum].activator && g_entities[goal->entitynum].activator->s.frame == 2) {
+			// Tobias FIXME: qtrue if Proxylauncher in bag to place mines at respawning obelisk, otherwise -> node WAIT or collect ammo?
+			return qfalse;
 		}
 		// if the obelisk is visible
 		VectorCopy(goal->origin, target);
@@ -5026,8 +5445,6 @@ qboolean BotEqualizeWeakestHumanTeamScore(bot_state_t *bs) {
 	maleScores = 0;
 
 	for (i = 0; i < level.maxclients; i++) {
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-
 		if (i == bs->client) {
 			continue;
 		}
@@ -5046,8 +5463,10 @@ qboolean BotEqualizeWeakestHumanTeamScore(bot_state_t *bs) {
 		if (entinfo.number == bs->entitynum) {
 			continue;
 		}
+
+		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -5254,10 +5673,6 @@ void BotAimAtEnemy(bot_state_t *bs) {
 #endif
 		}
 	}
-	// keep a minimum accuracy
-	if (aim_accuracy <= 0.0f) {
-		aim_accuracy = 0.0001f;
-	}
 	// Tobias TODO: add prone ~ + 0.2f;
 	// if the bot is crouching
 	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
@@ -5294,14 +5709,10 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			f = 2.0f;
 		}
 
-		aim_accuracy += 0.2f * f / 2.0f;
+		aim_accuracy += 0.2f * f * 0.5f;
 #ifdef DEBUG
 		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: Time based aim accuracy: %f.\n", netname, aim_accuracy);
 #endif
-	}
-	// maximum accuracy
-	if (aim_accuracy > 1.0f) {
-		aim_accuracy = 1.0f;
 	}
 	// consider enemy model specific attributes
 	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
@@ -5314,6 +5725,19 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		}
 #endif
 	}
+	// keep a minimum accuracy
+	if (aim_accuracy <= 0.0f) {
+		aim_accuracy = 0.0001f;
+	}
+	// also set a maximum accuracy
+	if (aim_accuracy > 1.0f) {
+		aim_accuracy = 1.0f;
+	}
+//#ifdef DEBUG
+	if (bot_challenge.integer) {
+		aim_accuracy = 1.0f;
+	}
+//#endif
 	// if the enemy is visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		VectorCopy(entinfo.origin, bestorigin);
@@ -5360,7 +5784,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 					VectorClear(cmdmove);
 					//AAS_ClearShownDebugLines();
 					// movement prediction
-					trap_AAS_PredictClientMovement(&move, bs->enemy, origin, PRESENCE_CROUCH, qfalse, dir, cmdmove, 0, dist * 10 / wi.speed, 0.1f, 0, 0, qfalse);
+					trap_AAS_PredictClientMovement(&move, bs->enemy, origin, PRESENCE_CROUCH, qfalse, qfalse, dir, cmdmove, 0, dist * 10 / wi.speed, 0.1f, 0, 0, qfalse);
 					VectorCopy(move.endpos, bestorigin);
 #ifdef DEBUG
 					BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Predicted speed = %f, Frames = %f.\n", netname, FloatTime(), VectorLength(dir), dist * 10 / wi.speed);
@@ -5523,7 +5947,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 		// trace from start to middle, check if the projectile will be blocked by something
 		BotAI_Trace(&trace, start, mins, maxs, topOfArc, entinfo.number, MASK_SHOT);
 		// if the projectile will not be blocked
-		if (trace.fraction >= 1) {
+		if (trace.fraction >= 1.0f) {
 			// get the end point (the projectiles impact point), for safety sake take overhead ledges into account (so we trace along the highest point of the arc, from middle to end)
 			VectorCopy(entinfo.origin, end);
 
@@ -5531,7 +5955,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 			// trace from middle to end, check if the projectile will be blocked by something
 			BotAI_Trace(&trace, topOfArc, mins, maxs, end, entinfo.number, MASK_SHOT);
 			// if the projectile will not be blocked
-			if (trace.fraction >= 1) {
+			if (trace.fraction >= 1.0f) {
 				// take projectile speed, gravity and enemy height into account
 				bestorigin[2] += (dist * dist / wi.speed * wi.proj.gravity) + (bs->inventory[ENEMY_HEIGHT] > 0 ? bs->inventory[ENEMY_HEIGHT] * 0.1 : 0);
 #ifdef DEBUG
@@ -5584,7 +6008,583 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 	// if the bots should be really challenging
 	viewType = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_VIEW_TYPE, 0, 1);
 
-	if (viewType == 1.0
+	if (viewType > 0.9
+//#ifdef DEBUG
+		|| bot_challenge.integer
+//#endif
+		) {
+		// if the bot is really accurate and has the enemy in view for some time
+		if (aim_accuracy > 0.9f && bs->enemysight_time < FloatTime() - 1) {
+			// set the view angles directly
+			if (bs->ideal_viewangles[PITCH] > 180) {
+				bs->ideal_viewangles[PITCH] -= 360;
+			}
+
+			VectorCopy(bs->ideal_viewangles, bs->viewangles);
+			trap_EA_View(bs->client, bs->viewangles);
+		}
+	}
+#ifdef DEBUG
+	BotAI_Print(PRT_MESSAGE, S_COLOR_CYAN "%s: Final aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
+}
+// Tobias END
+/*
+=======================================================================================================================================
+BotAimAtEnemy
+=======================================================================================================================================
+*/
+void BotAimAtEnemy(bot_state_t *bs) {
+	int i, mask;
+	float dist, f, aim_skill, aim_accuracy, speed, reactiontime, viewType, enemyHeight;
+	vec3_t origin, dir, bestorigin, end, start, target, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
+	static vec3_t rmins = {-4, -4, -4}, rmaxs = {4, 4, 4}; // rockets/missiles
+//	static vec3_t bmins = {-6, -6, -6}, bmaxs = {6, 6, 6}; // satchel/dynamite/bombs
+//	static vec3_t fmins = {-30, -30, -30}, fmaxs = {30, 30, 30}; // flame chunks
+	float *mins, *maxs;
+	weaponinfo_t wi;
+	aas_entityinfo_t entinfo;
+	aas_clientmove_t move;
+	bot_goal_t goal;
+	bsp_trace_t trace;
+	playerState_t ps;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
+
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	// if the bot has no enemy
+	if (bs->enemy < 0) {
+		return;
+	}
+
+	if (bs->weaponnum <= WP_NONE || bs->weaponnum >= WP_NUM_WEAPONS) {
+		return;
+	}
+	// get the entity information
+	BotEntityInfo(bs->enemy, &entinfo);
+	// if the entity information is valid
+	if (!entinfo.valid) {
+		return;
+	}
+	// if this is not a player (could be an obelisk)
+	if (bs->enemy >= MAX_CLIENTS) {
+		// if the entity is visible
+		VectorCopy(entinfo.origin, target);
+		// if attacking an obelisk
+		if (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum) {
+			target[2] += OBELISK_TARGET_HEIGHT;
+		}
+		// aim at the entity
+		VectorSubtract(target, bs->eye, dir);
+		VectorToAngles(dir, bs->ideal_viewangles);
+		// set the aim target before trying to attack
+		VectorCopy(target, bs->aimtarget);
+		return;
+	}
+
+	//BotAI_Print(PRT_MESSAGE, "%s: Aiming at client %d.\n", netname, bs->enemy);
+	// get the weapon information
+	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
+	// get the weapon specific aim accuracy and or aim skill
+	switch (wi.number) {
+		case WP_MACHINEGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_MACHINEGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_CHAINGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_CHAINGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_SHOTGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_SHOTGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_NAILGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_NAILGUN, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAILGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_PROXLAUNCHER:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PROXLAUNCHER, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			//mask = MASK_MISSILESHOT;
+			mask = MASK_SHOT;
+			break;
+		case WP_GRENADELAUNCHER:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_GRENADELAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_GRENADELAUNCHER, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			//mask = MASK_MISSILESHOT;
+			mask = MASK_SHOT;
+			break;
+		case WP_NAPALMLAUNCHER:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_NAPALMLAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_NAPALMLAUNCHER, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			//mask = MASK_MISSILESHOT;
+			mask = MASK_SHOT;
+			break;
+		case WP_ROCKETLAUNCHER:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_ROCKETLAUNCHER, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_ROCKETLAUNCHER, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			//mask = MASK_MISSILESHOT;
+			mask = MASK_SHOT;
+			break;
+		case WP_BEAMGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BEAMGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_RAILGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_RAILGUN, 0, 1);
+			mins = NULL;
+			maxs = NULL;
+			mask = MASK_SHOT;
+			break;
+		case WP_PLASMAGUN:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_PLASMAGUN, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PLASMAGUN, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			mask = MASK_SHOT;
+			break;
+		case WP_BFG:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_BFG10K, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BFG10K, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			mask = MASK_SHOT;
+			break;
+		default:
+			aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
+			aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY, 0, 1);
+			mins = rmins;
+			maxs = rmaxs;
+			mask = MASK_SHOT;
+			break;
+	}
+// Tobias FIXME: this is nonsense, if reactiontime is 0 than this has no effect (0.5 * 0 = 0)
+/*
+	if (aim_skill > 0.95) {
+		// don't aim too early
+		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
+
+		if (bs->enemysight_time > FloatTime() - reactiontime) {
+			return;
+		}
+
+		if (bs->teleport_time > FloatTime() - reactiontime) {
+			return;
+		}
+	}
+*/
+// Tobias END
+	VectorSubtract(entinfo.origin, entinfo.lastvisorigin, enemyvelocity);
+	VectorScale(enemyvelocity, 1 / entinfo.update_time, enemyvelocity);
+	// enemy origin and velocity is remembered every 0.5 seconds
+	if (bs->enemyposition_time < FloatTime()) {
+		bs->enemyposition_time = FloatTime() + 0.5;
+		VectorCopy(enemyvelocity, bs->enemyvelocity);
+		VectorCopy(entinfo.origin, bs->enemyorigin);
+	}
+	// if not extremely skilled
+	if (aim_skill < 0.9) {
+		VectorSubtract(entinfo.origin, bs->enemyorigin, dir);
+		// if the enemy moved a bit
+		if (VectorLengthSquared(dir) > Square(48)) {
+			// if the enemy changed direction
+			if (DotProduct(bs->enemyvelocity, enemyvelocity) < 0) {
+				// aim accuracy should be worse now
+				aim_accuracy *= 0.7f;
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, "%s: Enemy changed direction (*0.7): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
+			}
+		}
+	}
+	// if the enemy is invisible then shoot crappy most of the time
+	if (EntityIsInvisible(&entinfo)) {
+		if (random() > 0.1) {
+			aim_accuracy *= 0.4f;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy invisible (*0.4): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
+		}
+	}
+	// Tobias TODO: add prone ~ + 0.2f;
+	// if the bot is crouching
+	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
+		aim_accuracy += 0.2f;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Crouching (+0.1): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
+	}
+	// if the bot is standing still
+	if (VectorLengthSquared(bs->cur_ps.velocity) <= 0) {
+		aim_accuracy += 0.3f;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Standing still (+0.2): aim accuracy: %f, vel: %i.\n", netname, aim_accuracy, (int)VectorLengthSquared(bs->cur_ps.velocity));
+#endif
+	}
+	// if the enemy is standing still
+	f = VectorLength(bs->enemyvelocity);
+
+	if (f > 200.0f) {
+		f = 200.0f;
+	}
+
+	aim_accuracy += 0.2f * (0.5f - (f / 200.0f));
+#ifdef DEBUG
+	if (f <= 0) {
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy standing still (+0.2): aim accuracy: %f, Enemy speed: %i.\n", netname, aim_accuracy, (int)f);
+	}
+#endif
+	// if the bot needs some time to react on the enemy, aiming gets better with time
+	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
+
+	if (reactiontime > 1.75f) {
+		f = FloatTime() - bs->enemysight_time;
+
+		if (f > 2.0f) {
+			f = 2.0f;
+		}
+
+		aim_accuracy += 0.2f * (f * 0.5f);
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: Time based aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
+	}
+	// consider enemy model specific attributes
+	if (BotEqualizeWeakestHumanTeamScore(bs) || BotEqualizeTeamScore(bs)) {
+		aim_accuracy *= bot_equalizer_aim.value; // DEBUG: bot_equalizer_aim
+#ifdef DEBUG
+		if (BotTeam(bs) == TEAM_RED) {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Camouflage skin: EQUALIZE for BLUE! RED score = %i, BLUE score = %i, aim accuracy = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, aim_accuracy);
+		} else {
+			BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Camouflage skin: EQUALIZE for RED! BLUE score = %i, RED score = %i, aim accuracy = %f.\n", netname, bs->ownteamscore, bs->enemyteamscore, aim_accuracy);
+		}
+#endif
+	}
+	// keep a minimum accuracy
+	if (aim_accuracy <= 0.0f) {
+		aim_accuracy = 0.0001f;
+	}
+	// also set a maximum accuracy
+	if (aim_accuracy > 1.0f) {
+		aim_accuracy = 1.0f;
+	}
+//#ifdef DEBUG
+	if (bot_challenge.integer) {
+		aim_accuracy = 1.0f;
+	}
+//#endif
+	bs->allowHitWorld = qfalse;
+	// if the enemy is visible
+	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
+		// get the start point shooting from
+		// NOTE: the x and y projectile start offsets are ignored
+		VectorCopy(bs->origin, start);
+
+		start[2] += bs->cur_ps.viewheight;
+		start[2] += wi.offset[2];
+		// get the end point aiming at
+		VectorCopy(entinfo.origin, bestorigin);
+		// try to aim at the head
+		if (BotAI_GetClientState(bs->enemy, &ps)) {
+			bestorigin[2] += ps.viewheight;
+		}
+
+		BotAI_Trace(&trace, start, mins, maxs, bestorigin, bs->entitynum, mask);
+		// if the enemy is NOT hit
+		if (trace.fraction < 1.0f && trace.entityNum != entinfo.number) {
+			// aim a bit higher
+			bestorigin[2] += 8;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy NOT hit. Aiming higher!\n", netname);
+#endif
+			BotAI_Trace(&trace, start, mins, maxs, bestorigin, bs->entitynum, mask);
+			// if the enemy is still NOT hit
+			if (trace.fraction < 1.0f && trace.entityNum != entinfo.number) {
+				// aim a bit lower
+				bestorigin[2] -= 32;
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy NOT hit. Aiming lower!\n", netname);
+#endif
+			}
+		}
+		// if it is not an instant hit weapon the bot might want to predict the enemy
+		if (!BotUsesInstantHitWeapon(bs)) {
+			// direction towards the enemy
+			VectorSubtract(bestorigin, bs->origin, dir);
+			// distance towards the enemy
+			dist = VectorLength(dir);
+			// direction the enemy is moving in
+			VectorSubtract(entinfo.origin, bs->enemyorigin, dir);
+			// if the enemy is NOT pretty far away and strafing just small steps left and right
+			if (!(dist > 100 && VectorLengthSquared(dir) < Square(32))) {
+				// if skilled enough and if the weapon is ready to fire, do exact prediction
+				if (aim_skill > 0.8 && bs->cur_ps.weaponstate == WEAPON_READY) {
+					VectorSubtract(entinfo.origin, bs->origin, dir);
+					// distance towards the enemy
+					dist = VectorLength(dir);
+					// direction the enemy is moving in
+					VectorSubtract(entinfo.origin, entinfo.lastvisorigin, dir);
+					VectorScale(dir, 1 / entinfo.update_time, dir);
+					VectorCopy(entinfo.origin, origin);
+
+					origin[2] += 1;
+
+					VectorClear(cmdmove);
+					//AAS_ClearShownDebugLines();
+					// movement prediction
+					trap_AAS_PredictClientMovement(&move, bs->enemy, origin, PRESENCE_CROUCH, qfalse, qfalse, dir, cmdmove, 0, dist * 10 / wi.speed, 0.1f, 0, 0, qfalse);
+					VectorCopy(move.endpos, bestorigin);
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Predicted speed = %f, Frames = %f.\n", netname, FloatTime(), VectorLength(dir), dist * 10 / wi.speed);
+#endif
+				// if not that skilled do linear prediction
+				} else if (aim_skill > 0.4) {
+					// direction towards the enemy
+					VectorSubtract(entinfo.origin, bs->origin, dir);
+					// distance towards the enemy
+					dist = VectorLength(dir);
+					// direction the enemy is moving in
+					VectorSubtract(entinfo.origin, entinfo.lastvisorigin, dir);
+
+					dir[2] = 0;
+					speed = VectorNormalize(dir) / entinfo.update_time;
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, "%s: Speed = %f, wi->speed = %f.\n", netname, speed, wi->speed);
+#endif
+					// best spot to aim at
+					VectorMA(entinfo.origin, (dist / wi.speed) * speed, dir, bestorigin);
+				}
+			}
+		}
+		// if the projectile does large radial damage
+		if (aim_skill > 0.6 && (wi.proj.damagetype & DAMAGETYPE_RADIAL) && wi.proj.radius > 50) {
+			// if the enemy isn't standing significantly higher than the bot and isn't in water
+			if (entinfo.origin[2] < bs->origin[2] + 16 && !(trap_AAS_PointContents(entinfo.origin) & (CONTENTS_WATER|CONTENTS_SLIME|CONTENTS_LAVA))) {
+				// try to aim at the ground in front of the enemy
+				VectorCopy(entinfo.origin, end);
+
+				end[2] -= 64;
+
+				BotAI_Trace(&trace, entinfo.origin, mins, maxs, end, entinfo.number, mask);
+				VectorCopy(bestorigin, groundtarget); // Tobias CHECK: is 'bestorigin' wrong now (changed above), or was it always strange to use 'bestorigin' instead of 'end' ?
+
+				if (trace.startsolid) {
+					groundtarget[2] = entinfo.origin[2] - 16;
+				} else {
+					groundtarget[2] = trace.endpos[2] - 8;
+				}
+				// trace a line from projectile start to ground target
+				BotAI_Trace(&trace, start, mins, maxs, groundtarget, bs->entitynum, mask);
+				// if hitpoint is not vertically too far from the ground target
+				if (fabs(trace.endpos[2] - groundtarget[2]) < 50) {
+					VectorSubtract(trace.endpos, groundtarget, dir);
+					// if the hitpoint is near enough the ground target
+					if (VectorLengthSquared(dir) < Square(60)) {
+						VectorSubtract(trace.endpos, start, dir);
+						// if the hitpoint is far enough from the bot
+						if (VectorLengthSquared(dir) > Square(100)) {
+							// check if the bot is visible from the ground target
+							trace.endpos[2] += 1;
+
+							BotAI_Trace(&trace, trace.endpos, mins, maxs, entinfo.origin, entinfo.number, mask);
+
+							if (trace.fraction >= 1.0f) {
+#ifdef DEBUG
+								BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Aiming at ground.\n", netname, AAS_Time());
+#endif
+								VectorCopy(groundtarget, bestorigin);
+								// allow the bot to shoot at the ground
+								bs->allowHitWorld = qtrue;
+							}
+						}
+					}
+				}
+			}
+		}
+//#ifdef DEBUG
+		if (!bot_challenge.integer) {
+//#endif
+			bestorigin[0] += 20 * crandom() * (1 - aim_accuracy);
+			bestorigin[1] += 20 * crandom() * (1 - aim_accuracy);
+			bestorigin[2] += 10 * crandom() * (1 - aim_accuracy);
+//#ifdef DEBUG
+		}
+//#endif
+		BotAI_Trace(&trace, bs->eye, mins, maxs, bestorigin, bs->entitynum, mask);
+		VectorCopy(trace.endpos, bs->aimtarget);
+	// if the enemy is NOT visible
+	} else {
+		VectorCopy(bs->lastenemyorigin, bestorigin);
+
+		bestorigin[2] += 8;
+		// if the bot is skilled enough
+		if (aim_skill > 0.5) {
+			// do prediction shots around corners
+			if (!BotUsesInstantHitWeapon(bs)) {
+				// create the chase goal
+				goal.entitynum = bs->client;
+				goal.areanum = bs->areanum;
+
+				VectorCopy(bs->eye, goal.origin);
+				VectorSet(goal.mins, -8, -8, -8);
+				VectorSet(goal.maxs, 8, 8, 8);
+
+				if (trap_BotPredictVisiblePosition(bs->lastenemyorigin, bs->lastenemyareanum, &goal, TFL_DEFAULT, target)) {
+					VectorSubtract(target, bs->eye, dir);
+					// if the hitpoint is far enough from the bot
+					if (VectorLengthSquared(dir) > Square(100)) {
+						VectorCopy(target, bestorigin);
+						// if the projectile does large radial damage try to aim at the ground in front of the enemy
+						if (wi.proj.damagetype & DAMAGETYPE_RADIAL) {
+							bestorigin[2] -= 20;
+						}
+					}
+				}
+				// allow the bot to shoot at the ground
+				bs->allowHitWorld = qtrue;
+				aim_accuracy = 1.0f;
+			}
+		}
+
+		VectorCopy(bestorigin, bs->aimtarget);
+	}
+// Tobias NOTE: for developers...
+/*
+		(o = botai trace line)
+		(* = projectile travel line)
+                                                                                        o  <---- topOfArc[2] trace
+                                                                                  o
+                                                                            o
+                                                                       o                *  <---- grenade arc is always below trace!
+                                                                  o   *
+                                                             o *
+                                                        o*
+                                                   o *
+                                               o *
+                                          o   *
+                                     o     *
+             trace start ----> o        *
+                                      *
+                            _______ *
+                           |      *
+                           |     * |
+                           |    *  |
+        projectile start --|-> *   |
+                           |       |
+                           |       |
+                           |       |
+                           |       |
+NOTE: 1. We can't trace a parabola. That's why we trace a bit above the real arc of travel in straight line. If the projectile will hit some overhead ledge, the bot will fire the projectile straight ahead!
+NOTE: 2. wi.proj.gravity, was never set in the botfiles, it MUST be set to make this work properly (an alternate would be to completely do all this without the need of weaponinfo). Without modified botfiles everything works as normally.
+NOTE: 3. wi.proj.gravity is a simple configurable (pseudo)multiplier, this seems to be the fastest way to compute 100% accurate ballistics (e.g: projectile speed 700 -> gravity 0.3, projectile speed 10000 -> gravity 0.04, etc.).
+NOTE: 4. It doesn't really make sense to use DEFAULT_GRAVITY or g_gravity (projectiles are not influenced by g_gravity at all in Q3a).
+NOTE: 5. Although my method of computing the ballistics looks like magic, it is the simplest and fastest way I could think of (correct but slow math: -> https://en.wikipedia.org/wiki/Parabola)
+         Computing the ballistics this way takes configurable projectile speed, configurable projectile gravity, dynamic enemy height and dynamic enemy distance into account.
+NOTE: 6. This code becomes more precise the faster the projectile moves. Grenades are too slow in Q3a! Fix this: average H-Gren.: bolt speed 1300, = ~60 meters. (gravity 0.35)
+
+WARNING 1: Accuracy is nearly 100% even with very fast projectiled weapons (e.g.: speed 20000 etc.), this means bots will always hit their opponents, even with a bow (eventually decrease the bots individual aim_accuracy)
+WARNING 2: Bots will also throw grenades through windows even from distance, so be careful!
+*/
+	if (BotUsesGravityAffectedProjectileWeapon(bs)) {
+		// direction towards the enemy
+		VectorSubtract(bestorigin, bs->origin, dir);
+
+		enemyHeight = dir[2]; // Tobias CHECK: enemyHeight = dist[2]?
+		// distance towards the enemy
+		dist = VectorNormalize(dir);
+		// get the start point shooting from, for safety sake take overhead ledges into account (so we trace along the highest point of the arc, from start to middle)
+		VectorCopy(bs->origin, start);
+
+		start[2] += bs->cur_ps.viewheight + 20;
+		// half the distance will be the middle of the projectile arc (highest point the projectile will travel)
+		VectorMA(start, dist * 0.5, dir, middleOfArc);
+		VectorCopy(middleOfArc, topOfArc);
+
+		topOfArc[2] += (dist * wi.proj.gravity) + (enemyHeight > 0 ? enemyHeight * 0.1 : 0);
+		// trace from start to middle, check if the projectile will be blocked by something
+		BotAI_Trace(&trace, start, mins, maxs, topOfArc, entinfo.number, mask);
+		// if the projectile will not be blocked
+		if (trace.fraction >= 1.0f) {
+			// get the end point (the projectiles impact point), for safety sake take overhead ledges into account (so we trace along the highest point of the arc, from middle to end)
+			VectorCopy(entinfo.origin, end);
+
+			end[2] += 20;
+			// trace from middle to end, check if the projectile will be blocked by something
+			BotAI_Trace(&trace, topOfArc, mins, maxs, end, entinfo.number, mask);
+			// if the projectile will not be blocked
+			if (trace.fraction >= 1.0f) {
+				// take projectile speed, gravity and enemy height into account
+				bestorigin[2] += (dist * dist / wi.speed * wi.proj.gravity) + (enemyHeight > 0 ? enemyHeight * 0.1 : 0);
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Predicted speed = %f, Frames = %f, Enemy height = %f.\n", netname, FloatTime(), VectorLength(dir), dist * 10 / wi.speed, enemyHeight);
+#endif
+			}
+		}
+	}
+	// get aim direction
+	VectorSubtract(bestorigin, bs->eye, dir);
+//#ifdef DEBUG
+	if (!bot_challenge.integer) {
+//#endif
+		if (BotUsesInstantHitWeapon(bs)) {
+			// distance towards the enemy
+			dist = VectorLength(dir);
+
+			if (dist > 150) {
+				dist = 150;
+			}
+
+			f = 0.6f + dist / 150 * 0.4f;
+			aim_accuracy *= f;
+		}
+		// add some random stuff to the aim direction depending on the aim accuracy
+		if (aim_accuracy < 0.8f) {
+			VectorNormalize(dir);
+
+			for (i = 0; i < 3; i++) {
+				dir[i] += 0.3f * crandom() * (1 - aim_accuracy);
+			}
+		}
+//#ifdef DEBUG
+	}
+//#endif
+	// set the ideal view angles
+	VectorToAngles(dir, bs->ideal_viewangles);
+	// take the weapon spread into account for lower skilled bots
+	bs->ideal_viewangles[PITCH] += 6 * wi.vspread * crandom() * (1 - aim_accuracy);
+	bs->ideal_viewangles[PITCH] = AngleMod(bs->ideal_viewangles[PITCH]);
+	bs->ideal_viewangles[YAW] += 6 * wi.hspread * crandom() * (1 - aim_accuracy);
+	bs->ideal_viewangles[YAW] = AngleMod(bs->ideal_viewangles[YAW]);
+	// if the bots should be really challenging
+	viewType = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_VIEW_TYPE, 0, 1);
+
+	if (viewType > 0.9
 //#ifdef DEBUG
 		|| bot_challenge.integer
 //#endif
@@ -5804,7 +6804,7 @@ void BotCheckAttack(bot_state_t *bs) {
 
 	start[2] += bs->cur_ps.viewheight;
 
-	AngleVectors(bs->viewangles, forward, right, NULL);
+	AngleVectorsForwardRight(bs->viewangles, forward, right);
 	// get the weapon info
 	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
 
@@ -7883,8 +8883,6 @@ void BotDeathmatchAI(bot_state_t *bs, float thinktime) {
 		BotSetTeleportTime(bs);
 		// check for air
 		BotCheckAir(bs);
-		// check the team scores
-		BotCheckTeamScores(bs);
 	}
 	// check the console messages
 	BotCheckConsoleMessages(bs);
@@ -8072,7 +9070,7 @@ void BotSetupDeathmatchAI(void) {
 
 	gametype = trap_Cvar_VariableIntegerValue("g_gametype");
 
-	trap_Cvar_Register(&g_spSkill, "g_spSkill", "3", 0);
+	trap_Cvar_Register(&g_spSkill, "g_spSkill", "2", 0);
 
 	if (gametype == GT_CTF) {
 		if (trap_BotGetLevelItemGoal(-1, "Red Flag", &ctf_redflag) < 0) {

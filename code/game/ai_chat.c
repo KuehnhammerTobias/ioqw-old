@@ -61,7 +61,7 @@ int BotNumActivePlayers(void) {
 	for (i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -90,7 +90,7 @@ int BotIsFirstInRankings(bot_state_t *bs) {
 	for (i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -121,7 +121,7 @@ int BotIsLastInRankings(bot_state_t *bs) {
 	for (i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -154,7 +154,7 @@ char *BotFirstClientInRankings(void) {
 	for (i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -189,7 +189,7 @@ char *BotLastClientInRankings(void) {
 	for (i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -228,7 +228,7 @@ char *BotRandomOpponentName(bot_state_t *bs) {
 
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
-		if (!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) {
+		if (!buf[0] || !*Info_ValueForKey(buf, "n")) {
 			continue;
 		}
 		// skip spectators
@@ -410,52 +410,26 @@ BotValidChatPosition
 =======================================================================================================================================
 */
 int BotValidChatPosition(bot_state_t *bs) {
-	vec3_t point, start, end, mins, maxs;
-	bsp_trace_t trace;
+	vec3_t feet;
 
 	// if the bot is dead all positions are valid
 	if (BotIsDead(bs)) {
 		return qtrue;
 	}
 
-	if (level.clients[bs->client].lasthurt_time > level.time - 3000) {
-		return qfalse;
-	}
-	// never start chatting with a powerup
-	if (bs->inventory[INVENTORY_QUAD] || bs->inventory[INVENTORY_INVISIBILITY] || bs->inventory[INVENTORY_REGEN]) {
+	if (level.clients[bs->client].lasthurt_time > level.time - 1000) {
 		return qfalse;
 	}
 	// must be on the ground
-	//if (bs->cur_ps.groundEntityNum != ENTITYNUM_NONE) {
-	//	return qfalse;
-	//}
-	// do not chat if in lava or slime
-	VectorCopy(bs->origin, point);
-
-	point[2] -= 24;
-
-	if (trap_PointContents(point, bs->entitynum) & (CONTENTS_LAVA|CONTENTS_SLIME)) {
+	if (bs->cur_ps.groundEntityNum != ENTITYNUM_NONE) {
 		return qfalse;
 	}
-	// do not chat if under water
-	VectorCopy(bs->origin, point);
+	// do not chat if in water, lava or slime
+	VectorCopy(bs->origin, feet);
 
-	point[2] += 32;
+	feet[2] -= 23;
 
-	if (trap_PointContents(point, bs->entitynum) & MASK_WATER) {
-		return qfalse;
-	}
-	// must be standing on the world entity
-	VectorCopy(bs->origin, start);
-	VectorCopy(bs->origin, end);
-
-	start[2] += 1;
-	end[2] -= 10;
-
-	trap_AAS_PresenceTypeBoundingBox(PRESENCE_CROUCH, mins, maxs);
-	BotAI_Trace(&trace, start, mins, maxs, end, bs->client, MASK_SOLID);
-
-	if (trace.entityNum != ENTITYNUM_WORLD) {
+	if (trap_AAS_PointContents(feet) & (CONTENTS_WATER|CONTENTS_LAVA|CONTENTS_SLIME)) {
 		return qfalse;
 	}
 	// the bot is in a position where it can chat
@@ -968,6 +942,10 @@ int BotChat_HitNoDeath(bot_state_t *bs) {
 	if (bs->enemy >= 0) {
 		// get the entity information
 		BotEntityInfo(bs->enemy, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			return qfalse;
+		}
 
 		if (EntityIsShooting(&entinfo)) {
 			return qfalse;
@@ -1038,6 +1016,10 @@ int BotChat_HitNoKill(bot_state_t *bs) {
 	if (bs->enemy >= 0) {
 		// get the entity information
 		BotEntityInfo(bs->enemy, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			return qfalse;
+		}
 
 		if (EntityIsShooting(&entinfo)) {
 			return qfalse;

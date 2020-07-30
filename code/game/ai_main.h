@@ -111,6 +111,21 @@ typedef struct bot_activategoal_s {
 	bot_aienter_t aienter;				// function to call to return to AI node from before going to activate entity
 	struct bot_activategoal_s *next;	// next activate goal on stack
 } bot_activategoal_t;
+// definitions for view history
+#define VIEWHISTORY_SIZE 128
+
+typedef struct viewhistory_s {
+	vec3_t real_viewangles;
+	vec3_t lastviewcommand;
+	vec3_t totalviewdistortion;
+	float lastUpdateTime;
+	int oldestEntry;
+	struct {
+		float time;
+		vec3_t ideal_view;
+		vec3_t viewdistortion;
+	} entryTab[VIEWHISTORY_SIZE];
+} viewhistory_t;
 // bot state
 #define MAX_SUBTEAM_SIZE 32
 
@@ -156,6 +171,8 @@ typedef struct bot_state_s {
 	int enemyteamscore;						// enemy team score
 	int ownteamscore;						// own team score
 	float walker;							// walker charactertic
+	float croucher;							// crouch charactertic
+	float jumper;							// jumper charactertic
 	float ltime;							// local bot time
 	float entergame_time;					// time the bot entered the game
 	float ltg_time;							// long term goal time
@@ -196,6 +213,7 @@ typedef struct bot_state_s {
 	float blockedbyavoidspot_time;			// time blocked by an avoid spot
 	float predictobstacles_time;			// last time the bot predicted obstacles
 	int predictobstacles_goalareanum;		// last goal areanum the bot predicted obstacles for
+	qboolean allowHitWorld;					// in some situations a bot is allowed to shoot at the ground or walls (i.e. projectiles with radial damage)
 	vec3_t aimtarget;
 	vec3_t enemyvelocity;					// enemy velocity 0.5 secs ago during battle
 	vec3_t enemyorigin;						// enemy origin 0.5 secs ago during battle
@@ -214,6 +232,7 @@ typedef struct bot_state_s {
 	vec3_t viewangles;						// current view angles
 	vec3_t ideal_viewangles;				// ideal view angles
 	vec3_t viewanglespeed;
+	viewhistory_t viewhistory;
 	int ltgtype;							// long term goal type
 	// team goals
 	int teammate;							// team mate involved in this team goal

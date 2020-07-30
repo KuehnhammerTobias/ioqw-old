@@ -212,6 +212,7 @@ BotVoiceChat_Patrol
 void BotVoiceChat_Patrol(bot_state_t *bs, int client, int mode) {
 
 	bs->decisionmaker = client;
+	bs->ltg_time = 0;
 	bs->ltgtype = 0;
 	bs->lead_time = 0;
 	bs->lastgoal_ltgtype = 0;
