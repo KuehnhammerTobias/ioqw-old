@@ -466,6 +466,10 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		teammates = BotCountAllTeamMates(bs, 256);
 
 		if (VectorLengthSquared(dir) < Square(bs->formation_dist + (teammates * bs->formation_dist))) {
+			// don't crouch when swimming
+			if (trap_AAS_Swimming(bs->origin)) {
+				bs->crouch_time = FloatTime() - 1;
+			}
 			// check if the bot wants to crouch, don't crouch if crouched less than 5 seconds ago
 			if (bs->crouch_time < FloatTime() - 5) {
 				croucher = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CROUCHER, 0, 1);
@@ -473,10 +477,6 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				if (random() < bs->thinktime * croucher) {
 					bs->crouch_time = FloatTime() + 5 + croucher * 15;
 				}
-			}
-			// don't crouch when swimming
-			if (trap_AAS_Swimming(bs->origin)) {
-				bs->crouch_time = FloatTime() - 1;
 			}
 			// if the companion is visible
 			if (BotEntityVisible(&bs->cur_ps, 360, bs->teammate)) {
@@ -2142,7 +2142,16 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 	int range;
 	//char buf[128];
 	//bot_goal_t tmpgoal;
+// Tobias DEBUG
+	float checkcvar;
+#ifdef DEBUG
+	int tt_nbg;
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
+	checkcvar = bot_checktime.value;
+// Tobias END
 	range = trap_Characteristic_BInteger(bs->character, CHARACTERISTIC_GOAL_MULTIPLIER, 0, 10000);
 
 	if (BotIsObserver(bs)) {
@@ -2415,15 +2424,7 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 		VectorCopy(target, bs->lastenemyorigin);
 		bs->lastenemyareanum = areanum;
 	}
-	// if in lava or slime the bot should be able to get out
-	if (BotInLavaOrSlime(bs)) {
-		bs->tfl |= TFL_LAVA|TFL_SLIME;
-	}
-	// if the bot has the scout powerup
-	if (BotHasScout(bs)) {
-		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
-	}
-	// if the enemy is not visible
+	// if the enemy is NOT visible
 	if (!BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		// if the enemy is NOT visible for 1 second
 		if (bs->enemyvisible_time < FloatTime() - 1) {
@@ -2435,6 +2436,14 @@ int AINode_Battle_Fight(bot_state_t *bs) {
 				return qfalse;
 			}
 		}
+	}
+	// if in lava or slime the bot should be able to get out
+	if (BotInLavaOrSlime(bs)) {
+		bs->tfl |= TFL_LAVA|TFL_SLIME;
+	}
+	// if the bot has the scout powerup
+	if (BotHasScout(bs)) {
+		bs->tfl |= TFL_SCOUTBARRIER|TFL_SCOUTJUMP;
 	}
 	// only check for nearby goals if not in water, it takes too long
 	if (BotFeelingBad(bs) && !trap_AAS_Swimming(bs->origin) && !BotCTFCarryingFlag(bs) && !Bot1FCTFCarryingFlag(bs) && !BotHarvesterCarryingCubes(bs)) {

@@ -909,8 +909,8 @@ void BotChangeViewAngles(bot_state_t *bs, float thinktime) {
 			}
 
 			bs->viewangles[i] = BotChangeViewAngle(bs->viewangles[i], bs->ideal_viewangles[i], anglespeed);
-		} else {
 			// over reaction view model
+		} else {
 			bs->viewangles[i] = AngleMod(bs->viewangles[i]);
 			bs->ideal_viewangles[i] = AngleMod(bs->ideal_viewangles[i]);
 			diff = AngleDifference(bs->viewangles[i], bs->ideal_viewangles[i]);
@@ -1236,11 +1236,7 @@ int BotAI(int client, float thinktime) {
 		// remove color espace sequences from the arguments
 		RemoveColorEscapeSequences(args);
 
-		if (!Q_stricmp(buf, "cp ")) {
-			/*CenterPrintf*/
-		} else if (!Q_stricmp(buf, "cs")) {
-			/*ConfigStringModified*/
-		} else if (!Q_stricmp(buf, "print")) {
+		if (!Q_stricmp(buf, "print")) {
 			// remove first and last quote from the chat message
 			memmove(args, args + 1, strlen(args));
 			args[strlen(args) - 1] = '\0';
@@ -1261,9 +1257,7 @@ int BotAI(int client, float thinktime) {
 			BotVoiceChatCommand(bs, SAY_TEAM, args);
 		} else if (!Q_stricmp(buf, "vtell")) {
 			BotVoiceChatCommand(bs, SAY_TELL, args);
-		} else if (!Q_stricmp(buf, "scores")) {
-			/*FIXME: parse scores?*/
-		} else if (!Q_stricmp(buf, "clientLevelShot")) {
+		} else {
 			/*ignore*/
 		}
 	}
