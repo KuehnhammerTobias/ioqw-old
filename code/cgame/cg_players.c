@@ -705,7 +705,6 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 				Q_strncpyz(shaderName, token, sizeof(shaderName));
 
 				if (!token[0]) {
-					// end of line
 					break;
 				}
 
@@ -748,7 +747,6 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	legsSkin = torsoSkin = headSkin = qfalse;
 	/*
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%slower_%s.skin", modelName, teamName, skinName);
-
 	ci->legsSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->legsSkin) {
@@ -756,7 +754,6 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%supper_%s.skin", modelName, teamName, skinName);
-
 	ci->torsoSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->torsoSkin) {
@@ -811,7 +808,6 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/lower.md3", modelName);
-
 	ci->legsModel = trap_R_RegisterModel(filename);
 
 	if (!ci->legsModel) {
@@ -820,7 +816,6 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/upper.md3", modelName);
-
 	ci->torsoModel = trap_R_RegisterModel(filename);
 
 	if (!ci->torsoModel) {
@@ -1676,10 +1671,8 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 	vec3_t legsAngles, torsoAngles, headAngles;
 	float dest;
 	static int movementOffsets[8] = {0, 22, 45, -22, 0, 22, -45, -22};
-#ifndef BASEGAME
 	vec3_t velocity;
 	float speed;
-#endif
 	int dir, clientNum;
 	clientInfo_t *ci;
 
@@ -1739,7 +1732,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 			torsoAngles[PITCH] = 0.0f;
 		}
 	}
-#ifndef BASEGAME
+
 	// --------- roll -------------
 
 	// lean towards the direction of travel
@@ -1761,7 +1754,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 		side = speed * DotProduct(velocity, axis[0]);
 		legsAngles[PITCH] += side;
 	}
-#endif
+
 	clientNum = cent->currentState.clientNum;
 
 	if (clientNum >= 0 && clientNum < MAX_CLIENTS) {
@@ -2210,15 +2203,8 @@ Float sprites over the player's head.
 static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	int friendFlags, thirdPersonFlags, team;
 	vec3_t origin;
-// Tobias DEBUG
-	clientInfo_t *ci;
-	int clientNum;
 
-	clientNum = cent->currentState.clientNum;
-	ci = &cgs.clientinfo[clientNum];
-// Tobias END
 	VectorCopy(parent->origin, origin);
-
 	origin[2] += 42;
 
 	if (cent->currentState.number == cg.snap->ps.clientNum) {
@@ -2233,29 +2219,7 @@ static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	} else {
 		friendFlags = thirdPersonFlags = 0;
 	}
-// Tobias DEBUG
-	if (cg_drawDebug.integer) {
-		if (cg_drawStatusDebug.integer) {
-			if (cgs.gametype > GT_TOURNAMENT) {
-				if (ci) {
-					qhandle_t h;
 
-					h = CG_StatusHandle(ci->teamTask);
-					CG_PlayerFloatSprite(origin, thirdPersonFlags, h);
-					return;
-				}
-			}
-		} else if (cg_drawObstacleDebug.integer) {
-			if (ci) {
-				qhandle_t h;
-
-				h = CG_ObstacleHandle(ci->teamTask);
-				CG_PlayerFloatSprite(origin, thirdPersonFlags, h);
-				return;
-			}
-		}
-	}
-// Tobias END
 	if (cent->currentState.eFlags & EF_CONNECTION) {
 		CG_PlayerFloatSprite(origin, thirdPersonFlags, cgs.media.connectionShader);
 		return;
@@ -2557,28 +2521,23 @@ void CG_Player(centity_t *cent) {
 	memset(&head, 0, sizeof(head));
 	// get the rotation information
 	CG_PlayerAngles(cent, legs.axis, torso.axis, head.axis);
-// Tobias HACK: make player models (visually) bigger until we have new models... this way we can test our new model specific hit boxes without looking too silly
+// Tobias HACK: make player models (visually) bigger until we have new models...
 	if (!strcmp(ci->modelName, "razor")) {
-		VectorScale(legs.axis[0], 1.39, legs.axis[0]);
-		VectorScale(legs.axis[1], 1.39, legs.axis[1]);
-		VectorScale(legs.axis[2], 1.39, legs.axis[2]);
-		cent->lerpOrigin[2] += 9;
+		VectorScale(legs.axis[0], 1.41, legs.axis[0]);
+		VectorScale(legs.axis[1], 1.41, legs.axis[1]);
+		VectorScale(legs.axis[2], 1.41, legs.axis[2]);
+		cent->lerpOrigin[2] += 10;
 	} else if ((!strcmp(ci->modelName, "janet")) || (!strcmp(ci->modelName, "james"))) {
 		VectorScale(legs.axis[0], 1.12, legs.axis[0]);
 		VectorScale(legs.axis[1], 1.12, legs.axis[1]);
 		VectorScale(legs.axis[2], 1.12, legs.axis[2]);
 		cent->lerpOrigin[2] += 3;
-	} else if ((!strcmp(ci->modelName, "major")) || (!strcmp(ci->modelName, "pi")) || (!strcmp(ci->modelName, "morgan")) || (!strcmp(ci->modelName, "sorlag"))) {
+	} else if (!strcmp(ci->modelName, "mynx") || (!strcmp(ci->modelName, "major")) || (!strcmp(ci->modelName, "pi")) || (!strcmp(ci->modelName, "fritzkrieg")) || (!strcmp(ci->modelName, "morgan")) || (!strcmp(ci->modelName, "sorlag"))) {
 		VectorScale(legs.axis[0], 1.20, legs.axis[0]);
 		VectorScale(legs.axis[1], 1.20, legs.axis[1]);
 		VectorScale(legs.axis[2], 1.20, legs.axis[2]);
 		cent->lerpOrigin[2] += 5;
-	} else if ((!strcmp(ci->modelName, "fritzkrieg")) || (!strcmp(ci->modelName, "biker"))) {
-		VectorScale(legs.axis[0], 1.18, legs.axis[0]);
-		VectorScale(legs.axis[1], 1.18, legs.axis[1]);
-		VectorScale(legs.axis[2], 1.18, legs.axis[2]);
-		cent->lerpOrigin[2] += 4;
-	} else if ((!strcmp(ci->modelName, "vex")) || (!strcmp(ci->modelName, "slash"))) {
+	} else if (!strcmp(ci->modelName, "vex")) {
 		VectorScale(legs.axis[0], 0.97, legs.axis[0]);
 		VectorScale(legs.axis[1], 0.97, legs.axis[1]);
 		VectorScale(legs.axis[2], 0.97, legs.axis[2]);
@@ -2640,7 +2599,7 @@ void CG_Player(centity_t *cent) {
 		return;
 	}
 
-	torso.customSkin = legs.customSkin; // Tobias CHECK: legs?
+	torso.customSkin = legs.customSkin;
 
 	VectorCopy(cent->lerpOrigin, torso.lightingOrigin);
 	CG_PositionRotatedEntityOnTag(&torso, &legs, ci->legsModel, "tag_torso");
@@ -2746,6 +2705,7 @@ void CG_Player(centity_t *cent) {
 			AnglesToAxis(angles, skull.axis);
 			/*
 			dir[2] = 0;
+
 			VectorInverse(dir);
 			VectorCopy(dir, skull.axis[1]);
 			VectorNormalize(skull.axis[1]);
@@ -2869,7 +2829,7 @@ void CG_Player(centity_t *cent) {
 		return;
 	}
 
-	head.customSkin = legs.customSkin; // Tobias CHECK: legs?
+	head.customSkin = legs.customSkin;
 
 	VectorCopy(cent->lerpOrigin, head.lightingOrigin);
 	CG_PositionRotatedEntityOnTag(&head, &torso, ci->torsoModel, "tag_head");

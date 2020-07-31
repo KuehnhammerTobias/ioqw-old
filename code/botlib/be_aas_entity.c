@@ -67,22 +67,35 @@ int AAS_UpdateEntity(int entnum, bot_entitystate_t *state) {
 		ent->leaves = NULL;
 		return BLERR_NOERROR;
 	}
+
+	ent->i.update_time = AAS_Time() - ent->i.ltime;
+	ent->i.type = state->type;
+	ent->i.flags = state->flags;
+	ent->i.ltime = AAS_Time();
+
+	VectorCopy(ent->i.origin, ent->i.lastvisorigin);
+
+	ent->i.solid = state->solid;
+	ent->i.groundent = state->groundent;
+	ent->i.modelindex = state->modelindex;
+	ent->i.modelindex2 = state->modelindex2;
+	ent->i.frame = state->frame;
+	ent->i.event = state->event;
+	ent->i.eventParm = state->eventParm;
+	ent->i.powerups = state->powerups;
+	ent->i.weapon = state->weapon;
+	ent->i.legsAnim = state->legsAnim;
+	ent->i.torsoAnim = state->torsoAnim;
 	// number of the entity
 	ent->i.number = entnum;
 	// updated so set valid flag
 	ent->i.valid = qtrue;
-	ent->i.update_time = AAS_Time() - ent->i.ltime;
-	ent->i.ltime = AAS_Time();
-
-	VectorCopy(ent->i.origin, ent->i.lastvisorigin);
 	// link everything the first frame
 	if (aasworld.numframes == 1) {
 		relink = qtrue;
 	} else {
 		relink = qfalse;
 	}
-
-	ent->i.solid = state->solid;
 
 	if (ent->i.solid == SOLID_BSP) {
 		// if the angles of the model changed
@@ -125,19 +138,6 @@ int AAS_UpdateEntity(int entnum, bot_entitystate_t *state) {
 			ent->leaves = AAS_BSPLinkEntity(absmins, absmaxs, entnum, 0);
 		}
 	}
-
-	ent->i.flags = state->flags;
-	ent->i.type = state->type;
-	ent->i.groundent = state->groundent;
-	ent->i.modelindex = state->modelindex;
-	ent->i.modelindex2 = state->modelindex2;
-	ent->i.frame = state->frame;
-	ent->i.event = state->event;
-	ent->i.eventParm = state->eventParm;
-	ent->i.powerups = state->powerups;
-	ent->i.weapon = state->weapon;
-	ent->i.legsAnim = state->legsAnim;
-	ent->i.torsoAnim = state->torsoAnim;
 
 	return BLERR_NOERROR;
 }
@@ -235,6 +235,29 @@ int AAS_EntityModelNum(int entnum) {
 
 /*
 =======================================================================================================================================
+AAS_OriginOfMoverWithModelNum
+=======================================================================================================================================
+*/
+int AAS_OriginOfMoverWithModelNum(int modelnum, vec3_t origin) {
+	int i;
+	aas_entity_t *ent;
+
+	for (i = 0; i < aasworld.maxentities; i++) {
+		ent = &aasworld.entities[i];
+
+		if (ent->i.type == ET_MOVER) {
+			if (ent->i.modelindex == modelnum) {
+				VectorCopy(ent->i.origin, origin);
+				return qtrue;
+			}
+		}
+	}
+
+	return qfalse;
+}
+
+/*
+=======================================================================================================================================
 AAS_EntitySize
 =======================================================================================================================================
 */
@@ -298,8 +321,8 @@ void AAS_InvalidateEntities(void) {
 	int i;
 
 	for (i = 0; i < aasworld.maxentities; i++) {
-		aasworld.entities[i].i.number = i;
 		aasworld.entities[i].i.valid = qfalse;
+		aasworld.entities[i].i.number = i;
 	}
 }
 

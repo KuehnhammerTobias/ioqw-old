@@ -702,29 +702,6 @@ float LerpAngle(float from, float to, float frac) {
 
 /*
 =======================================================================================================================================
-AngleDifference
-=======================================================================================================================================
-*/
-float AngleDifference(float ang1, float ang2) {
-	float diff;
-
-	diff = ang1 - ang2;
-
-	if (ang1 > ang2) {
-		if (diff > 180.0) {
-			diff -= 360.0;
-		}
-	} else {
-		if (diff < -180.0) {
-			diff += 360.0;
-		}
-	}
-
-	return diff;
-}
-
-/*
-=======================================================================================================================================
 AngleSubtract
 
 Always returns a value from -180 to 180.
@@ -764,7 +741,6 @@ AngleMod
 =======================================================================================================================================
 */
 float AngleMod(float a) {
-
 	a = (360.0 / 65536) * ((int)(a * (65536 / 360.0)) & 65535);
 	return a;
 }
@@ -807,26 +783,6 @@ Returns the normalized delta from angle1 to angle2.
 */
 float AngleDelta(float angle1, float angle2) {
 	return AngleNormalize180(angle1 - angle2);
-}
-
-/*
-=======================================================================================================================================
-SetMovedir
-=======================================================================================================================================
-*/
-void SetMovedir(vec3_t angles, vec3_t movedir) {
-	static const vec3_t VEC_UP = {0, -1, 0};
-	static const vec3_t MOVEDIR_UP = {0, 0, 1};
-	static const vec3_t VEC_DOWN = {0, -2, 0};
-	static const vec3_t MOVEDIR_DOWN = {0, 0, -1};
-
-	if (VectorCompare(angles, VEC_UP)) {
-		VectorCopy(MOVEDIR_UP, movedir);
-	} else if (VectorCompare(angles, VEC_DOWN)) {
-		VectorCopy(MOVEDIR_DOWN, movedir);
-	} else {
-		AngleVectorsForward(angles, movedir);
-	}
 }
 
 /*
@@ -1210,87 +1166,30 @@ void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up) 
 	sr = sin(angle);
 	cr = cos(angle);
 
-	forward[0] = cp * cy;
-	forward[1] = cp * sy;
-	forward[2] = -sp;
+	if (forward) {
+		forward[0] = cp * cy;
+		forward[1] = cp * sy;
+		forward[2] = -sp;
+	}
 
-	right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
-	right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
-	right[2] = -1 * sr * cp;
+	if (right) {
+		right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
+		right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
+		right[2] = -1 * sr * cp;
+	}
 
-	up[0] = (cr * sp * cy + -sr * -sy);
-	up[1] = (cr * sp * sy + -sr * cy);
-	up[2] = cr * cp;
-}
-
-/*
-=======================================================================================================================================
-AngleVectorsRightUp
-
-Optimized version of 'AngleVectors'.
-=======================================================================================================================================
-*/
-void AngleVectorsRightUp(const vec3_t angles, vec3_t right, vec3_t up) {
-	float angle;
-	static float sr, sp, sy, cr, cp, cy;
-
-	// static to help MS compiler fp bugs
-	angle = angles[YAW] * (M_PI * 2 / 360);
-	sy = sin(angle);
-	cy = cos(angle);
-	angle = angles[PITCH] * (M_PI * 2 / 360);
-	sp = sin(angle);
-	cp = cos(angle);
-	angle = angles[ROLL] * (M_PI * 2 / 360);
-	sr = sin(angle);
-	cr = cos(angle);
-
-	right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
-	right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
-	right[2] = -1 * sr * cp;
-
-	up[0] = (cr * sp * cy + -sr * -sy);
-	up[1] = (cr * sp * sy + -sr * cy);
-	up[2] = cr * cp;
-}
-
-
-/*
-=======================================================================================================================================
-AngleVectorsForwardRight
-
-Optimized version of 'AngleVectors'.
-=======================================================================================================================================
-*/
-void AngleVectorsForwardRight(const vec3_t angles, vec3_t forward, vec3_t right) {
-	float angle;
-	static float sr, sp, sy, cr, cp, cy;
-
-	// static to help MS compiler fp bugs
-	angle = angles[YAW] * (M_PI * 2 / 360);
-	sy = sin(angle);
-	cy = cos(angle);
-	angle = angles[PITCH] * (M_PI * 2 / 360);
-	sp = sin(angle);
-	cp = cos(angle);
-	angle = angles[ROLL] * (M_PI * 2 / 360);
-	sr = sin(angle);
-	cr = cos(angle);
-
-	forward[0] = cp * cy;
-	forward[1] = cp * sy;
-	forward[2] = -sp;
-
-	right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
-	right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
-	right[2] = -1 * sr * cp;
+	if (up) {
+		up[0] = (cr * sp * cy + -sr * -sy);
+		up[1] = (cr * sp * sy + -sr * cy);
+		up[2] = cr * cp;
+	}
 }
 
 /*
 =======================================================================================================================================
 AngleVectorsForward
 
-Optimized version of 'AngleVectorsForwardRight'.
+Optimized version of 'AngleVectors'.
 =======================================================================================================================================
 */
 void AngleVectorsForward(const vec3_t angles, vec3_t forward) {

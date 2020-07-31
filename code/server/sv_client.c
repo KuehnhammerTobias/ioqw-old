@@ -290,8 +290,8 @@ void SV_DirectConnect(netadr_t from) {
 	// if "sv_privateClients" is set > 0, then that number of client slots will be reserved for connections that
 	// have "password" set to the value of "sv_privatePassword"
 	// info requests will report the maxclients as if the private slots didn't exist, to prevent people from trying to connect
-	// to a full server
-	// this is to allow us to reserve a couple slots here on our servers so we can play without having to kick people
+	// to a full server.
+	// this is to allow us to reserve a couple slots here on our servers so we can play without having to kick people.
 
 	// check for privateClient password
 	password = Info_ValueForKey(userinfo, "password");
@@ -510,7 +510,7 @@ static void SV_SendClientGameState(client_t *client) {
 	// NOTE: all server->client messages now acknowledge
 	// let the client know which reliable clientCommands we have received
 	MSG_WriteLong(&msg, client->lastClientCommand);
-	// send any server commands waiting to be sent first
+	// send any server commands waiting to be sent first.
 	// we have to do this cause we send the client->reliableSequence with a gamestate and it sets the clc.serverCommandSequence at
 	// the client side
 	SV_UpdateServerCommandsToClient(client, &msg);
@@ -840,7 +840,7 @@ int SV_WriteDownloadToClient(client_t *cl, msg_t *msg) {
 
 	Com_DPrintf("clientDownload: %d : writing block %d\n", (int)(cl - svs.clients), cl->downloadXmitBlock);
 	// move on to the next block
-	// it will get sent with next snap shot. The rate will keep us in line
+	// it will get sent with next snap shot. The rate will keep us in line.
 	cl->downloadXmitBlock++;
 	cl->downloadSendTime = svs.time;
 	return 1;
@@ -1459,8 +1459,8 @@ static qboolean SV_ShouldIgnoreVoipSender(const client_t *cl) {
 	} else if (!cl->hasVoip) { // client doesn't have VoIP support?!
 		return qtrue;
 	}
-	// !!! FIXME: implement player blacklist
-	return qfalse; // don't ignore
+	// !!! FIXME: implement player blacklist.
+	return qfalse; // don't ignore.
 }
 
 /*

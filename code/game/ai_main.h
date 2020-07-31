@@ -69,12 +69,10 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define TEAMTP_DEFENDER 1
 #define TEAMTP_ATTACKER 2
 // global team strategies
-#define CTFS_ALL_DEFENSIVE	1
-#define CTFS_MAX_DEFENSIVE	2
-#define CTFS_DEFENSIVE		3
-#define CTFS_AGGRESSIVE		4 // was 1
-#define CTFS_MAX_AGGRESSIVE	5
-#define CTFS_ALL_AGGRESSIVE	6
+#define CTFS_MAX_DEFENSIVE	1
+#define CTFS_DEFENSIVE		2
+#define CTFS_AGGRESSIVE		3 // was 1
+#define CTFS_MAX_AGGRESSIVE	4
 // copied from the aas file header
 #define PRESENCE_NONE	1
 #define PRESENCE_NORMAL	2
@@ -92,9 +90,6 @@ typedef struct bot_waypoint_s {
 #define MAX_ACTIVATESTACK 8
 #define MAX_ACTIVATEAREAS 32
 
-struct bot_state_s;
-typedef void (*bot_aienter_t)(struct bot_state_s *bs, char *s);
-
 typedef struct bot_activategoal_s {
 	int inuse;
 	bot_goal_t goal;					// goal to activate (buttons etc.)
@@ -108,24 +103,8 @@ typedef struct bot_activategoal_s {
 	int areas[MAX_ACTIVATEAREAS];		// routing areas disabled by blocking entity
 	int numareas;						// number of disabled routing areas
 	int areasdisabled;					// true if the areas are disabled for the routing
-	bot_aienter_t aienter;				// function to call to return to AI node from before going to activate entity
 	struct bot_activategoal_s *next;	// next activate goal on stack
 } bot_activategoal_t;
-// definitions for view history
-#define VIEWHISTORY_SIZE 128
-
-typedef struct viewhistory_s {
-	vec3_t real_viewangles;
-	vec3_t lastviewcommand;
-	vec3_t totalviewdistortion;
-	float lastUpdateTime;
-	int oldestEntry;
-	struct {
-		float time;
-		vec3_t ideal_view;
-		vec3_t viewdistortion;
-	} entryTab[VIEWHISTORY_SIZE];
-} viewhistory_t;
 // bot state
 #define MAX_SUBTEAM_SIZE 32
 
@@ -140,7 +119,6 @@ typedef struct bot_state_s {
 	int entityeventTime[MAX_GENTITIES];		// last entity event time
 	bot_settings_t settings;				// several bot settings
 	int (*ainode)(struct bot_state_s *bs);	// current AI node
-	char ainodename[32];					// current AI node name // Tobias DEBUG
 	float thinktime;						// time the bot thinks this frame
 	vec3_t origin;							// origin of the bot
 	vec3_t velocity;						// velocity of the bot
@@ -171,8 +149,6 @@ typedef struct bot_state_s {
 	int enemyteamscore;						// enemy team score
 	int ownteamscore;						// own team score
 	float walker;							// walker charactertic
-	float croucher;							// crouch charactertic
-	float jumper;							// jumper charactertic
 	float ltime;							// local bot time
 	float entergame_time;					// time the bot entered the game
 	float ltg_time;							// long term goal time
@@ -213,7 +189,6 @@ typedef struct bot_state_s {
 	float blockedbyavoidspot_time;			// time blocked by an avoid spot
 	float predictobstacles_time;			// last time the bot predicted obstacles
 	int predictobstacles_goalareanum;		// last goal areanum the bot predicted obstacles for
-	qboolean allowHitWorld;					// in some situations a bot is allowed to shoot at the ground or walls (i.e. projectiles with radial damage)
 	vec3_t aimtarget;
 	vec3_t enemyvelocity;					// enemy velocity 0.5 secs ago during battle
 	vec3_t enemyorigin;						// enemy origin 0.5 secs ago during battle
@@ -232,7 +207,6 @@ typedef struct bot_state_s {
 	vec3_t viewangles;						// current view angles
 	vec3_t ideal_viewangles;				// ideal view angles
 	vec3_t viewanglespeed;
-	viewhistory_t viewhistory;
 	int ltgtype;							// long term goal type
 	// team goals
 	int teammate;							// team mate involved in this team goal
@@ -303,50 +277,3 @@ int BotAI_GetClientState(int clientNum, playerState_t *state);
 int BotAI_GetEntityState(int entityNum, entityState_t *state);
 int BotAI_GetSnapshotEntity(int clientNum, int sequence, entityState_t *state);
 int BotTeamLeader(bot_state_t *bs);
-// Tobias DEBUG: new bot test cvars for debugging
-extern vmCvar_t bot_enable;
-extern vmCvar_t bot_developer;
-extern vmCvar_t bot_debug;
-extern vmCvar_t bot_maxdebugpolys;
-extern vmCvar_t bot_groundonly;
-extern vmCvar_t bot_reachability;
-extern vmCvar_t bot_visualizejumppads;
-extern vmCvar_t bot_forceclustering;
-extern vmCvar_t bot_forcereachability;
-extern vmCvar_t bot_forcewrite;
-extern vmCvar_t bot_aasoptimize;
-extern vmCvar_t bot_saveroutingcache;
-extern vmCvar_t bot_thinktime;
-extern vmCvar_t bot_reloadcharacters;
-extern vmCvar_t bot_testichat;
-extern vmCvar_t bot_testrchat;
-extern vmCvar_t bot_testsolid;
-extern vmCvar_t bot_testclusters;
-extern vmCvar_t bot_fastchat;
-extern vmCvar_t bot_nochat;
-extern vmCvar_t bot_pause;
-extern vmCvar_t bot_report;
-extern vmCvar_t bot_rocketjump;
-extern vmCvar_t bot_challenge;
-extern vmCvar_t bot_interbreedchar;
-extern vmCvar_t bot_interbreedbots;
-extern vmCvar_t bot_interbreedcycle;
-extern vmCvar_t bot_interbreedwrite;
-extern vmCvar_t bot_memorydump;
-extern vmCvar_t bot_visualrange;
-extern vmCvar_t bot_checktime;
-extern vmCvar_t bot_predictobstacles;
-extern vmCvar_t bot_equalize;
-extern vmCvar_t bot_equalizer_aim;
-extern vmCvar_t bot_equalizer_react;
-extern vmCvar_t bot_equalizer_fembon;
-extern vmCvar_t bot_equalizer_teambon;
-extern vmCvar_t bot_noshoot;
-extern vmCvar_t bot_nowalk;
-extern vmCvar_t bot_shownodechanges;
-extern vmCvar_t bot_teambluestrategy;
-extern vmCvar_t bot_teamredstrategy;
-extern vmCvar_t bot_alt_aggressive;
-extern vmCvar_t bot_alt_attack;
-extern vmCvar_t bot_alt_pickup;
-// Tobias END

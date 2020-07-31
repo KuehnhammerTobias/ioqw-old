@@ -236,7 +236,7 @@ void BotMutateGoalFuzzyLogic(int goalstate, float range) {
 LoadItemConfig
 =======================================================================================================================================
 */
-itemconfig_t *LoadItemConfig(const char *filename) {
+itemconfig_t *LoadItemConfig(char *filename) {
 	int max_iteminfo;
 	token_t token;
 	char path[MAX_QPATH];
@@ -584,7 +584,7 @@ void BotInitLevelItems(void) {
 
 				end[2] -= 32;
 				trace = AAS_Trace(origin, ic->iteminfo[i].mins, ic->iteminfo[i].maxs, end, -1, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
-				// if the item is not near the ground
+				// if the item not near the ground
 				if (trace.fraction >= 1) {
 					// if the item is not reachable from a jumppad
 					goalareanum = AAS_BestReachableFromJumpPadArea(origin, ic->iteminfo[i].mins, ic->iteminfo[i].maxs);
@@ -1343,13 +1343,9 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
 	if (!areanum || !AAS_AreaReachability(areanum)) {
-#ifdef DEBUG
-		botimport.Print(PRT_MESSAGE, "BotChooseLTGItem: Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
-#endif
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {
 			areanum = gs->lastreachabilityarea;
-			//botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "(SG 1 of 3) gs->lastreachabilityarea > 0 CASE LTG: areanum: %d\n", areanum);
 		}
 	}
 	// if still in solid
@@ -1510,8 +1506,6 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 /*
 =======================================================================================================================================
 BotChooseNBGItem
-
-Pops a new nearby goal on the goal stack in the goalstate.
 =======================================================================================================================================
 */
 int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelflags, bot_goal_t *ltg, float maxtime) {
@@ -1536,13 +1530,9 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
 	if (!areanum || !AAS_AreaReachability(areanum)) {
-#ifdef DEBUG
-		botimport.Print(PRT_MESSAGE, "BotChooseNBGItem: Bot is in solid or area has no reachability links: %d %d\n", areanum, gs->lastreachabilityarea);
-#endif
 		// use the last valid area the bot was in
 		if (gs->lastreachabilityarea > 0) {
 			areanum = gs->lastreachabilityarea;
-			//botimport.Print(PRT_MESSAGE, S_COLOR_CYAN "(SG 2 of 3) gs->lastreachabilityarea > 0 CASE NBG: areanum: %d\n", areanum);
 		}
 	}
 	// if still in solid
@@ -1646,11 +1636,6 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 					}
 				}
 			}
-#ifdef DEBUG
-			else {
-				botimport.Print(PRT_MESSAGE, "Can't reach %d\n", li->entitynum);
-			}
-#endif
 		}
 	}
 	// if no goal item found
@@ -1755,9 +1740,8 @@ int BotItemGoalInVisButNotVisible(int viewer, vec3_t eye, vec3_t viewangles, bot
 		if (goal->entitynum <= 0) {
 			return qfalse;
 		}
-		// get info about the entity
-		AAS_EntityInfo(goal->entitynum, &entinfo);
 		// if the entity data isn't valid
+		AAS_EntityInfo(goal->entitynum, &entinfo);
 		// NOTE: for some wacko reason entities are sometimes not updated
 		//if (!entinfo.valid) {
 		//	return qtrue;
@@ -1893,7 +1877,7 @@ BotSetupGoalAI
 =======================================================================================================================================
 */
 int BotSetupGoalAI(void) {
-	const char *filename;
+	char *filename;
 
 	// check if teamplay is on
 	g_gametype = LibVarValue("g_gametype", "0");

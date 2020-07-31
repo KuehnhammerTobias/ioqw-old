@@ -67,12 +67,28 @@ int botlibsetup = qfalse;
 
 /*
 =======================================================================================================================================
+ValidClientNumber
+=======================================================================================================================================
+*/
+qboolean ValidClientNumber(int num, char *str) {
+
+	if (num < 0 || num > botlibglobals.maxclients) {
+		// weird: the disabled stuff results in a crash
+		botimport.Print(PRT_ERROR, "%s: invalid client number %d, [0, %d]\n", str, num, botlibglobals.maxclients);
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+/*
+=======================================================================================================================================
 ValidEntityNumber
 =======================================================================================================================================
 */
-static qboolean ValidEntityNumber(int num, const char *str) {
+qboolean ValidEntityNumber(int num, char *str) {
 
-	if (num < 0 || (unsigned)num > botlibglobals.maxentities) {
+	if (num < 0 || num > botlibglobals.maxentities) {
 		botimport.Print(PRT_ERROR, "%s: invalid entity number %d, [0, %d]\n", str, num, botlibglobals.maxentities);
 		return qfalse;
 	}
@@ -85,7 +101,7 @@ static qboolean ValidEntityNumber(int num, const char *str) {
 BotLibSetup
 =======================================================================================================================================
 */
-static qboolean BotLibSetup(const char *str) {
+qboolean BotLibSetup(char *str) {
 
 	if (!botlibglobals.botlibsetup) {
 		botimport.Print(PRT_ERROR, "%s: bot library used before being setup\n", str);
@@ -217,11 +233,13 @@ Export_BotLibVarGet
 =======================================================================================================================================
 */
 int Export_BotLibVarGet(const char *var_name, char *value, int size) {
-	const char *varvalue;
+	char *varvalue;
 
 	varvalue = LibVarGetString(var_name);
 
-	Q_strncpyz(value, varvalue, size);
+	strncpy(value, varvalue, size - 1);
+
+	value[size - 1] = '\0';
 	return BLERR_NOERROR;
 }
 
@@ -277,7 +295,7 @@ int Export_BotLibLoadMap(const char *mapname) {
 Export_BotLibUpdateEntity
 =======================================================================================================================================
 */
-static int Export_BotLibUpdateEntity(int ent, bot_entitystate_t *state) {
+int Export_BotLibUpdateEntity(int ent, bot_entitystate_t *state) {
 
 	if (!BotLibSetup("BotUpdateEntity")) {
 		return BLERR_LIBRARYNOTSETUP;
@@ -297,7 +315,7 @@ int AAS_PointLight(vec3_t origin, int *red, int *green, int *blue);
 int AAS_TraceAreas(vec3_t start, vec3_t end, int *areas, vec3_t *points, int maxareas);
 int AAS_Reachability_WeaponJump(int area1num, int area2num);
 int BotFuzzyPointReachabilityArea(vec3_t origin);
-float BotGapDistance(vec3_t origin, vec3_t velocity, vec3_t hordir, int entnum);
+int BotGapDistance(vec3_t origin, vec3_t hordir, int checkdist, int entnum);
 void AAS_FloodAreas(vec3_t origin);
 
 /*
@@ -323,7 +341,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 	//bot_goal_t goal;
 	//clock_t start_time, end_time;
 	//vec3_t mins = {-16, -16, -24};
-	//vec3_t maxs = {16, 16, 56};
+	//vec3_t maxs = {16, 16, 32};
 	//int areas[10], numareas;
 
 	//return 0;
@@ -544,7 +562,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 	}
 
 	VectorClear(forward);
-	//BotGapDistance(origin, 0, forward, 0);
+	//BotGapDistance(origin, forward, 100, 0);
 	/*
 	if (parm0 & BUTTON_USE) {
 		botimport.Print(PRT_MESSAGE, "test rj from 703 to 716\n");
@@ -572,8 +590,8 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 
 	AAS_ClearShownDebugLines();
 
-	if (trace.entityNum) {
-		ent = &aasworld.entities[trace.entityNum];
+	if (trace.ent) {
+		ent = &aasworld.entities[trace.ent];
 		AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 	}
 
@@ -617,8 +635,8 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 
 		AAS_DrawPlaneCross(bsptrace.endpos, bsptrace.plane.normal, bsptrace.plane.dist + bsptrace.exp_dist, bsptrace.plane.type, LINECOLOR_GREEN);
 
-		if (trace.entityNum) {
-			ent = &aasworld.entities[trace.entityNum];
+		if (trace.ent) {
+			ent = &aasworld.entities[trace.ent];
 			AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 		}
 	}
@@ -630,7 +648,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3) {
 	if (bsptrace.fraction < 1.0) {
 		AAS_DrawPlaneCross(bsptrace.endpos, bsptrace.plane.normal, bsptrace.plane.dist, bsptrace.plane.type, LINECOLOR_RED);
 
-		if (bsptrace.entityNum) {
+		if (bsptrace.ent) {
 			ent = &aasworld.entities[bsptrace.ent];
 			AAS_ShowBoundingBox(ent->origin, ent->mins, ent->maxs);
 		}
@@ -735,6 +753,7 @@ static void Init_AI_Export(ai_export_t *ai) {
 	ai->BotInitialChat = BotInitialChat;
 	ai->BotGetChatMessage = BotGetChatMessage;
 	ai->BotReplyChat = BotReplyChat;
+	ai->BotChatLength = BotChatLength;
 	ai->BotEnterChat = BotEnterChat;
 	ai->StringContains = StringContains;
 	ai->BotFindMatch = BotFindMatch;

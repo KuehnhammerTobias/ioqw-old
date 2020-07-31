@@ -187,8 +187,27 @@ static void CG_ParseWarmup(void) {
 
 	info = CG_ConfigString(CS_WARMUP);
 	warmup = atoi(info);
-	cg.warmup = warmup;
 	cg.warmupCount = -1;
+
+	if (warmup == 0 && cg.warmup) {
+
+	} else if (warmup > 0 && cg.warmup <= 0) {
+		if (cgs.gametype > GT_TOURNAMENT && cgs.gametype <= GT_HARVESTER) {
+			if (cg.soundPlaying != cgs.media.countPrepareTeamSound) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.countPrepareTeamSound);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
+		} else {
+			if (cg.soundPlaying != cgs.media.countPrepareSound) {
+				CG_AddBufferedAnnouncerSound(-1);
+				CG_AddBufferedAnnouncerSound(cgs.media.countPrepareSound);
+				cg.soundTime = cg.time + 1; // play in next frame
+			}
+		}
+	}
+
+	cg.warmup = warmup;
 }
 
 /*
@@ -446,7 +465,7 @@ static void CG_MapRestart(void) {
 	cg.soundBufferIn = 0;
 	cg.soundBufferOut = 0;
 
-	memset(cg.soundBuffer, 0, sizeof(cg.soundBuffer));
+	cg.soundBuffer[cg.soundBufferOut] = 0;
 	// Tobias END
 	// make sure the "3 frags left" warnings play again
 	cg.fraglimitWarnings = 0;

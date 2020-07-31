@@ -322,7 +322,7 @@ void CG_AddParticleToScene(cparticle_t *p, vec3_t org, float alpha) {
 		if (p->roll) {
 			VectorToAngles(cg.refdef.viewaxis[0], rotate_ang);
 			rotate_ang[ROLL] += p->roll;
-			AngleVectorsRightUp(rotate_ang, rr, ru);
+			AngleVectors(rotate_ang, NULL, rr, ru);
 		}
 
 		if (p->roll) {
@@ -449,7 +449,7 @@ void CG_AddParticleToScene(cparticle_t *p, vec3_t org, float alpha) {
 			VectorToAngles(rforward, temp);
 			p->accumroll += p->roll;
 			temp[ROLL] += p->accumroll * 0.1;
-			AngleVectorsRightUp(temp, rright2, rup2);
+			AngleVectors(temp, NULL, rright2, rup2);
 		} else {
 			VectorCopy(rright, rright2);
 			VectorCopy(rup, rup2);
@@ -528,7 +528,7 @@ void CG_AddParticleToScene(cparticle_t *p, vec3_t org, float alpha) {
 		if (p->roll) {
 			VectorToAngles(cg.refdef.viewaxis[0], rotate_ang);
 			rotate_ang[ROLL] += p->roll;
-			AngleVectorsRightUp(rotate_ang, rr, ru);
+			AngleVectors(rotate_ang, NULL, rr, ru);
 		} else {
 			VectorCopy(vup, ru);
 			VectorCopy(vright, rr);
@@ -705,7 +705,7 @@ void CG_AddParticleToScene(cparticle_t *p, vec3_t org, float alpha) {
 		if (p->roll) {
 			VectorToAngles(cg.refdef.viewaxis[0], rotate_ang);
 			rotate_ang[ROLL] += p->roll;
-			AngleVectorsRightUp(rotate_ang, rr, ru);
+			AngleVectors(rotate_ang, NULL, rr, ru);
 		}
 
 		if (p->roll) {
@@ -1632,7 +1632,7 @@ qboolean ValidBloodPool(vec3_t start) {
 
 	VectorSet(normal, 0, 0, 1);
 	VectorToAngles(normal, angles);
-	AngleVectorsRightUp(angles, right, up);
+	AngleVectors(angles, NULL, right, up);
 	VectorMA(start, EXTRUDE_DIST, normal, center_pos);
 
 	for (x = -fwidth / 2; x < fwidth; x += fwidth) {

@@ -415,6 +415,7 @@ static facet_t facets[MAX_FACETS];
 
 #define NORMAL_EPSILON 0.0001
 #define DIST_EPSILON 0.02
+
 /*
 =======================================================================================================================================
 CM_PlaneEqual
@@ -531,7 +532,7 @@ static int CM_FindPlane(float *p1, float *p2, float *p3) {
 	}
 	// add a new plane
 	if (numPlanes == MAX_PATCH_PLANES) {
-		Com_Error(ERR_DROP, "CM_FindPlane: MAX_PATCH_PLANES");
+		Com_Error(ERR_DROP, "MAX_PATCH_PLANES");
 	}
 
 	Vector4Copy(plane, planes[numPlanes].plane);
@@ -1244,7 +1245,7 @@ struct patchCollide_s *CM_GeneratePatchCollide(int width, int height, vec3_t *po
 	CM_SetGridWrapWidth(&grid);
 	CM_SubdivideGridColumns(&grid);
 	CM_RemoveDegenerateColumns(&grid);
-	// we now have a grid of points exactly on the curve, the approximate surface defined by these points will be collided against
+	// we now have a grid of points exactly on the curve the approximate surface defined by these points will be collided against
 	pf = Hunk_Alloc(sizeof(*pf), h_high);
 
 	ClearBounds(pf->bounds[0], pf->bounds[1]);
@@ -1776,9 +1777,9 @@ void CM_DrawDebugSurface(void (*DrawPoly)(int color, int numPoints, float *point
 					plane[3] = -plane[3];
 				}
 
-				//if (!facet->borderNoAdjust[j]) {
+		//		if (!facet->borderNoAdjust[j]) {
 				plane[3] -= cv->value;
-				//}
+		//		}
 
 				for (n = 0; n < 3; n++) {
 					if (plane[n] > 0) {

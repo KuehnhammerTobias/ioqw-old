@@ -41,6 +41,7 @@ struct bot_initmove_s;
 struct weaponinfo_s;
 
 #define BOTFILESBASEFOLDER "botfiles"
+#define MAX_EPAIRKEY 128
 // debug line colors
 #define LINECOLOR_NONE		0
 #define LINECOLOR_RED		1
@@ -132,7 +133,7 @@ typedef struct botlib_import_s {
 	// get time for measuring time lapse
 	int (*MilliSeconds)(void);
 	// print messages from the bot library
-	void (QDECL *Print)(int type, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+	void (QDECL *Print)(int type, char *fmt, ...) __attribute__((format(printf, 2, 3)));
 	// trace a bbox through the world
 	void (*Trace)(bsp_trace_t *trace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask);
 	// trace a bbox against entities
@@ -147,7 +148,7 @@ typedef struct botlib_import_s {
 	char *(*BSPEntityData)(void);
 	void (*BSPModelMinsMaxsOrigin)(int modelnum, vec3_t angles, vec3_t mins, vec3_t maxs, vec3_t origin);
 	// send a bot client command
-	void (*BotClientCommand)(int client, const char *command);
+	void (*BotClientCommand)(int client, char *command);
 	// memory allocation
 	void *(*GetMemory)(int size);	// allocate from Zone
 	void (*FreeMemory)(void *ptr);	// free memory from Zone
@@ -210,9 +211,9 @@ typedef struct ea_export_s {
 	void (*EA_View)(int client, vec3_t viewangles);
 	void (*EA_Crouch)(int client);
 	void (*EA_SelectWeapon)(int client, int weapon);
-	void (*EA_Say)(int client, const char *str);
-	void (*EA_SayTeam)(int client, const char *str);
-	void (*EA_Command)(int client, const char *command);
+	void (*EA_Say)(int client, char *str);
+	void (*EA_SayTeam)(int client, char *str);
+	void (*EA_Command)(int client, char *command);
 	void (*EA_Gesture)(int client);
 	void (*EA_Action)(int client, int action);
 	void (*EA_Talk)(int client);
@@ -244,6 +245,7 @@ typedef struct ai_export_s {
 	void (*BotInitialChat)(int chatstate, char *type, int mcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
 	void (*BotGetChatMessage)(int chatstate, char *buf, int size);
 	int (*BotReplyChat)(int chatstate, char *message, int mcontext, int vcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
+	int (*BotChatLength)(int chatstate);
 	void (*BotEnterChat)(int chatstate, int client, int sendto);
 	int (*StringContains)(char *str1, char *str2, int casesensitive);
 	int (*BotFindMatch)(char *str, struct bot_match_s *match, unsigned long int context);
@@ -331,7 +333,7 @@ typedef struct botlib_export_s {
 	// gets a library variable returns BLERR_
 	int (*BotLibVarGet)(const char *var_name, char *value, int size);
 	// sets a C-like define returns BLERR_
-	int (*PC_AddGlobalDefine)(const char *string);
+	int (*PC_AddGlobalDefine)(char *string);
 	int (*PC_LoadSourceHandle)(const char *filename);
 	int (*PC_FreeSourceHandle)(int handle);
 	int (*PC_ReadTokenHandle)(int handle, pc_token_t *pc_token);

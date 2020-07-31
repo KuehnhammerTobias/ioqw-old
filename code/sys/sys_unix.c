@@ -570,7 +570,7 @@ void Sys_ErrorDialog(const char *error) {
 		Com_Printf("ERROR: couldn't open %s\n", fileName);
 		return;
 	}
-	// we're crashing, so we don't care much if write() or close() fails
+	// we're crashing, so we don't care much if write() or close() fails.
 	while ((size = CON_LogRead(buffer, sizeof(buffer))) > 0) {
 		if (write(f, buffer, size) != size) {
 			Com_Printf("ERROR: couldn't fully write to %s\n", fileName);

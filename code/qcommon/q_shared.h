@@ -648,7 +648,6 @@ void VectorToAngles(const vec3_t value1, vec3_t angles);
 void AnglesToAxis(const vec3_t angles, vec3_t axis[3]);
 void AxisClear(vec3_t axis[3]);
 void AxisCopy(vec3_t in[3], vec3_t out[3]);
-void SetMovedir(vec3_t angles, vec3_t movedir);
 void SetPlaneSignbits(struct cplane_s *out);
 int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
@@ -656,7 +655,6 @@ qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_
 qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, const vec3_t origin);
 float AngleMod(float a);
 float LerpAngle(float from, float to, float frac);
-float AngleDifference(float ang1, float ang2);
 float AngleSubtract(float a1, float a2);
 void AnglesSubtract(vec3_t v1, vec3_t v2, vec3_t v3);
 float AngleNormalize360(float angle);
@@ -676,10 +674,6 @@ void MatrixSetupTransformFromRotation(matrix_t m, const matrix_t rot, const vec3
 void MatrixTransformPoint2(const matrix_t m, vec3_t inout);
 // Tobias END
 void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
-// optimized version of AngleVectors (when only right and up vectors are needed)
-void AngleVectorsRightUp(const vec3_t angles, vec3_t right, vec3_t up);
-// optimized version of AngleVectors (when only forward and right vectors are needed)
-void AngleVectorsForwardRight(const vec3_t angles, vec3_t forward, vec3_t right);
 // optimized version of AngleVectors (when only forward is needed)
 void AngleVectorsForward(const vec3_t angles, vec3_t forward);
 void PerpendicularVector(vec3_t dst, const vec3_t src);
@@ -832,8 +826,8 @@ void QDECL Com_Printf(const char *msg, ...) __attribute__((format(printf, 1, 2))
 #define CVAR_VM_CREATED		0x00001000 // cvar was created exclusively in one of the VMs.
 #define CVAR_PROTECTED		0x00002000 // prevent modifying this var from VMs or the server
 // these flags are only returned by the Cvar_Flags() function
-#define CVAR_MODIFIED		0x40000000 // cvar was modified
-#define CVAR_NONEXISTENT	0x80000000 // cvar doesn't exist
+#define CVAR_MODIFIED		0x40000000 // Cvar was modified
+#define CVAR_NONEXISTENT	0x80000000 // Cvar doesn't exist.
 // nothing outside the Cvar_*() functions should modify these fields!
 typedef struct cvar_s cvar_t;
 
@@ -882,7 +876,7 @@ typedef struct {
 // if you change the count of flags be sure to also change VOIP_FLAGNUM
 #define VOIP_SPATIAL	0x00000001 // spatialized voip message
 #define VOIP_DIRECT		0x00000002 // non-spatialized voip message
-// number of flags voip knows. You will have to bump protocol version number if you change this
+// number of flags voip knows. You will have to bump protocol version number if you change this.
 #define VOIP_FLAGCNT 2
 
 /*
@@ -920,7 +914,7 @@ typedef struct {
 	cplane_t plane;			// surface normal at impact, transformed to world space
 	int surfaceFlags;		// surface hit
 	int contents;			// contents on other side of surface hit
-	int entityNum;			// entity the contacted surface is a part of
+	int entityNum;			// entity the contacted sirface is a part of
 } trace_t;
 // trace->entityNum can also be 0 to (MAX_GENTITIES - 1) or ENTITYNUM_NONE, ENTITYNUM_WORLD
 
@@ -982,13 +976,11 @@ typedef enum {
 #define ENTITYNUM_NONE (MAX_GENTITIES - 1)
 #define ENTITYNUM_WORLD (MAX_GENTITIES - 2)
 #define ENTITYNUM_MAX_NORMAL (MAX_GENTITIES - 2)
-
 #define MODELINDEX_BITS 10
 // these are networked using the modelindex and/or modelindex2 field, must fit in MODELINDEX_BITS
 #define MAX_SUBMODELS 1024 // max bsp models, q3map2 limits to 1024 via MAX_MAP_MODELS
 #define MAX_MODELS 256 // max model filenames set by game VM
 #define MAX_SOUNDS 256 // this is sent over the net as 8 bits (in eventParm) so they cannot be blindly increased
-
 #define MAX_CONFIGSTRINGS 1024
 // these are the only configstrings that the system reserves, all the other ones are strictly for servergame to clientgame communication
 #define CS_SERVERINFO 0 // an info string with all the serverinfo cvars
@@ -1089,7 +1081,7 @@ typedef struct usercmd_s {
 	signed char forwardmove, rightmove, upmove;
 } usercmd_t;
 
-#define SCOUT_SPEED_SCALE 1.5f
+#define SCOUT_SPEED_SCALE 1.5
 // if entityState->solid == SOLID_BMODEL, modelindex is an inline model number
 #define SOLID_BMODEL 0xffffff
 

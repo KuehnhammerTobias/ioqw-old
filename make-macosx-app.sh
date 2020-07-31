@@ -326,7 +326,7 @@ fi
 
 PLIST="${PLIST}
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 1999-2020 id Software LLC, ioquake3 contributors, Spearmint contributors, ioid3 contributors.</string>
+    <string>Copyright © 1999-2019 id Software LLC, ioquake3 contributors, Spearmint contributors, ioid3 contributors.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>

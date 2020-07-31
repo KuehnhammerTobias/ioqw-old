@@ -255,8 +255,8 @@ UIDIR=$(MOUNT_DIR)/ui
 JPDIR=$(MOUNT_DIR)/jpeg-8c
 OGGDIR=$(MOUNT_DIR)/libogg-1.3.3
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.6
-OPUSDIR=$(MOUNT_DIR)/opus-1.3
-OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.11
+OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
+OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.9
 ZDIR=$(MOUNT_DIR)/zlib
 FTDIR=$(MOUNT_DIR)/freetype-2.9
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
@@ -2736,6 +2736,7 @@ OBJ = $(Q3OBJ) $(Q3ROBJ) $(Q3R2OBJ) $(Q3DOBJ) $(JPGOBJ) $(FTOBJ) \
 TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)
 STRINGOBJ1 = $(Q3R1STRINGOBJ)
 STRINGOBJ2 = $(Q3R2STRINGOBJ)
+
 
 copyfiles: release
 	@if [ ! -d $(COPYDIR)/$(BASEGAME) ]; then echo "You need to set COPYDIR to where your Quake Wars data is!"; fi

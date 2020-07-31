@@ -46,10 +46,10 @@ typedef enum {
 	qfalse,
 	qtrue
 } qboolean;
+
 #endif // SCREWUP
 #ifdef BOTLIB
 #include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
 #include "botlib.h"
 #include "be_interface.h"
 #include "l_memory.h"
@@ -90,12 +90,12 @@ define_t *globaldefines;
 SourceError
 =======================================================================================================================================
 */
-void QDECL SourceError(source_t *source, const char *fmt, ...) {
+void QDECL SourceError(source_t *source, char *str, ...) {
 	char text[1024];
 	va_list ap;
 
-	va_start(ap, fmt);
-	Q_vsnprintf(text, sizeof(text), fmt, ap);
+	va_start(ap, str);
+	Q_vsnprintf(text, sizeof(text), str, ap);
 	va_end(ap);
 #ifdef BOTLIB
 	botimport.Print(PRT_ERROR, "file %s, line %d: %s\n", source->scriptstack->filename, source->scriptstack->line, text);
@@ -110,12 +110,12 @@ void QDECL SourceError(source_t *source, const char *fmt, ...) {
 SourceWarning
 =======================================================================================================================================
 */
-void QDECL SourceWarning(source_t *source, const char *fmt, ...) {
+void QDECL SourceWarning(source_t *source, char *str, ...) {
 	char text[1024];
 	va_list ap;
 
-	va_start(ap, fmt);
-	Q_vsnprintf(text, sizeof(text), fmt, ap);
+	va_start(ap, str);
+	Q_vsnprintf(text, sizeof(text), str, ap);
 	va_end(ap);
 #ifdef BOTLIB
 	botimport.Print(PRT_WARNING, "file %s, line %d: %s\n", source->scriptstack->filename, source->scriptstack->line, text);
@@ -420,29 +420,20 @@ int PC_ReadDefineParms(source_t *source, define_t *define, token_t **parms, int 
 PC_StringizeTokens
 =======================================================================================================================================
 */
-int PC_StringizeTokens(const token_t *tokens, token_t *token) {
-	const token_t *t;
-	int len, total;
+int PC_StringizeTokens(token_t *tokens, token_t *token) {
+	token_t *t;
 
 	token->type = TT_STRING;
 	token->whitespace_p = NULL;
 	token->endwhitespace_p = NULL;
-	token->string[0] = '"';
-	total = 1;
+	token->string[0] = '\0';
+	strcat(token->string, "\"");
 
 	for (t = tokens; t; t = t->next) {
-		len = (int)strlen(t->string);
-
-		if (len + total >= sizeof(token->string) - 1) { // reserve space for '"' and '\0'
-			return qfalse;
-		}
-
-		strcpy(token->string + total, t->string);
-		total += len;
+		strncat(token->string, t->string, MAX_TOKEN - strlen(token->string) - 1);
 	}
 
-	strcpy(token->string + total, "\"");
-
+	strncat(token->string, "\"", MAX_TOKEN - strlen(token->string) - 1);
 	return qtrue;
 }
 
@@ -452,26 +443,16 @@ PC_MergeTokens
 =======================================================================================================================================
 */
 int PC_MergeTokens(token_t *t1, token_t *t2) {
-	int len1;
 
 	// merging of a name with a name or number
 	if (t1->type == TT_NAME && (t2->type == TT_NAME || t2->type == TT_NUMBER)) {
-		if (strlen(t1->string) + strlen(t2->string) >= sizeof(t1->string)) {
-			return qfalse;
-		}
-
 		strcat(t1->string, t2->string);
 		return qtrue;
 	}
 	// merging of two strings
 	if (t1->type == TT_STRING && t2->type == TT_STRING) {
-		len1 = (int)strlen(t1->string);
-
-		if (strlen(t1->string) + strlen(t2->string) - 2 >= sizeof(t1->string)) {
-			return qfalse;
-		}
 		// remove trailing double quote
-		t1->string[len1 - 1] = '\0';
+		t1->string[strlen(t1->string) - 1] = '\0';
 		// concat without leading double quote
 		strcat(t1->string, &t2->string[1]);
 		return qtrue;
@@ -721,6 +702,7 @@ int PC_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define_t *define
 			strncat(token->string, curtime + 4, 7);
 			strncat(token->string + 7, curtime + 20, 4);
 			strcat(token->string, "\"");
+			free(curtime);
 			token->type = TT_NAME;
 			token->subtype = strlen(token->string);
 			*firsttoken = token;
@@ -735,6 +717,7 @@ int PC_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define_t *define
 			strcpy(token->string, "\"");
 			strncat(token->string, curtime + 11, 8);
 			strcat(token->string, "\"");
+			free(curtime);
 			token->type = TT_NAME;
 			token->subtype = strlen(token->string);
 			*firsttoken = token;
@@ -1300,7 +1283,7 @@ int PC_Directive_define(source_t *source) {
 PC_DefineFromString
 =======================================================================================================================================
 */
-define_t *PC_DefineFromString(const char *string) {
+define_t *PC_DefineFromString(char *string) {
 	script_t *script;
 	source_t src;
 	token_t *t;
@@ -1359,7 +1342,7 @@ define_t *PC_DefineFromString(const char *string) {
 PC_AddDefine
 =======================================================================================================================================
 */
-int PC_AddDefine(source_t *source, const char *string) {
+int PC_AddDefine(source_t *source, char *string) {
 	define_t *define;
 
 	define = PC_DefineFromString(string);
@@ -1383,7 +1366,7 @@ PC_AddGlobalDefine
 Add a globals define that will be added to all opened sources.
 =======================================================================================================================================
 */
-int PC_AddGlobalDefine(const char *string) {
+int PC_AddGlobalDefine(char *string) {
 	define_t *define;
 
 	define = PC_DefineFromString(string);
@@ -1438,7 +1421,7 @@ void PC_RemoveAllGlobalDefines(void) {
 PC_CopyDefine
 =======================================================================================================================================
 */
-define_t *PC_CopyDefine(source_t *source, const define_t *define) {
+define_t *PC_CopyDefine(source_t *source, define_t *define) {
 	define_t *newdefine;
 	token_t *token, *newtoken, *lasttoken;
 
@@ -1702,7 +1685,7 @@ int PC_OperatorPriority(int op) {
 PC_EvaluateTokens
 =======================================================================================================================================
 */
-static int PC_EvaluateTokens(source_t *source, token_t *tokens, int *intvalue, float *floatvalue, int integer) {
+int PC_EvaluateTokens(source_t *source, token_t *tokens, signed long int *intvalue, float *floatvalue, int integer) {
 	operator_t *o, *firstoperator, *lastoperator;
 	value_t *v, *firstvalue, *lastvalue, *v1, *v2;
 	token_t *t;
@@ -2245,7 +2228,7 @@ static int PC_EvaluateTokens(source_t *source, token_t *tokens, int *intvalue, f
 PC_Evaluate
 =======================================================================================================================================
 */
-static int PC_Evaluate(source_t *source, int *intvalue, float *floatvalue, int integer) {
+int PC_Evaluate(source_t *source, signed long int *intvalue, float *floatvalue, int integer) {
 	token_t token, *firsttoken, *lasttoken;
 	token_t *t, *nexttoken;
 	define_t *define;
@@ -2356,7 +2339,7 @@ static int PC_Evaluate(source_t *source, int *intvalue, float *floatvalue, int i
 PC_DollarEvaluate
 =======================================================================================================================================
 */
-static int PC_DollarEvaluate(source_t *source, int *intvalue, float *floatvalue, int integer) {
+int PC_DollarEvaluate(source_t *source, signed long int *intvalue, float *floatvalue, int integer) {
 	int indent, defined = qfalse;
 	token_t token, *firsttoken, *lasttoken;
 	token_t *t, *nexttoken;
@@ -2484,7 +2467,8 @@ PC_Directive_elif
 =======================================================================================================================================
 */
 int PC_Directive_elif(source_t *source) {
-	int type, value, skip;
+	signed long int value;
+	int type, skip;
 
 	PC_PopIndent(source, &type, &skip);
 
@@ -2509,7 +2493,8 @@ PC_Directive_if
 =======================================================================================================================================
 */
 int PC_Directive_if(source_t *source) {
-	int value, skip;
+	signed long int value;
+	int skip;
 
 	if (!PC_Evaluate(source, &value, NULL, qtrue)) {
 		return qfalse;
@@ -2703,7 +2688,7 @@ PC_DollarDirective_evalint
 =======================================================================================================================================
 */
 int PC_DollarDirective_evalint(source_t *source) {
-	int value;
+	signed long int value;
 	token_t token;
 
 	if (!PC_DollarEvaluate(source, &value, NULL, qtrue)) {
@@ -3092,7 +3077,7 @@ void PC_UnreadToken(source_t *source, token_t *token) {
 PC_SetIncludePath
 =======================================================================================================================================
 */
-void PC_SetIncludePath(source_t *source, const char *path) {
+void PC_SetIncludePath(source_t *source, char *path) {
 	size_t len;
 
 	Q_strncpyz(source->includepath, path, sizeof(source->includepath) - 1);
@@ -3154,7 +3139,7 @@ source_t *LoadSourceFile(const char *filename) {
 LoadSourceMemory
 =======================================================================================================================================
 */
-source_t *LoadSourceMemory(const char *ptr, int length, const char *name) {
+source_t *LoadSourceMemory(char *ptr, int length, char *name) {
 	source_t *source;
 	script_t *script;
 
@@ -3365,7 +3350,7 @@ int PC_SourceFileAndLine(int handle, char *filename, int *line) {
 PC_SetBaseFolder
 =======================================================================================================================================
 */
-void PC_SetBaseFolder(const char *path) {
+void PC_SetBaseFolder(char *path) {
 	PS_SetBaseFolder(path);
 }
 

@@ -44,7 +44,7 @@ bot_input_t *botinputs;
 EA_Say
 =======================================================================================================================================
 */
-void EA_Say(int client, const char *str) {
+void EA_Say(int client, char *str) {
 	botimport.BotClientCommand(client, va("say %s", str));
 }
 
@@ -53,7 +53,7 @@ void EA_Say(int client, const char *str) {
 EA_SayTeam
 =======================================================================================================================================
 */
-void EA_SayTeam(int client, const char *str) {
+void EA_SayTeam(int client, char *str) {
 	botimport.BotClientCommand(client, va("say_team %s", str));
 }
 
@@ -62,7 +62,7 @@ void EA_SayTeam(int client, const char *str) {
 EA_Tell
 =======================================================================================================================================
 */
-void EA_Tell(int client, int clientto, const char *str) {
+void EA_Tell(int client, int clientto, char *str) {
 	botimport.BotClientCommand(client, va("tell %d, %s", clientto, str));
 }
 
@@ -71,7 +71,7 @@ void EA_Tell(int client, int clientto, const char *str) {
 EA_UseItem
 =======================================================================================================================================
 */
-void EA_UseItem(int client, const char *it) {
+void EA_UseItem(int client, char *it) {
 	botimport.BotClientCommand(client, va("use %s", it));
 }
 
@@ -80,7 +80,7 @@ void EA_UseItem(int client, const char *it) {
 EA_DropItem
 =======================================================================================================================================
 */
-void EA_DropItem(int client, const char *it) {
+void EA_DropItem(int client, char *it) {
 	botimport.BotClientCommand(client, va("drop %s", it));
 }
 
@@ -89,7 +89,7 @@ void EA_DropItem(int client, const char *it) {
 EA_UseInv
 =======================================================================================================================================
 */
-void EA_UseInv(int client, const char *inv) {
+void EA_UseInv(int client, char *inv) {
 	botimport.BotClientCommand(client, va("invuse %s", inv));
 }
 
@@ -98,7 +98,7 @@ void EA_UseInv(int client, const char *inv) {
 EA_DropInv
 =======================================================================================================================================
 */
-void EA_DropInv(int client, const char *inv) {
+void EA_DropInv(int client, char *inv) {
 	botimport.BotClientCommand(client, va("invdrop %s", inv));
 }
 
@@ -120,7 +120,7 @@ void EA_Gesture(int client) {
 EA_Command
 =======================================================================================================================================
 */
-void EA_Command(int client, const char *command) {
+void EA_Command(int client, char *command) {
 	botimport.BotClientCommand(client, command);
 }
 
@@ -345,11 +345,11 @@ void EA_Move(int client, vec3_t dir, float speed) {
 		speed = -MAX_USERMOVE;
 	}
 
+	bi->speed = speed;
+
 	if (speed <= 200) {
 		bi->actionflags |= ACTION_WALK;
 	}
-
-	bi->speed = speed;
 }
 
 /*
@@ -394,7 +394,7 @@ EA_ResetInput
 */
 void EA_ResetInput(int client) {
 	bot_input_t *bi;
-	int jumped;
+	int jumped = qfalse;
 
 	bi = &botinputs[client];
 	bi->thinktime = 0;

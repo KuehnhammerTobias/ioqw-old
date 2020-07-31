@@ -31,7 +31,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "g_public.h"
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION BASEGAME
-#define BODY_QUEUE_SIZE 64 // https://github.com/ec-/baseq3a/issues/6
+#define BODY_QUEUE_SIZE 64
 #define FRAMETIME 100 // msec
 #define CARNAGE_REWARD_TIME 3000
 #define REWARD_TIME 2000
@@ -238,6 +238,9 @@ struct gclient_s {
 	char *areabits;
 };
 // this structure is cleared as each map is entered
+#define MAX_SPAWN_VARS 64
+#define MAX_SPAWN_VARS_CHARS 4096
+
 typedef struct {
 	struct gclient_s *clients;		// [maxclients]
 	struct gentity_s *gentities;
@@ -247,8 +250,6 @@ typedef struct {
 	fileHandle_t logFile;
 	// store latched cvars here that we want to get at often
 	int maxclients;
-	qboolean mapcoordsValid, tracemapLoaded;
-	vec2_t mapcoordsMins, mapcoordsMaxs;
 	int framenum;
 	int time;						// in msec
 	int previousTime;				// so movers can back up when blocked
@@ -264,7 +265,6 @@ typedef struct {
 	int follow1, follow2;			// clientNums for auto-follow spectators
 	int snd_fry;					// sound index for standing in lava
 	int warmupModificationCount;	// for detecting if g_warmup is changed
-	int botReportModificationCount; // Tobias DEBUG
 	// voting state
 	char voteString[MAX_STRING_CHARS];
 	char voteDisplayString[MAX_STRING_CHARS];
@@ -483,7 +483,6 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 int BotAIShutdownClient(int client, qboolean restart);
 int BotAIStartFrame(int time);
 void BotTestAAS(vec3_t origin);
-void Svcmd_BotTeamplayReport_f(void); // Tobias DEBUG
 
 #include "g_team.h" // teamplay specific stuff
 
@@ -638,6 +637,7 @@ int trap_BotNumConsoleMessages(int chatstate);
 void trap_BotInitialChat(int chatstate, char *type, int mcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
 int trap_BotNumInitialChats(int chatstate, char *type);
 int trap_BotReplyChat(int chatstate, char *message, int mcontext, int vcontext, char *var0, char *var1, char *var2, char *var3, char *var4, char *var5, char *var6, char *var7);
+int trap_BotChatLength(int chatstate);
 void trap_BotEnterChat(int chatstate, int client, int sendto);
 void trap_BotGetChatMessage(int chatstate, char *buf, int size);
 int trap_StringContains(char *str1, char *str2, int casesensitive);

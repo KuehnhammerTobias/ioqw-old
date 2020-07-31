@@ -343,8 +343,10 @@ char *AAS_LoadAASLump(fileHandle_t fp, int offset, int length, int *lastoffset, 
 	// allocate memory
 	buf = (char *)GetClearedHunkMemory(length + 1);
 	// read the data
-	botimport.FS_Read(buf, length, fp);
-	*lastoffset += length;
+	if (length) {
+		botimport.FS_Read(buf, length, fp);
+		*lastoffset += length;
+	}
 
 	return buf;
 }

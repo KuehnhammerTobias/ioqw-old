@@ -340,8 +340,19 @@ Angles will be cleared, because it is being used to represent a direction instea
 =======================================================================================================================================
 */
 void G_SetMovedir(vec3_t angles, vec3_t movedir) {
+	static vec3_t VEC_UP = {0, -1, 0};
+	static vec3_t MOVEDIR_UP = {0, 0, 1};
+	static vec3_t VEC_DOWN = {0, -2, 0};
+	static vec3_t MOVEDIR_DOWN = {0, 0, -1};
 
-	SetMovedir(angles, movedir);
+	if (VectorCompare(angles, VEC_UP)) {
+		VectorCopy(MOVEDIR_UP, movedir);
+	} else if (VectorCompare(angles, VEC_DOWN)) {
+		VectorCopy(MOVEDIR_DOWN, movedir);
+	} else {
+		AngleVectorsForward(angles, movedir);
+	}
+
 	VectorClear(angles);
 }
 

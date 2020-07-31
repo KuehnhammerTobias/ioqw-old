@@ -32,16 +32,16 @@ int g_console_field_width = 78;
 typedef struct {
 	qboolean initialized;
 	short text[CON_TEXTSIZE];
-	int current;				// line where next message will be printed
-	int x;						// offset in current line for next print
-	int display;				// bottom of console displays this line
-	int linewidth;				// characters across screen
-	int totallines;				// total lines in console scrollback
-	float xadjust;				// for wide aspect screens
-	float displayFrac;			// aproaches finalFrac at scr_conspeed
-	float finalFrac;			// 0.0 to 1.0 lines of console to display
-	int vislines;				// in scanlines
-	int times[NUM_CON_TIMES];	// cls.realtime time the line was generated for transparent notify lines
+	int current;		// line where next message will be printed
+	int x;				// offset in current line for next print
+	int display;		// bottom of console displays this line
+	int linewidth;		// characters across screen
+	int totallines;		// total lines in console scrollback
+	float xadjust;		// for wide aspect screens
+	float displayFrac;	// aproaches finalFrac at scr_conspeed
+	float finalFrac;	// 0.0 to 1.0 lines of console to display
+	int vislines;		// in scanlines
+	int times[NUM_CON_TIMES]; // cls.realtime time the line was generated for transparent notify lines
 	vec4_t color;
 } console_t;
 
@@ -466,10 +466,7 @@ void CL_ConsolePrint(char *txt) {
 	}
 
 	if (!con.initialized) {
-		con.color[0] = 1.0f;
-		con.color[1] = 1.0f;
-		con.color[2] = 1.0f;
-		con.color[3] = 1.0f;
+		con.color[0] = con.color[1] = con.color[2] = con.color[3] = 1.0f;
 		con.linewidth = -1;
 
 		Con_CheckResize();
@@ -680,12 +677,12 @@ void Con_DrawSolidConsole(float frac) {
 		SCR_DrawPic(0, 0, SCREEN_WIDTH, y, cls.consoleShader);
 	}
 
-	color[0] = 1.0f;
-	color[1] = 1.0f;
-	color[2] = 1.0f;
-	color[3] = 1.0f;
+	color[0] = 1;
+	color[1] = 1;
+	color[2] = 1;
+	color[3] = 1;
 
-	SCR_FillRect(0, y, SCREEN_WIDTH, 0.33f, color);
+	SCR_FillRect(0, y, SCREEN_WIDTH, 2, color);
 	// draw the version number
 	re.SetColor(g_color_table[ColorIndex(COLOR_WHITE)]);
 

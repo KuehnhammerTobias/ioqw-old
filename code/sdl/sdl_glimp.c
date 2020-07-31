@@ -275,7 +275,7 @@ static qboolean GLimp_GetProcAddresses(qboolean fixedFunction) {
 			QGL_DESKTOP_1_1_PROCS;
 			QGL_DESKTOP_1_1_FIXED_FUNCTION_PROCS;
 		} else if (qglesMajorVersion == 1 && qglesMinorVersion >= 1) {
-			// OpenGL ES 1.1 (2.0 is not backward compatible)
+			// OpenGL ES 1.1(2.0 is not backward compatible)
 			QGL_1_1_PROCS;
 			QGL_1_1_FIXED_FUNCTION_PROCS;
 			QGL_ES_1_1_PROCS;
@@ -481,19 +481,19 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 		if ((i % 4) == 0 && i) {
 			// one pass, reduce
 			switch (i / 4) {
-				case 2:
+				case 2 :
 					if (colorBits == 24) {
 						colorBits = 16;
 					}
 
 					break;
-				case 1:
+				case 1 :
 					if (depthBits == 24) {
 						depthBits = 16;
 					} else if (depthBits == 16) {
 						depthBits = 8;
 					}
-				case 3:
+				case 3 :
 					if (stencilBits == 24) {
 						stencilBits = 16;
 					} else if (stencilBits == 16) {

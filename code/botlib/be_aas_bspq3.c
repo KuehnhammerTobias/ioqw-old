@@ -233,7 +233,8 @@ int AAS_ValueForBSPEpairKey(int ent, char *key, char *value, int size) {
 
 	for (epair = bspworld.entities[ent].epairs; epair; epair = epair->next) {
 		if (!strcmp(epair->key, key)) {
-			Q_strncpyz(value, epair->value, size);
+			strncpy(value, epair->value, size - 1);
+			value[size - 1] = '\0';
 			return qtrue;
 		}
 	}
@@ -359,7 +360,7 @@ void AAS_ParseBSPEntities(void) {
 		}
 
 		if (bspworld.numentities >= MAX_BSPENTITIES) {
-			botimport.Print(PRT_MESSAGE, "AAS_ParseBSPEntities: too many entities in BSP file\n");
+			botimport.Print(PRT_MESSAGE, "too many entities in BSP file\n");
 			break;
 		}
 

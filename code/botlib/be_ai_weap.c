@@ -182,7 +182,7 @@ void DumpWeaponConfig(weaponconfig_t *wc) {
 LoadWeaponConfig
 =======================================================================================================================================
 */
-weaponconfig_t *LoadWeaponConfig(const char *filename) {
+weaponconfig_t *LoadWeaponConfig(char *filename) {
 	int max_weaponinfo, max_projectileinfo;
 	token_t token;
 	char path[MAX_QPATH];
@@ -191,20 +191,20 @@ weaponconfig_t *LoadWeaponConfig(const char *filename) {
 	weaponconfig_t *wc;
 	weaponinfo_t weaponinfo;
 
-	max_weaponinfo = (int)LibVarValue("max_weaponinfo", "64");
+	max_weaponinfo = (int)LibVarValue("max_weaponinfo", "32");
 
 	if (max_weaponinfo < 0) {
 		botimport.Print(PRT_ERROR, "max_weaponinfo = %d\n", max_weaponinfo);
-		max_weaponinfo = 64;
-		LibVarSet("max_weaponinfo", "64");
+		max_weaponinfo = 32;
+		LibVarSet("max_weaponinfo", "32");
 	}
 
-	max_projectileinfo = (int)LibVarValue("max_projectileinfo", "64");
+	max_projectileinfo = (int)LibVarValue("max_projectileinfo", "32");
 
 	if (max_projectileinfo < 0) {
 		botimport.Print(PRT_ERROR, "max_projectileinfo = %d\n", max_projectileinfo);
-		max_projectileinfo = 64;
-		LibVarSet("max_projectileinfo", "64");
+		max_projectileinfo = 32;
+		LibVarSet("max_projectileinfo", "32");
 	}
 
 	Q_strncpyz(path, filename, sizeof(path));
@@ -512,7 +512,7 @@ BotSetupWeaponAI
 =======================================================================================================================================
 */
 int BotSetupWeaponAI(void) {
-	const char *file;
+	char *file;
 
 	file = LibVarString("weaponconfig", "weapons.c");
 	weaponconfig = LoadWeaponConfig(file);

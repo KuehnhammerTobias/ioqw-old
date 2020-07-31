@@ -332,10 +332,6 @@ static float PM_CmdScale(usercmd_t *cmd) {
 
 	total = sqrt(cmd->forwardmove * cmd->forwardmove + cmd->rightmove * cmd->rightmove + cmd->upmove * cmd->upmove);
 	scale = (float)pm->ps->speed * max / (127.0 * total);
-	// ignore if in air
-	if (pm->ps->groundEntityNum == ENTITYNUM_NONE) {
-		return scale;
-	}
 	// ignore if spectator
 	if (pm->ps->persistant[PERS_TEAM] == TEAM_SPECTATOR) {
 		return scale;
@@ -471,14 +467,14 @@ static qboolean PM_CheckWaterJump(void) {
 	VectorNormalize(flatforward);
 	VectorMA(pm->ps->origin, 30, flatforward, spot);
 
-	spot[2] += 4; // Tobias CHECK: compensate for the new viewheight to get out of water with ease again (but why do other games not need this?), AND I think this fixes the issue with bots hanging around in water (in q3dm12 BFG room).
+	spot[2] += 4;
 	cont = pm->pointcontents(spot, pm->ps->clientNum);
 
 	if (!(cont & CONTENTS_SOLID)) {
 		return qfalse;
 	}
 
-	spot[2] += 18; // Tobias CHECK: compensate for the new viewheight to get out of water with ease again (but why do other games not need this?), AND I think this fixes the issue with bots hanging around in water (in q3dm12 BFG room).
+	spot[2] += 16;
 	cont = pm->pointcontents(spot, pm->ps->clientNum);
 
 	if (cont & (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY)) {
@@ -727,7 +723,7 @@ static void PM_WalkMove(void) {
 		wishvel[i] = pml.forward[i] * fmove + pml.right[i] * smove;
 	}
 	// when going up or down slopes the wish velocity should Not be zero
-	//wishvel[2] = 0;
+//	wishvel[2] = 0;
 
 	VectorCopy(wishvel, wishdir);
 
@@ -765,7 +761,7 @@ static void PM_WalkMove(void) {
 		pm->ps->velocity[2] -= pm->ps->gravity * pml.frametime;
 	} else {
 		// don't reset the z velocity for slopes
-		//pm->ps->velocity[2] = 0;
+//		pm->ps->velocity[2] = 0;
 	}
 
 	vel = VectorLength(pm->ps->velocity);
@@ -1132,7 +1128,6 @@ static void PM_CrashLand(void) {
 	float a, b, c, den;
 	int stunTime;
 
-	stunTime = 0;
 	// decide which landing animation to use
 	if (pm->ps->pm_flags & PMF_BACKWARDS_JUMP) {
 		PM_ForceLegsAnim(LEGS_LANDB);
@@ -1157,6 +1152,7 @@ static void PM_CrashLand(void) {
 	t = (-b - sqrt(den)) / (2 * a);
 	delta = vel + t * acc;
 	delta = delta * delta * 0.0001;
+	stunTime = 0;
 	// ducking while falling doubles damage
 	if (pm->ps->pm_flags & PMF_DUCKED) {
 		delta *= 2;
@@ -1169,17 +1165,54 @@ static void PM_CrashLand(void) {
 	if (pm->waterlevel == 2) {
 		delta *= 0.85;
 	}
-	// the scout powerup also reduces falling damage
-	if (bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
-		delta *= 0.9;
-	}
 
 	if (delta < 1) {
 		return;
 	}
-	// create a local entity event to play the sound
 	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
+		// create a local entity event to play the sound
+		if (delta > 84) { // Tobias NOTE: a delta of 84 = max_fallheight of 516 units for bots, and 529 units for humans (why can humans fall higher than bots?)
+			PM_AddEvent(EV_FALL_DIE);
+			stunTime = 1000;
+		} else if (delta > 70) {
+			PM_AddEvent(EV_FALL_DMG_50);
+			stunTime = 1000;
+		} else if (delta > 58) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_25);
+			}
+
+			stunTime = 250;
+		} else if (delta > 48 ) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_15);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 38.75) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_10);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 28) {
+			// this is a pain grunt, so don't play it if dead
+			if (pm->ps->stats[STAT_HEALTH] > 0) {
+				PM_AddEvent(EV_FALL_DMG_5);
+			}
+
+			stunTime = 1000;
+		} else if (delta > 7) {
+			PM_AddEvent(EV_FALL_SHORT);
+		} else {
+			PM_AddEvent(PM_FootstepForSurface());
+		}
+	// Tobias NOTE: this simulates the old behavior, assuming old maps use SURF_NODAMAGE if needed
+	} else {
 		if (delta > 60) {
 			// this is a pain grunt, so don't play it if dead
 			if (pm->ps->stats[STAT_HEALTH] > 0) {
@@ -1199,6 +1232,7 @@ static void PM_CrashLand(void) {
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
+	// Tobias END
 	}
 	// when landing from launch ramps don't stop so abruptly
 	if (VectorLength(pm->ps->velocity) > 400) {
@@ -1402,7 +1436,7 @@ static void PM_GroundTrace(void) {
 
 	pm->ps->groundEntityNum = trace.entityNum;
 	// don't reset the z velocity for slopes
-	//pm->ps->velocity[2] = 0;
+//	pm->ps->velocity[2] = 0;
 
 	PM_AddTouchEnt(trace.entityNum);
 }
@@ -1476,7 +1510,7 @@ static void PM_CheckDuck(void) {
 	} else { // stand up if possible
 		if (pm->ps->pm_flags & PMF_DUCKED) {
 			// try to stand up
-			pm->maxs[2] = 46; // 56 + 24 = 80 (80 * 2.5 = 200)
+			pm->maxs[2] = 56;
 			pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, pm->ps->origin, pm->ps->clientNum, pm->tracemask);
 
 			if (!trace.allsolid) {
@@ -1486,10 +1520,10 @@ static void PM_CheckDuck(void) {
 	}
 
 	if (pm->ps->pm_flags & PMF_DUCKED) {
-		pm->maxs[2] = 42;
+		pm->maxs[2] = 32;
 		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
 	} else {
-		pm->maxs[2] = 46; // 56 + 24 = 80 (80 * 2.5 = 200)
+		pm->maxs[2] = 56;
 		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
 	}
 }
@@ -1556,7 +1590,7 @@ static void PM_Footsteps(void) {
 	// ducked
 	if (pm->ps->pm_flags & PMF_DUCKED) {
 		bobmove = 0.35f; // 0.65f
-		// (auto-)walking
+
 		if (pm->ps->pm_flags & PMF_BACKWARDS_RUN) {
 			PM_ContinueLegsAnim(LEGS_BACKCR);
 		} else {
@@ -1851,10 +1885,6 @@ static void PM_Weapon(void) {
 		case WP_BFG:
 			addTime = 200;
 			break;
-	}
-
-	if (bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_AMMOREGEN) {
-		addTime /= 1.1;
 	}
 
 	pm->ps->weaponTime += addTime;

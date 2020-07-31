@@ -212,7 +212,6 @@ BotVoiceChat_Patrol
 void BotVoiceChat_Patrol(bot_state_t *bs, int client, int mode) {
 
 	bs->decisionmaker = client;
-	bs->ltg_time = 0;
 	bs->ltgtype = 0;
 	bs->lead_time = 0;
 	bs->lastgoal_ltgtype = 0;
@@ -239,7 +238,7 @@ void BotVoiceChat_Camp(bot_state_t *bs, int client, int mode) {
 	bs->teamgoal.entitynum = -1;
 	// get the entity information
 	BotEntityInfo(client, &entinfo);
-	// if the entity information is valid
+	// if info is valid (in PVS)
 	if (entinfo.valid) {
 		areanum = BotPointAreaNum(entinfo.origin);
 
@@ -297,7 +296,7 @@ void BotVoiceChat_FollowMe(bot_state_t *bs, int client, int mode) {
 	bs->teamgoal.entitynum = -1;
 	// get the entity information
 	BotEntityInfo(client, &entinfo);
-	// if the entity information is valid
+	// if info is valid (in PVS)
 	if (entinfo.valid) {
 		areanum = BotPointAreaNum(entinfo.origin);
 

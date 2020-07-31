@@ -1046,7 +1046,7 @@ S_AL_SrcKill
 static void S_AL_SrcKill(srcHandle_t src) {
 	src_t *curSource = &srcList[src];
 
-	// I'm not touching it. Unlock it first
+	// I'm not touching it. Unlock it first.
 	if (curSource->isLocked) {
 		return;
 	}
@@ -1389,7 +1389,7 @@ static void S_AL_SrcLoop(alSrcPriority_t priority, sfxHandle_t sfx, const vec3_t
 	sent->loopPriority = priority;
 	sent->loopSfx = sfx;
 	sent->range = range;
-	// if this is not set then the looping sound is stopped
+	// if this is not set then the looping sound is stopped.
 	sent->loopAddedThisFrame = qtrue;
 	// these lines should be called via S_AL_SrcSetup, but we can't call that yet as it buffers sfxes that may change
 	// with subsequent calls to S_AL_SrcLoop
@@ -2088,7 +2088,7 @@ static void S_AL_MusicUpdate(void) {
 		S_AL_MusicProcess(b);
 		qalSourceQueueBuffers(musicSource, 1, &b);
 	}
-	// hitches can cause OpenAL to be starved of buffers when streaming
+	// hitches can cause OpenAL to be starved of buffers when streaming.
 	// if this happens, it will stop playback. This restarts the source if it is no longer playing, and if there are buffers available
 	qalGetSourcei(musicSource, AL_SOURCE_STATE, &state);
 	qalGetSourcei(musicSource, AL_BUFFERS_QUEUED, &numBuffers);
@@ -2385,7 +2385,7 @@ static void S_AL_Update(void) {
 	int i;
 
 	if (s_muted->modified) {
-		// muted state changed. Let S_AL_Gain turn up all sources again
+		// muted state changed. Let S_AL_Gain turn up all sources again.
 		for (i = 0; i < srcCount; i++) {
 			if (srcList[i].isActive) {
 				S_AL_Gain(srcList[i].alSource, srcList[i].scaleGain);
@@ -2911,7 +2911,7 @@ qboolean S_AL_Init(soundInterface_t *si) {
 		// !!! FIXME: capture support, but they don't list it in the
 		// !!! FIXME: extension string. We need to check the version string,
 		// !!! FIXME: then the extension string, but that's too much trouble,
-		// !!! FIXME: so we'll just check the function pointer for now
+		// !!! FIXME: so we'll just check the function pointer for now.
 		if (qalcCaptureOpenDevice == NULL)
 #else
 		if (!qalcIsExtensionPresent(NULL, "ALC_EXT_capture"))

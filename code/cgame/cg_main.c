@@ -104,7 +104,6 @@ vmCvar_t cg_statusScale;
 vmCvar_t cg_stretch;
 vmCvar_t cg_gibs;
 vmCvar_t cg_drawTimer;
-vmCvar_t cg_drawClock;
 vmCvar_t cg_drawFPS;
 vmCvar_t cg_drawSnapshot;
 vmCvar_t cg_draw3dIcons;
@@ -124,11 +123,6 @@ vmCvar_t cg_crosshairHealth;
 vmCvar_t cg_draw2D;
 vmCvar_t cg_drawStatus;
 vmCvar_t cg_animSpeed;
-// Tobias DEBUG
-vmCvar_t cg_drawDebug;
-vmCvar_t cg_drawStatusDebug;
-vmCvar_t cg_drawObstacleDebug;
-// Tobias END
 vmCvar_t cg_debugAnim;
 vmCvar_t cg_debugPosition;
 vmCvar_t cg_debugEvents;
@@ -235,7 +229,6 @@ static cvarTable_t cvarTable[] = {
 	{&cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE},
 	{&cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE},
 	{&cg_drawTimer, "cg_drawTimer", "1", CVAR_ARCHIVE},
-	{&cg_drawClock, "cg_drawClock", "2", CVAR_ARCHIVE},
 	{&cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE},
 	{&cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE},
 	{&cg_draw3dIcons, "cg_draw3dIcons", "1", CVAR_ARCHIVE},
@@ -248,9 +241,9 @@ static cvarTable_t cvarTable[] = {
 	{&cg_drawPickups, "cg_drawPickups", "1", CVAR_ARCHIVE},
 	{&cg_drawWeaponBar, "cg_drawWeaponBar", "1", CVAR_ARCHIVE},
 	{&cg_drawStatusHead, "cg_drawStatusHead", "1", CVAR_ARCHIVE},
-	{&cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE},
+	{&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
 	{&cg_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE},
-	{&cg_crosshairSize, "cg_crosshairSize", "10", CVAR_ARCHIVE},
+	{&cg_crosshairSize, "cg_crosshairSize", "12", CVAR_ARCHIVE},
 	{&cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE},
 	{&cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE},
 	{&cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE},
@@ -271,11 +264,6 @@ static cvarTable_t cvarTable[] = {
 	{&cg_bobyaw, "cg_bobyaw", "0.0015", CVAR_ARCHIVE},
 	{&cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT},
 	{&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
-// Tobias DEBUG
-	{&cg_drawDebug, "cg_drawDebug", "1", CVAR_ARCHIVE},
-	{&cg_drawStatusDebug, "cg_drawStatusDebug", "0", CVAR_ARCHIVE},
-	{&cg_drawObstacleDebug, "cg_drawObstacleDebug", "1", CVAR_ARCHIVE},
-// Tobias END
 	{&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
 	{&cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT},
 	{&cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT},
@@ -307,8 +295,8 @@ static cvarTable_t cvarTable[] = {
 	{&cg_paused, "cl_paused", "0", CVAR_ROM},
 	{&cg_blood, "com_blood", "1", CVAR_ARCHIVE},
 	{&cg_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO},
-	{&cg_enableDust, "cg_enableDust", "1", 0},
-	{&cg_enableBreath, "cg_enableBreath", "1", 0},
+	{&cg_enableDust, "cg_enableDust", "0", 0},
+	{&cg_enableBreath, "cg_enableBreath", "0", 0},
 	{&cg_obeliskRespawnDelay, "g_obeliskRespawnDelay", "10", CVAR_SYSTEMINFO},
 	{&cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE|CVAR_SYSTEMINFO},
 	{&cg_blueTeamName, "g_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE|CVAR_SYSTEMINFO},
@@ -338,7 +326,7 @@ static cvarTable_t cvarTable[] = {
 //	{&cg_pmove_fixed, "cg_pmove_fixed", "0", CVAR_USERINFO|CVAR_ARCHIVE}
 	{&cg_coronafardist, "cg_coronafardist", "1536", CVAR_ARCHIVE},
 	{&cg_coronas, "cg_coronas", "1", CVAR_ARCHIVE},
-	{&cg_fadeExplosions, "cg_fadeExplosions", "1", CVAR_ARCHIVE},
+	{&cg_fadeExplosions, "cg_fadeExplosions", "0", CVAR_ARCHIVE},
 	{&cg_skybox, "cg_skybox", "1", CVAR_ARCHIVE},
 	{&cg_atmosphericEffects, "cg_atmosphericEffects", "1", CVAR_ARCHIVE}
 };
@@ -467,6 +455,7 @@ void QDECL CG_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
+
 	trap_Print(text);
 }
 
@@ -482,6 +471,7 @@ void QDECL CG_Error(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
+
 	trap_Error(text);
 }
 
@@ -497,6 +487,7 @@ void QDECL Com_Error(int level, const char *error, ...) {
 	va_start(argptr, error);
 	Q_vsnprintf(text, sizeof(text), error, argptr);
 	va_end(argptr);
+
 	trap_Error(text);
 }
 
@@ -512,6 +503,7 @@ void QDECL Com_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
+
 	trap_Print(text);
 }
 
@@ -533,9 +525,11 @@ CG_SetupDlightstyles
 =======================================================================================================================================
 */
 void CG_SetupDlightstyles(void) {
+	int i, j;
+	char *str;
+	char *token;
+	int entnum;
 	centity_t *cent;
-	int i, j, entnum;
-	char *str, *token;
 
 	cg.lightstylesInited = qtrue;
 
@@ -1161,7 +1155,7 @@ static void CG_RegisterGraphics(void) {
 		}
 	}
 	// can be used by HUD so always load it
-	CG_RegisterItemVisuals(3/*item_health_large*/);
+	CG_RegisterItemVisuals(3 /*item_health_large*/);
 	// wall marks
 	cgs.media.bulletMarkShader = trap_R_RegisterShader("gfx/damage/bullet_mrk");
 	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
@@ -1174,7 +1168,7 @@ static void CG_RegisterGraphics(void) {
 	cgs.numInlineModels = trap_CM_NumInlineModels();
 
 	if (cgs.numInlineModels > MAX_SUBMODELS) {
-		CG_Error("MAX_SUBMODELS (%d) exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
+		CG_Error("MAX_SUBMODELS(%d)exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
 	}
 
 	for (i = 1; i < cgs.numInlineModels; i++) {
@@ -1209,7 +1203,6 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_capture.tga");
 	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_missing.tga");
 	// task shaders
-	cgs.media.roamShader = trap_R_RegisterShaderNoMip("gfx/2d/defer.tga"); // Tobias DEBUG
 	cgs.media.patrolShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/patrol.tga");
 	cgs.media.assaultShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/assault.tga");
 	cgs.media.campShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/camp.tga");
@@ -2104,8 +2097,8 @@ void CG_HudMenuHacks(void) {
 	if (menu && !menu->forceScreenPlacement) {
 		Menu_SetScreenPlacement(menu, PLACE_LEFT, PLACE_TOP);
 	}
-	// make vertical power up area stick to the left or right side in widescreen. Team Arena has it on the right side but also handle
-	// custom huds that use left side
+	// make vertical power up area stick to the left or right side in widescreen
+	// Team Arena has it on the right side but also handle custom huds that use left side
 	menu = Menus_FindByName("powerup area");
 
 	if (menu && !menu->forceScreenPlacement) {
@@ -2257,10 +2250,12 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	CG_InitMarkPolys();
 	// remove the last loading update
 	cg.infoScreenText[0] = 0;
-	cg.lightstylesInited = qfalse;
 	// make sure we have update values (scores)
 	CG_SetConfigValues();
 	CG_StartMusic();
+
+	cg.lightstylesInited = qfalse;
+
 	CG_LoadingString("");
 	CG_InitTeamChat();
 	CG_ShaderStateChanged();

@@ -621,7 +621,7 @@ void BotDumpSynonymList(bot_synonymlist_t *synlist) {
 BotLoadSynonyms
 =======================================================================================================================================
 */
-bot_synonymlist_t *BotLoadSynonyms(const char *filename) {
+bot_synonymlist_t *BotLoadSynonyms(char *filename) {
 	int pass, size, contextlevel, numsynonyms;
 	unsigned long int context, contextstack[32];
 	char *ptr = NULL;
@@ -1014,16 +1014,15 @@ void BotDumpRandomStringList(bot_randomlist_t *randomlist) {
 BotLoadRandomStrings
 =======================================================================================================================================
 */
-bot_randomlist_t *BotLoadRandomStrings(const char *filename) {
+bot_randomlist_t *BotLoadRandomStrings(char *filename) {
 	int pass, size;
 	char *ptr = NULL, chatmessagestring[MAX_MESSAGE_SIZE];
 	source_t *source;
 	token_t token;
 	bot_randomlist_t *randomlist, *lastrandom, *random;
 	bot_randomstring_t *randomstring;
-	size_t len;
 #ifdef DEBUG
-	int starttime = botimport.MilliSeconds();
+	int starttime = Sys_MilliSeconds();
 #endif // DEBUG
 	size = 0;
 	randomlist = NULL;
@@ -1047,6 +1046,8 @@ bot_randomlist_t *BotLoadRandomStrings(const char *filename) {
 		lastrandom = NULL; // last
 
 		while (PC_ReadToken(source, &token)) {
+			size_t len;
+
 			if (token.type != TT_NAME) {
 				SourceError(source, "unknown random %s", token.string);
 				FreeSource(source);
@@ -1110,7 +1111,7 @@ bot_randomlist_t *BotLoadRandomStrings(const char *filename) {
 
 	botimport.Print(PRT_MESSAGE, "loaded %s\n", filename);
 #ifdef DEBUG
-	botimport.Print(PRT_MESSAGE, "random strings %d msec\n", botimport.MilliSeconds() - starttime);
+	botimport.Print(PRT_MESSAGE, "random strings %d msec\n", Sys_MilliSeconds() - starttime);
 	//BotDumpRandomStringList(randomlist);
 #endif // DEBUG
 	return randomlist;
@@ -1347,7 +1348,7 @@ void BotFreeMatchTemplates(bot_matchtemplate_t *mt) {
 BotLoadMatchTemplates
 =======================================================================================================================================
 */
-bot_matchtemplate_t *BotLoadMatchTemplates(const char *matchfile) {
+bot_matchtemplate_t *BotLoadMatchTemplates(char *matchfile) {
 	source_t *source;
 	token_t token;
 	bot_matchtemplate_t *matchtemplate, *matches, *lastmatch;
@@ -1567,7 +1568,8 @@ void BotMatchVariable(bot_match_t *match, int variable, char *buf, int size) {
 		}
 
 		assert(match->variables[variable].offset >= 0);
-		Q_strncpyz(buf, &match->string[(int)match->variables[variable].offset], size);
+		strncpy(buf, &match->string[(int)match->variables[variable].offset], size - 1);
+		buf[size - 1] = '\0';
 	} else {
 		strcpy(buf, "");
 	}
@@ -1929,7 +1931,7 @@ void BotCheckValidReplyChatKeySet(source_t *source, bot_replychatkey_t *keys) {
 BotLoadReplyChat
 =======================================================================================================================================
 */
-bot_replychat_t *BotLoadReplyChat(const char *filename) {
+bot_replychat_t *BotLoadReplyChat(char *filename) {
 	char chatmessagestring[MAX_MESSAGE_SIZE];
 	char namebuffer[MAX_MESSAGE_SIZE];
 	source_t *source;
@@ -2138,7 +2140,7 @@ bot_chat_t *BotLoadInitialChat(char *chatfile, char *chatname) {
 #ifdef DEBUG
 	int starttime;
 
-	starttime = botimport.MilliSeconds();
+	starttime = Sys_MilliSeconds();
 #endif // DEBUG
 	size = 0;
 	foundchat = qfalse;
@@ -2285,7 +2287,7 @@ bot_chat_t *BotLoadInitialChat(char *chatfile, char *chatname) {
 		BotCheckInitialChatIntegrety(chat);
 	}
 #ifdef DEBUG
-	botimport.Print(PRT_MESSAGE, "initial chats loaded in %d msec\n", botimport.MilliSeconds() - starttime);
+	botimport.Print(PRT_MESSAGE, "initial chats loaded in %d msec\n", Sys_MilliSeconds() - starttime);
 #endif // DEBUG
 	// character was read successfully
 	return chat;
@@ -2944,6 +2946,23 @@ int BotReplyChat(int chatstate, char *message, int mcontext, int vcontext, char 
 
 /*
 =======================================================================================================================================
+BotChatLength
+=======================================================================================================================================
+*/
+int BotChatLength(int chatstate) {
+	bot_chatstate_t *cs;
+
+	cs = BotChatStateFromHandle(chatstate);
+
+	if (!cs) {
+		return 0;
+	}
+
+	return strlen(cs->chatmessage);
+}
+
+/*
+=======================================================================================================================================
 BotEnterChat
 =======================================================================================================================================
 */
@@ -2994,7 +3013,9 @@ void BotGetChatMessage(int chatstate, char *buf, int size) {
 	}
 
 	BotRemoveTildes(cs->chatmessage);
-	Q_strncpyz(buf, cs->chatmessage, size);
+	strncpy(buf, cs->chatmessage, size - 1);
+
+	buf[size - 1] = '\0';
 	// clear the chat message from the state
 	strcpy(cs->chatmessage, "");
 }
@@ -3122,9 +3143,9 @@ BotSetupChatAI
 =======================================================================================================================================
 */
 int BotSetupChatAI(void) {
-	const char *file;
+	char *file;
 #ifdef DEBUG
-	int starttime = botimport.MilliSeconds();
+	int starttime = Sys_MilliSeconds();
 #endif // DEBUG
 	file = LibVarString("synfile", "syn.c");
 	synonyms = BotLoadSynonyms(file);
@@ -3132,15 +3153,12 @@ int BotSetupChatAI(void) {
 	randomstrings = BotLoadRandomStrings(file);
 	file = LibVarString("matchfile", "match.c");
 	matchtemplates = BotLoadMatchTemplates(file);
-
-	if (!LibVarValue("nochat", "0")) {
-		file = LibVarString("rchatfile", "rchat.c");
-		replychats = BotLoadReplyChat(file);
-	}
+	file = LibVarString("rchatfile", "rchat.c");
+	replychats = BotLoadReplyChat(file);
 
 	InitConsoleMessageHeap();
 #ifdef DEBUG
-	botimport.Print(PRT_MESSAGE, "setup chat AI %d msec\n", botimport.MilliSeconds() - starttime);
+	botimport.Print(PRT_MESSAGE, "setup chat AI %d msec\n", Sys_MilliSeconds() - starttime);
 #endif // DEBUG
 	return BLERR_NOERROR;
 }

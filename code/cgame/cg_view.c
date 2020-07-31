@@ -391,7 +391,7 @@ static void CG_OffsetFirstPersonView(void) {
 	angles[PITCH] += delta * cg_runpitch.value;
 	delta = DotProduct(predictedVelocity, cg.refdef.viewaxis[1]);
 	angles[ROLL] -= delta * cg_runroll.value;
-	delta = DotProduct(predictedVelocity, cg.refdef.viewaxis[0]); // Tobias NOTE: same as above, re-use it for [2] bob?
+	delta = DotProduct(predictedVelocity, cg.refdef.viewaxis[0]);
 	angles[YAW] -= delta * cg_runyaw.value;
 	// add angles based on bob, make sure the bob is visible even at low speeds
 	speed = cg.xyspeed > 200 ? cg.xyspeed : 200;
@@ -419,7 +419,7 @@ static void CG_OffsetFirstPersonView(void) {
 	delta = cg.bobfracsin * cg_bobyaw.value * speed;
 
 	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED) {
-		delta *= 2; // crouching accentuates yaw
+		delta *= 2; // crouching accentuates roll
 	}
 
 	if (cg.bobcycle & 1) {
@@ -807,21 +807,16 @@ void CG_AddBufferedAnnouncerSound(sfxHandle_t sfx) {
 	if (!sfx) {
 		return;
 	}
-	// Tobias NOTE: do we need this?
-	// clear all buffered sounds
-	if (sfx == -1) {
-		cg.soundTime = 0;
-		cg.soundBufferIn = 0;
-		cg.soundBufferOut = 0;
-		memset(cg.soundBuffer, 0, sizeof(cg.soundBuffer));
+	// if we are going into the intermission, don't start any voices
+	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
 		return;
 	}
-	// Tobias END
+
 	cg.soundBuffer[cg.soundBufferIn] = sfx;
 	cg.soundBufferIn = (cg.soundBufferIn + 1) % MAX_SOUNDBUFFER;
 
 	if (cg.soundBufferIn == cg.soundBufferOut) {
-		cg.soundBufferOut = (cg.soundBufferOut + 1) % MAX_SOUNDBUFFER;
+		cg.soundBufferOut++;
 	}
 }
 
@@ -842,12 +837,12 @@ CG_PlayBufferedAnnouncerSounds
 static void CG_PlayBufferedAnnouncerSounds(void) {
 
 	// clear all buffered sounds
-	if (cg.intermissionStarted || cg.warmupCounterShowing) {
+	if (cg.intermissionStarted || (cg.warmup && cg.warmupCount < 6)) {
 		// Tobias NOTE: do we need this?
 		cg.soundTime = 0;
 		cg.soundBufferIn = 0;
 		cg.soundBufferOut = 0;
-		memset(cg.soundBuffer, 0, sizeof(cg.soundBuffer));
+		cg.soundBuffer[cg.soundBufferOut] = 0;
 		// Tobias END
 		return;
 	}
@@ -893,7 +888,8 @@ CG_SetupFrustum
 */
 void CG_SetupFrustum(void) {
 	int i;
-	float xs, xc, ang;
+	float xs, xc;
+	float ang;
 
 	ang = cg.refdef.fov_x / 180 * M_PI * 0.5f;
 	xs = sin(ang);
@@ -946,8 +942,6 @@ qboolean CG_CullPoint(vec3_t pt) {
 /*
 =======================================================================================================================================
 CG_CullPointAndRadius
-
-Returns true if culled.
 =======================================================================================================================================
 */
 qboolean CG_CullPointAndRadius(const vec3_t pt, vec_t radius) {
@@ -998,12 +992,12 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, qboolean demoP
 		CG_DrawInformation();
 		return;
 	}
-	// let the client system know what our weapon and zoom settings are
-	trap_SetUserCmdValue(cg.weaponSelect, cg.zoomSensitivity);
 
 	if (!cg.lightstylesInited) {
 		CG_SetupDlightstyles();
 	}
+	// let the client system know what our weapon and zoom settings are
+	trap_SetUserCmdValue(cg.weaponSelect, cg.zoomSensitivity);
 	// this counter will be bumped for every valid scene we generate
 	cg.clientFrame++;
 	// update cg.predictedPlayerState

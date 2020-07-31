@@ -1367,8 +1367,6 @@ void BG_PlayerStateToEntityState(playerState_t *ps, entityState_t *s, qboolean s
 		}
 	}
 
-	s->team = ps->persistant[PERS_TEAM];
-
 	if (ps->stats[STAT_HEALTH] <= 0) {
 		s->skinFraction = 1.0f;
 	} else if (ps->stats[STAT_HEALTH] >= 100) {
@@ -1379,6 +1377,7 @@ void BG_PlayerStateToEntityState(playerState_t *ps, entityState_t *s, qboolean s
 
 	s->loopSound = ps->loopSound;
 	s->tokens = ps->tokens;
+	s->team = ps->persistant[PERS_TEAM];
 }
 
 /*
@@ -1459,8 +1458,6 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t *ps, entityState_t *s,
 		}
 	}
 
-	s->team = ps->persistant[PERS_TEAM];
-
 	if (ps->stats[STAT_HEALTH] <= 0) {
 		s->skinFraction = 1.0f;
 	} else if (ps->stats[STAT_HEALTH] >= 100) {
@@ -1471,6 +1468,7 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t *ps, entityState_t *s,
 
 	s->loopSound = ps->loopSound;
 	s->tokens = ps->tokens;
+	s->team = ps->persistant[PERS_TEAM];
 }
 
 /*

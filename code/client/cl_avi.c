@@ -342,7 +342,7 @@ qboolean CL_OpenAVIForWriting(const char *fileName) {
 	} else {
 		afd.motionJpeg = qfalse;
 	}
-	// buffers only need to store RGB pixels
+	// buffers only need to store RGB pixels.
 	// allocate a bit more space for the capture buffer to account for possible padding at the end of pixel lines, and padding for alignment
 #define MAX_PACK_LEN 16
 	afd.cBuffer = Z_Malloc((afd.width * 3 + MAX_PACK_LEN - 1) * afd.height + MAX_PACK_LEN - 1);

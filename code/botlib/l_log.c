@@ -51,8 +51,8 @@ static logfile_t logfile;
 Log_Open
 =======================================================================================================================================
 */
-void Log_Open(const char *filename) {
-	const char *ospath;
+void Log_Open(char *filename) {
+	char *ospath;
 
 	if (!LibVarValue("log", "0")) {
 		return;
@@ -77,7 +77,6 @@ void Log_Open(const char *filename) {
 	}
 
 	Q_strncpyz(logfile.filename, filename, MAX_LOGFILENAMESIZE);
-
 	botimport.Print(PRT_MESSAGE, "Opened log %s\n", logfile.filename);
 }
 

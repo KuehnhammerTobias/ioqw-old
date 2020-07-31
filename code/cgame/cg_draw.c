@@ -39,16 +39,6 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
-static const char *DayAbbrev[] = {
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday"
-};
-
 /*
 =======================================================================================================================================
 CG_Text_Width
@@ -583,9 +573,7 @@ CG_DrawStatusBarFlag
 =======================================================================================================================================
 */
 static void CG_DrawStatusBarFlag(float x, int team) {
-	int iconSize;
-
-	iconSize = ICON_SIZE * cg_statusScale.value;
+	int iconSize = ICON_SIZE * cg_statusScale.value;
 
 	CG_DrawFlagModel(x + (1.0f - cg_statusScale.value) * ICON_SIZE * 0.5f, 480 - iconSize, iconSize, iconSize, team, qfalse);
 }
@@ -927,7 +915,8 @@ static float CG_DrawTeamOverlay(float y, qboolean right, qboolean upper) {
 	char st[16];
 	clientInfo_t *ci;
 	gitem_t *item;
-	int ret_y, count, team;
+	int ret_y, count;
+	int team;
 
 	if (!cg_drawTeamOverlay.integer) {
 		return y;
@@ -1524,66 +1513,7 @@ static void CG_DrawLowerLeft(void) {
 
 	CG_DrawPickupItem(y);
 }
-#endif // BASEGAME
-/*
-=======================================================================================================================================
-CG_DrawRealTimeClock
-=======================================================================================================================================
-*/
-static int CG_DrawRealTimeClock(int y) {
-	char *s;
-	int w;
-	qtime_t qtime;
-/*
-	if (!cg_drawClock.integer) {
-		return y;
-	}
-*/
-	trap_RealTime(&qtime);
 
-	if (cg_drawClock.integer == 2) {
-		s = va("%02d.%02d.%02d, %s, %02d:%02d", qtime.tm_mday, 1 + qtime.tm_mon, 1900 + qtime.tm_year, DayAbbrev[qtime.tm_wday], qtime.tm_hour, qtime.tm_min);
-	} else {
-		char *pm = " am";
-		int h = qtime.tm_hour;
-
-		if (h == 0) {
-			h = 12;
-		} else if (h == 12) {
-			pm = " pm";
-		} else if (h > 12) {
-			h -= 12;
-			pm = " pm";
-		}
-
-		s = va("%02d.%02d.%02d, %s, %d:%02d%s", qtime.tm_mday, 1 + qtime.tm_mon, 1900 + qtime.tm_year, DayAbbrev[qtime.tm_wday], h, qtime.tm_min, pm);
-	}
-
-	w = CG_Text_Width(s, 0.2f, 0);
-
-	CG_Text_Paint(635 - w, y + BIGCHAR_HEIGHT, 0.2f, colorWhite, s, 0, 0, ITEM_TEXTSTYLE_SHADOWED); // Tobias NOTE: this is not correct because it's out of 16:9 control atm
-
-	return y;
-}
-
-
-/*
-=======================================================================================================================================
-CG_DrawBottomLineRight
-=======================================================================================================================================
-*/
-static void CG_DrawBottomLineRight(void) {
-	float y;
-
-	y = 480 - 20;
-
-	CG_SetScreenPlacement(PLACE_RIGHT, PLACE_BOTTOM);
-
-	if (cg_drawClock.integer) {
-		y = CG_DrawRealTimeClock(y);
-	}
-}
-#ifndef BASEGAME
 /*
 =======================================================================================================================================
 CG_DrawTeamInfo
@@ -2359,65 +2289,7 @@ static void CG_DrawIntermission(void) {
 	cg.scoreFadeTime = cg.time;
 	cg.scoreBoardShowing = CG_DrawScoreboard();
 }
-// Tobias DEBUG
-/*
-=======================================================================================================================================
-CG_DrawBotInfo
 
-Draw info for bot that player is following.
-=======================================================================================================================================
-*/
-static qboolean CG_DrawBotInfo(void) {
-	const char *info, *str, *leader, *carrying, *action, *node;
-	int w;
-
-	if (!(cg.snap->ps.pm_flags & PMF_FOLLOW)) {
-		return qfalse;
-	}
-
-	info = CG_ConfigString(CS_BOTINFO + cg.snap->ps.clientNum);
-
-	if (!*info) {
-		return qfalse;
-	}
-
-	CG_SetScreenPlacement(PLACE_CENTER, PLACE_TOP);
-
-	leader = Info_ValueForKey(info, "l");
-
-	if (*leader) {
-		str = "Bot is Leader";
-		w = CG_DrawStrlen(str) * BIGCHAR_WIDTH;
-		CG_DrawBigString(320 - w / 2, 174, str, 1.0f);
-	}
-
-	node = Info_ValueForKey(info, "n");
-
-	if (*node) {
-		str = va("AI Node: %s", node);
-		w = CG_DrawStrlen(str) * BIGCHAR_WIDTH;
-		CG_DrawBigString(320 - w / 2, 192, str, 1.0f);
-	}
-
-	action = Info_ValueForKey(info, "a");
-
-	if (*action) {
-		str = va("LTG: %s", action);
-		w = CG_DrawStrlen(str) * BIGCHAR_WIDTH;
-		CG_DrawBigString(320 - w / 2, 210, str, 1.0f);
-	}
-
-	carrying = Info_ValueForKey(info, "c");
-
-	if (*carrying) {
-		str = va("Bot carrying: %s", carrying);
-		w = CG_DrawStrlen(str) * BIGCHAR_WIDTH;
-		CG_DrawBigString(320 - w / 2, 228, str, 1.0f);
-	}
-
-	return qtrue;
-}
-// Tobias END
 /*
 =======================================================================================================================================
 CG_DrawFollow
@@ -2445,7 +2317,6 @@ static qboolean CG_DrawFollow(void) {
 	x = 0.5 * (640 - GIANT_WIDTH * CG_DrawStrlen(name));
 
 	CG_DrawStringExt(x, 40, name, color, qtrue, qtrue, GIANT_WIDTH, GIANT_HEIGHT, 0);
-	CG_DrawBotInfo(); // Tobias DEBUG
 	return qtrue;
 }
 
@@ -2529,8 +2400,6 @@ static void CG_DrawWarmup(void) {
 
 	sec = cg.warmup;
 
-	cg.warmupCounterShowing = qfalse;
-
 	if (!sec) {
 		return;
 	}
@@ -2592,10 +2461,6 @@ static void CG_DrawWarmup(void) {
 
 	sec = (sec - cg.time) / 1000;
 
-	if (sec < 6) {
-		cg.warmupCounterShowing = qtrue;
-	}
-
 	if (sec < 0) {
 		cg.warmup = 0;
 		sec = 0;
@@ -2615,14 +2480,6 @@ static void CG_DrawWarmup(void) {
 				break;
 			case 2:
 				trap_S_StartLocalSound(cgs.media.count3Sound, CHAN_ANNOUNCER);
-				break;
-			case 4:
-				if (cgs.gametype > GT_TOURNAMENT && cgs.gametype <= GT_HARVESTER) {
-					trap_S_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
-				} else {
-					trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
-				}
-
 				break;
 			default:
 				break;
@@ -2685,9 +2542,6 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 	if (cg_draw2D.integer == 0) {
 		return;
 	}
-	// draw the bottom lines
-	CG_DrawBottomLineRight();
-	//CG_DrawBottomLineLeft();
 
 	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
 		CG_DrawIntermission();
@@ -2797,14 +2651,14 @@ void CG_DrawMiscGamemodels(void) {
 	int i, j, drawn;
 	refEntity_t ent;
 
+	drawn = 0;
+
 	memset(&ent, 0, sizeof(ent));
 
 	ent.reType = RT_MODEL;
 	ent.nonNormalizedAxes = qtrue;
-	// static gamemodels don't project shadows
+	// ydnar: static gamemodels don't project shadows
 	ent.renderfx = RF_NOSHADOW;
-
-	drawn = 0;
 
 	for (i = 0; i < cg.numMiscGameModels; i++) {
 		if (cgs.miscGameModels[i].radius) {
@@ -2881,6 +2735,11 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 	}
 	// clear around the rendered view if sized down
 	CG_TileClear();
+
+	if (stereoView != STEREO_CENTER) {
+		CG_DrawCrosshair3D();
+	}
+
 	CG_DrawMiscGamemodels();
 	CG_PB_RenderPolyBuffers();
 	CG_FogView();
@@ -2888,10 +2747,6 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 	cg.refdef.skyAlpha = cg.skyAlpha;
 	// draw 3D view
 	trap_R_RenderScene(&cg.refdef);
-
-	if (stereoView != STEREO_CENTER) {
-		CG_DrawCrosshair3D();
-	}
 	// draw status bar and other floating elements
 	CG_Draw2D(stereoView);
 }

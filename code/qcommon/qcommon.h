@@ -325,7 +325,7 @@ void Cbuf_AddText(const char *text);
 void Cbuf_ExecuteText(int exec_when, const char *text);
 // this can be used in place of either Cbuf_AddText or Cbuf_InsertText
 void Cbuf_ExecuteTextSafe(int exec_when, const char *text);
-// used by VMs with special handling for unsafe calls
+// used by VMs with special handling for unsafe calls.
 void Cbuf_Execute(void);
 // Pulls off \n terminated lines of text from the command buffer and sends them through Cmd_ExecuteString. Stops when the buffer is empty.
 // Normally called once per frame, but may be explicitly invoked.
@@ -511,7 +511,7 @@ long FS_ReadFile(const char *qpath, void **buffer);
 // a null buffer will just return the file length without loading
 // as a quick check for existence. -1 length == not present
 // A 0 byte will always be appended at the end, so string ops are safe.
-// the buffer should be considered read-only, because it may be cached for other uses
+// the buffer should be considered read-only, because it may be cached for other uses.
 void FS_ForceFlush(fileHandle_t f);
 // forces flush on files we're writing to.
 void FS_FreeFile(void *buffer);
@@ -845,7 +845,7 @@ cpuFeatures_t Sys_GetProcessorFeatures(void);
 void Sys_SetErrorText(const char *text);
 void Sys_SendPacket(int length, const void *data, netadr_t to);
 qboolean Sys_StringToAdr(const char *s, netadr_t *a, netadrtype_t family);
-// does NOT parse port numbers, only base addresses
+// does NOT parse port numbers, only base addresses.
 qboolean Sys_IsLANAddress(netadr_t adr);
 void Sys_ShowIP(void);
 FILE *Sys_FOpen(const char *ospath, const char *mode);
@@ -931,17 +931,17 @@ void Huff_offsetReceive(node_t *node, int *ch, byte *fin, int *offset, int maxof
 void Huff_offsetTransmit(huff_t *huff, int ch, byte *fout, int *offset, int maxoffset);
 void Huff_putBit(int bit, byte *fout, int *offset);
 int Huff_getBit(byte *fout, int *offset);
-// don't use if you don't know what you're doing
+// don't use if you don't know what you're doing.
 int Huff_getBloc(void);
 void Huff_setBloc(int _bloc);
 
 extern huffman_t clientHuffTables;
 
-#define SV_ENCODE_START 4
-#define SV_DECODE_START 12
+#define SV_ENCODE_START		4
+#define SV_DECODE_START		12
 
-#define CL_ENCODE_START 12
-#define CL_DECODE_START 4
+#define CL_ENCODE_START		12
+#define CL_DECODE_START		4
 // flags for sv_allowDownload and cl_allowDownload
 #define DLF_ENABLE			1
 #define DLF_NO_REDIRECT		2

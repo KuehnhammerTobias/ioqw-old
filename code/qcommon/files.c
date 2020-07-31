@@ -152,11 +152,12 @@ When building a pak file, make sure a config.cfg isn't present in it, or configs
 // every time a new pk3 file is built, this checksum must be updated.
 // the easiest way to get it is to just run the game and see what it spits out
 static const unsigned int pak_checksums[] = {
-	4087071573u,
-	3709064859u,
-	908855077u,
-	977125798u
+	3555038932u,
+	2237217400u,
+	2747514120u,
+	3871129869u
 };
+
 // if this is defined, the executable positively won't work with any paks other
 // than the demo pak, even if productid is present. This is only used for our
 // last demo release to prevent the mac and linux users from using the demo
@@ -1163,8 +1164,8 @@ long FS_FOpenFileReadDir(const char *filename, searchpath_t *search, fileHandle_
 				// case and separator insensitive comparisons
 				if (!FS_FilenameCompare(pakFile->name, filename)) {
 					// found it!
-					// mark the pak as having been referenced and mark specifics on cgame and ui
-					// shaders, txt and arena files by themselves do not count as a reference as these are loaded from all pk3s
+					// mark the pak as having been referenced and mark specifics on cgame and ui.
+					// shaders, txt, and arena files by themselves do not count as a reference as these are loaded from all pk3s.
 					len = strlen(filename);
 
 					if (!(pak->referenced & FS_GENERAL_REF)) {
@@ -1277,7 +1278,7 @@ long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueF
 	isLocalConfig = !strcmp(filename, "autoexec.cfg") || !strcmp(filename, QWCONFIG_CFG);
 
 	for (search = fs_searchpaths; search; search = search->next) {
-		// autoexec.cfg and config.cfg can only be loaded outside of pk3 files
+		// autoexec.cfg and config.cfg can only be loaded outside of pk3 files.
 		if (isLocalConfig && search->pack) {
 			continue;
 		}
@@ -3056,7 +3057,7 @@ qboolean FS_ComparePaks(char *neededpaks, int len, qboolean dlstring) {
 			// don't got it
 			if (dlstring) {
 				// we need this to make sure we won't hit the end of the buffer or the server could overwrite non-pk3 files on clients by
-				// writing so much crap into neededpaks that Q_strcat cuts off the .pk3 extension
+				// writing so much crap into neededpaks that Q_strcat cuts off the .pk3 extension.
 				origpos += strlen(origpos);
 				// remote name
 				Q_strcat(neededpaks, len, "@");
@@ -3076,7 +3077,7 @@ qboolean FS_ComparePaks(char *neededpaks, int len, qboolean dlstring) {
 					Q_strcat(neededpaks, len, fs_serverReferencedPakNames[i]);
 					Q_strcat(neededpaks, len, ".pk3");
 				}
-				// find out whether it might have overflowed the buffer and don't add this file to the list if that is the case
+				// find out whether it might have overflowed the buffer and don't add this file to the list if that is the case.
 				if (strlen(origpos) + (origpos - neededpaks) >= len - 1) {
 					*origpos = '\0';
 					break;

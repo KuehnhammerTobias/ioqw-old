@@ -376,7 +376,7 @@ int BotLoadCachedCharacter(char *charfile, float skill, int reload) {
 #ifdef DEBUG
 	int starttime;
 
-	starttime = botimport.MilliSeconds();
+	starttime = Sys_MilliSeconds();
 #endif // DEBUG
 	// find a free spot for a character
 	for (handle = 1; handle <= MAX_CLIENTS; handle++) {
@@ -407,7 +407,7 @@ int BotLoadCachedCharacter(char *charfile, float skill, int reload) {
 		botimport.Print(PRT_MESSAGE, "loaded skill %d from %s\n", intskill, charfile);
 #ifdef DEBUG
 		if (botDeveloper) {
-			botimport.Print(PRT_MESSAGE, "skill %d loaded in %d msec from %s\n", intskill, botimport.MilliSeconds() - starttime, charfile);
+			botimport.Print(PRT_MESSAGE, "skill %d loaded in %d msec from %s\n", intskill, Sys_MilliSeconds() - starttime, charfile);
 		}
 #endif // DEBUG
 		return handle;
@@ -784,7 +784,8 @@ void Characteristic_String(int character, int index, char *buf, int size) {
 	}
 	// an integer will be converted to a float
 	if (ch->c[index].type == CT_STRING) {
-		Q_strncpyz(buf, ch->c[index].value.string, size);
+		strncpy(buf, ch->c[index].value.string, size - 1);
+		buf[size - 1] = '\0';
 	} else {
 		botimport.Print(PRT_ERROR, "characteristic %d is not a string\n", index);
 	}

@@ -456,7 +456,7 @@ void S_memoryLoad(sfx_t *sfx) {
 
 	// load the sound file
 	if (!S_LoadSound(sfx)) {
-		//Com_Printf(S_COLOR_YELLOW "WARNING: couldn't load sound: %s\n", sfx->soundName);
+//		Com_Printf(S_COLOR_YELLOW "WARNING: couldn't load sound: %s\n", sfx->soundName);
 		sfx->defaultSound = qtrue;
 	}
 
@@ -555,7 +555,7 @@ static qboolean S_Base_HearingThroughEntity(int entityNum, vec3_t origin) {
 	if (listener_number == entityNum) {
 		// this is an outrageous hack to detect whether or not the player is rendering in third person or not. We can't ask the renderer
 		// because the renderer has no notion of entities and we can't ask cgame since that would involve changing the API and hence mod
-		// compatibility. I don't think there is any way around this, but I'll leave the FIXME just in case anyone has a bright idea
+		// compatibility. I don't think there is any way around this, but I'll leave the FIXME just in case anyone has a bright idea.
 		distanceSq = DistanceSquared(sorigin, listener_origin);
 
 		if (distanceSq > THIRD_PERSON_THRESHOLD_SQ) {

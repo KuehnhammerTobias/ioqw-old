@@ -456,66 +456,14 @@ qhandle_t CG_StatusHandle(int task) {
 		case TEAMTASK_CAMP:
 			h = cgs.media.campShader;
 			break;
-// Tobias DEBUG
-		case TEAMTASK_PATROL:
-			h = cgs.media.patrolShader;
-			break;
-// Tobias END
 		default:
-// Tobias DEBUG
-			if (cg_drawDebug.integer && cg_drawStatusDebug.integer) {
-				h = cgs.media.roamShader;
-			} else
-// Tobias END
-			{
-				h = cgs.media.patrolShader;
-			}
-
-			break;
-	}
-
-	return h;
-}
-// Tobias DEBUG
-/*
-=======================================================================================================================================
-CG_ObstacleHandle
-=======================================================================================================================================
-*/
-qhandle_t CG_ObstacleHandle(int task) {
-	qhandle_t h;
-
-	switch (task) {
-		case TEAMTASK_OFFENSE: // BARRIER_JUMP (can jump over blocking barrier)
-			h = cgs.media.assaultShader;
-			break;
-		case TEAMTASK_PATROL: // BARRIER_CROUCH (can crouch through blocking barrier)
 			h = cgs.media.patrolShader;
 			break;
-		// --------------------------------------------------------------------------------------
-		case TEAMTASK_FOLLOW: // BARRIER_WALK (must walk around the blocking barrier)
-			h = cgs.media.followShader;
-			break;
-		case TEAMTASK_ESCORT: // BARRIER_WALK (must walk around the blocking barrier, but flipped side because moving obstacle is moving to our right side)
-			h = cgs.media.escortShader;
-			break;
-		case TEAMTASK_RETRIEVE: // BARRIER_WALK (must walk around the blocking barrier, but flipped side because right side is blocked by something)
-			h = cgs.media.retrieveShader;
-			break;
-		case TEAMTASK_DEFENSE: // BARRIER_WALK (random movement)
-			h = cgs.media.defendShader;
-			break;
-		case TEAMTASK_CAMP: // BARRIER_WALK (WAIT)
-			h = cgs.media.campShader;
-			break;
-		default: // NOT BLOCKED - no barrier at all
-			h = cgs.media.invisShader;
-			break;
 	}
 
 	return h;
 }
-// Tobias END
+
 /*
 =======================================================================================================================================
 CG_DrawSelectedPlayerStatus
@@ -1814,14 +1762,10 @@ CG_DrawTeamSpectators
 =======================================================================================================================================
 */
 static void CG_DrawTeamSpectators(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader) {
-	char *text;
-	float textWidth;
-	int now, delta;
-
-	text = cg.spectatorList;
-	textWidth = MAX(rect->w, CG_Text_Width(text, scale, 0));
-	now = trap_Milliseconds();
-	delta = now - cg.spectatorTime;
+	char *text = cg.spectatorList;
+	float textWidth = MAX(rect->w, CG_Text_Width(text, scale, 0));
+	int now = trap_Milliseconds();
+	int delta = now - cg.spectatorTime;
 
 	CG_SetClipRegion(rect->x, rect->y, rect->w, rect->h);
 	CG_Text_Paint(rect->x - cg.spectatorOffset, rect->y + rect->h - 3, scale, color, text, 0, 0, 0);
@@ -1845,12 +1789,11 @@ CG_DrawMedal
 =======================================================================================================================================
 */
 void CG_DrawMedal(int ownerDraw, rectDef_t *rect, float scale, vec4_t color, qhandle_t shader) {
-	score_t *score;
+	score_t *score = &cg.scores[cg.selectedScore];
 	float value = 0;
 	char *text = NULL;
 
 	color[3] = 0.25;
-	score = &cg.scores[cg.selectedScore];
 
 	switch (ownerDraw) {
 		case CG_ACCURACY:

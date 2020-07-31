@@ -78,7 +78,6 @@ AAS_RoutingInfo
 =======================================================================================================================================
 */
 void AAS_RoutingInfo(void) {
-
 	botimport.Print(PRT_MESSAGE, "%d area cache updates\n", numareacacheupdates);
 	botimport.Print(PRT_MESSAGE, "%d portal cache updates\n", numportalcacheupdates);
 	botimport.Print(PRT_MESSAGE, "%d bytes routing cache\n", routingcachesize);
@@ -149,9 +148,7 @@ AAS_TravelFlagForType_inline
 =======================================================================================================================================
 */
 static ID_INLINE int AAS_TravelFlagForType_inline(int traveltype) {
-	int tfl;
-
-	tfl = 0;
+	int tfl = 0;
 
 	if (traveltype & TRAVELFLAG_NOTTEAM1) {
 		tfl |= TFL_NOTTEAM1;
@@ -445,7 +442,7 @@ void AAS_CreateReversedReachability(void) {
 		// settings of the area
 		settings = &aasworld.areasettings[i];
 
-		if (settings->numreachableareas > 128) {
+		if (settings->numreachableareas >= 128) {
 			botimport.Print(PRT_WARNING, "area %d has more than 128 reachabilities\n", i);
 		}
 		// create reversed links for the reachabilities
@@ -1338,8 +1335,8 @@ void AAS_UpdateAreaRoutingCache(aas_routingcache_t *areacache) {
 	unsigned short int t, startareatraveltimes[128]; // NOTE: not more than 128 reachabilities per area allowed
 	aas_routingupdate_t *updateliststart, *updatelistend, *curupdate, *nextupdate;
 	aas_reachability_t *reach;
-	const aas_reversedreachability_t *revreach; // Tobias NOTE: check other places as well
-	const aas_reversedlink_t *revlink; // Tobias NOTE: check other places as well
+	aas_reversedreachability_t *revreach;
+	aas_reversedlink_t *revlink;
 #ifdef ROUTING_DEBUG
 	numareacacheupdates++;
 #endif // ROUTING_DEBUG
@@ -1833,35 +1830,9 @@ AAS_AreaTravelTimeToGoalArea
 =======================================================================================================================================
 */
 int AAS_AreaTravelTimeToGoalArea(int areanum, vec3_t origin, int goalareanum, int travelflags) {
-	int traveltime, reachnum;
-
-	reachnum = 0;
+	int traveltime, reachnum = 0;
 
 	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
-		return traveltime;
-	}
-
-	return 0;
-}
-
-/*
-=======================================================================================================================================
-AAS_AreaTravelTimeToGoalAreaCheckLoop
-=======================================================================================================================================
-*/
-int AAS_AreaTravelTimeToGoalAreaCheckLoop(int areanum, vec3_t origin, int goalareanum, int travelflags, int loopareanum) {
-	int traveltime, reachnum;
-	aas_reachability_t *reach;
-
-	reachnum = 0;
-
-	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
-		reach = &aasworld.reachability[reachnum];
-
-		if (loopareanum && reach->areanum == loopareanum) {
-			return 0; // going here will cause a looped route
-		}
-
 		return traveltime;
 	}
 
@@ -1874,9 +1845,7 @@ AAS_AreaReachabilityToGoalArea
 =======================================================================================================================================
 */
 int AAS_AreaReachabilityToGoalArea(int areanum, vec3_t origin, int goalareanum, int travelflags) {
-	int traveltime, reachnum;
-
-	reachnum = 0;
+	int traveltime, reachnum = 0;
 
 	if (AAS_AreaRouteToGoalArea(areanum, origin, goalareanum, travelflags, &traveltime, &reachnum)) {
 		return reachnum;

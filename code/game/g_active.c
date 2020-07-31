@@ -412,14 +412,14 @@ void ClientTimerActions(gentity_t *ent, int msec) {
 
 			switch (w) {
 				case WP_MACHINEGUN:
-					max = 100;
+					max = 50;
 					inc = 5;
 					t = 1000;
 					break;
 				case WP_CHAINGUN:
 					max = 100;
 					inc = 10;
-					t = 500;
+					t = 1000;
 					break;
 				case WP_SHOTGUN:
 					max = 10;
@@ -429,7 +429,7 @@ void ClientTimerActions(gentity_t *ent, int msec) {
 				case WP_NAILGUN:
 					max = 10;
 					inc = 1;
-					t = 1250;
+					t = 1500;
 					break;
 				case WP_PROXLAUNCHER:
 					max = 5;
@@ -454,22 +454,22 @@ void ClientTimerActions(gentity_t *ent, int msec) {
 				case WP_BEAMGUN:
 					max = 100;
 					inc = 10;
-					t = 750;
+					t = 1250;
 					break;
 				case WP_RAILGUN:
 					max = 10;
 					inc = 1;
-					t = 1750;
+					t = 2750;
 					break;
 				case WP_PLASMAGUN:
 					max = 50;
 					inc = 5;
-					t = 750;
+					t = 2000;
 					break;
 				case WP_BFG:
 					max = 20;
 					inc = 1;
-					t = 750;
+					t = 3000;
 					break;
 				default:
 					max = 0;
@@ -528,11 +528,13 @@ Events will be passed on to the clients for presentation, but any server game ef
 =======================================================================================================================================
 */
 void ClientEvents(gentity_t *ent, int oldEventSequence) {
-	int i, event, damage, goombaDmg, kb_time;
+	int i;
+	int event;
 	gclient_t *client;
 	gentity_t *victim;
 	trace_t tr;
 	vec3_t start, stop;
+	int damage, goombaDmg, kb_time;
 
 	client = ent->client;
 
@@ -567,11 +569,8 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 				if (!victim->client) {
 					VectorCopy(ent->r.currentOrigin, start);
 					VectorCopy(ent->r.currentOrigin, stop);
-
 					stop[2] -= 4;
-
 					trap_Trace(&tr, start, NULL, NULL, stop, ent->s.number, MASK_SHOT);
-
 					victim = &level.gentities[tr.entityNum];
 				}
 
@@ -612,7 +611,6 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 						}
 						// no normal pain sound
 						ent->pain_debounce_time = level.time + 200;
-
 						G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 					}
 		
@@ -642,7 +640,6 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/world/debris1.wav"));
 					// faller has a soft landing
 					damage *= 0.95f;
-
 					G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 				} else {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/player/land_hurt.wav"));

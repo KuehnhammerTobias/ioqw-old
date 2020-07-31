@@ -180,7 +180,7 @@ static void SV_Map_f(void) {
 		Cvar_SetValue("g_gametype", GT_SINGLE_PLAYER);
 		Cvar_SetValue("g_doWarmup", 0);
 		// may not set sv_maxclients directly, always set latched
-		Cvar_SetLatched("sv_maxclients", "64");
+		Cvar_SetLatched("sv_maxclients", "8");
 
 		cmd += 2;
 	} else {
@@ -482,7 +482,7 @@ static void SV_KickNum_f(void) {
 	}
 
 	if (cl->netchan.remoteAddress.type == NA_LOOPBACK) {
-		Com_Printf("Cannot ban host player\n");
+		Com_Printf("Cannot kick host player\n");
 		return;
 	}
 
@@ -701,7 +701,7 @@ static void SV_AddBanToList(qboolean isexception) {
 	banstring = Cmd_Argv(1);
 
 	if (strchr(banstring, '.') || strchr(banstring, ':')) {
-		// this is an ip address, not a client num
+		// this is an ip address, not a client num.
 		if (SV_ParseCIDRNotation(&ip, &mask, banstring)) {
 			Com_Printf("Error: Invalid address %s\n", banstring);
 			return;
@@ -904,7 +904,7 @@ static void SV_FlushBans_f(void) {
 	}
 
 	serverBansCount = 0;
-	// empty the ban file
+	// empty the ban file.
 	SV_WriteBans();
 	Com_Printf("All bans and exceptions have been deleted.\n");
 }

@@ -116,8 +116,8 @@ int CG_SpawnBubbles(localEntity_t **bubbles, vec3_t origin, float baseSize, int 
 
 		le->leFlags = LEF_PUFF_DONT_SCALE;
 		le->leType = LE_BUBBLE;
-		le->startTime = cg.time;
 		le->endTime = cg.time + 8000 + random() * 250;
+		le->startTime = cg.time;
 		le->lifeRate = 1.0 / (le->endTime - le->startTime);
 
 		re = &le->refEntity;
@@ -545,8 +545,8 @@ void CG_GibPlayer(vec3_t playerOrigin) {
 	if (CG_PointContents(playerOrigin, -1) & (CONTENTS_WATER|CONTENTS_SLIME)) {
 		CG_SpawnBubbles(NULL, playerOrigin, 3, 5 + random() * 5);
 	}
-	// allow gibs to be turned off for speed
-	if (!cg_blood.integer || !cg_gibs.integer) {
+
+	if (!cg_blood.integer) {
 		return;
 	}
 
@@ -559,6 +559,10 @@ void CG_GibPlayer(vec3_t playerOrigin) {
 		CG_LaunchGib(origin, velocity, cgs.media.gibSkull);
 	} else {
 		CG_LaunchGib(origin, velocity, cgs.media.gibBrain);
+	}
+	// allow gibs to be turned off for speed
+	if (!cg_gibs.integer) {
+		return;
 	}
 
 	VectorCopy(playerOrigin, origin);
