@@ -310,7 +310,7 @@ void CG_AddFragment(localEntity_t *le) {
 
 		// get last location
 		if (cg.time == le->pos.trTime) {
-			// fragment was added this frame. no good way to fix this.
+			// fragment was added this frame, no good way to fix this
 			CG_FreeLocalEntity(le);
 			return;
 		} else {

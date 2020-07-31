@@ -723,7 +723,7 @@ static void PM_WalkMove(void) {
 		wishvel[i] = pml.forward[i] * fmove + pml.right[i] * smove;
 	}
 	// when going up or down slopes the wish velocity should Not be zero
-//	wishvel[2] = 0;
+	//wishvel[2] = 0;
 
 	VectorCopy(wishvel, wishdir);
 
@@ -761,7 +761,7 @@ static void PM_WalkMove(void) {
 		pm->ps->velocity[2] -= pm->ps->gravity * pml.frametime;
 	} else {
 		// don't reset the z velocity for slopes
-//		pm->ps->velocity[2] = 0;
+		//pm->ps->velocity[2] = 0;
 	}
 
 	vel = VectorLength(pm->ps->velocity);
@@ -1172,7 +1172,7 @@ static void PM_CrashLand(void) {
 	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
 		// create a local entity event to play the sound
-		if (delta > 84) { // Tobias NOTE: a delta of 84 = max_fallheight of 516 units for bots, and 529 units for humans (why can humans fall higher than bots?)
+		if (delta > 84) {
 			PM_AddEvent(EV_FALL_DIE);
 			stunTime = 1000;
 		} else if (delta > 70) {
@@ -1185,7 +1185,7 @@ static void PM_CrashLand(void) {
 			}
 
 			stunTime = 250;
-		} else if (delta > 48 ) {
+		} else if (delta > 48) {
 			// this is a pain grunt, so don't play it if dead
 			if (pm->ps->stats[STAT_HEALTH] > 0) {
 				PM_AddEvent(EV_FALL_DMG_15);
@@ -1211,7 +1211,6 @@ static void PM_CrashLand(void) {
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
-	// Tobias NOTE: this simulates the old behavior, assuming old maps use SURF_NODAMAGE if needed
 	} else {
 		if (delta > 60) {
 			// this is a pain grunt, so don't play it if dead
@@ -1232,7 +1231,6 @@ static void PM_CrashLand(void) {
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
-	// Tobias END
 	}
 	// when landing from launch ramps don't stop so abruptly
 	if (VectorLength(pm->ps->velocity) > 400) {
@@ -1436,7 +1434,7 @@ static void PM_GroundTrace(void) {
 
 	pm->ps->groundEntityNum = trace.entityNum;
 	// don't reset the z velocity for slopes
-//	pm->ps->velocity[2] = 0;
+	//pm->ps->velocity[2] = 0;
 
 	PM_AddTouchEnt(trace.entityNum);
 }

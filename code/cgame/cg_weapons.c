@@ -1882,7 +1882,7 @@ void CG_AddViewWeapon(playerState_t *ps) {
 			fovOffset[0] = -0.2 * (cg.fov - 90) * cg.refdef.fov_x / cg.fov;
 		}
 	} else if (cg_fov.integer > 90) {
-		// Q3A's auto adjust
+		// auto adjust
 		fovOffset[2] = -0.2 * (cg_fov.integer - 90);
 	}
 

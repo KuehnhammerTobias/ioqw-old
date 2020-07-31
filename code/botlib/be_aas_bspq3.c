@@ -360,7 +360,7 @@ void AAS_ParseBSPEntities(void) {
 		}
 
 		if (bspworld.numentities >= MAX_BSPENTITIES) {
-			botimport.Print(PRT_MESSAGE, "too many entities in BSP file\n");
+			botimport.Print(PRT_MESSAGE, "AAS_ParseBSPEntities: too many entities in BSP file\n");
 			break;
 		}
 

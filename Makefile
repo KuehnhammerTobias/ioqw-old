@@ -98,7 +98,7 @@ endif
 export CROSS_COMPILING
 
 ifndef VERSION
-VERSION=1.00
+VERSION=0.04
 endif
 
 ifndef CLIENTBIN
@@ -255,8 +255,8 @@ UIDIR=$(MOUNT_DIR)/ui
 JPDIR=$(MOUNT_DIR)/jpeg-8c
 OGGDIR=$(MOUNT_DIR)/libogg-1.3.3
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.6
-OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
-OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.9
+OPUSDIR=$(MOUNT_DIR)/opus-1.3
+OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.11
 ZDIR=$(MOUNT_DIR)/zlib
 FTDIR=$(MOUNT_DIR)/freetype-2.9
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
@@ -267,6 +267,8 @@ Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 AUTOUPDATERSRCDIR=$(MOUNT_DIR)/autoupdater
 LIBTOMCRYPTSRCDIR=$(AUTOUPDATERSRCDIR)/rsa_tools/libtomcrypt-1.17
 TOMSFASTMATHSRCDIR=$(AUTOUPDATERSRCDIR)/rsa_tools/tomsfastmath-0.13.1
+LOKISETUPDIR=misc/setup
+NSISDIR=misc/nsis
 SDLHDIR=$(MOUNT_DIR)/SDL2
 LIBSDIR=$(MOUNT_DIR)/libs
 
@@ -2737,7 +2739,6 @@ TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)
 STRINGOBJ1 = $(Q3R1STRINGOBJ)
 STRINGOBJ2 = $(Q3R2STRINGOBJ)
 
-
 copyfiles: release
 	@if [ ! -d $(COPYDIR)/$(BASEGAME) ]; then echo "You need to set COPYDIR to where your Quake Wars data is!"; fi
 ifneq ($(BUILD_GAME_SO),0)
@@ -2778,6 +2779,11 @@ ifneq ($(BUILD_GAME_SO),0)
 endif
 
 clean: clean-debug clean-release
+ifeq ($(PLATFORM),mingw32)
+	@$(MAKE) -C $(NSISDIR) clean
+else
+	@$(MAKE) -C $(LOKISETUPDIR) clean
+endif
 
 clean-debug:
 	@$(MAKE) clean2 B=$(BD)
@@ -2810,6 +2816,20 @@ toolsclean2:
 distclean: clean toolsclean
 	@rm -rf $(BUILD_DIR)
 
+installer: release
+ifdef MINGW
+	@$(MAKE) VERSION=$(VERSION) -C $(NSISDIR) V=$(V) \
+		SDLDLL=$(SDLDLL) \
+		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
+		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
+		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
+		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
+		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
+		USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
+else
+	@$(MAKE) VERSION=$(VERSION) -C $(LOKISETUPDIR) V=$(V)
+endif
+
 dist:
 	git archive --format zip --output $(CLIENTBIN)-$(VERSION).zip HEAD
 
@@ -2824,7 +2844,7 @@ ifneq ($(B),)
 endif
 
 .PHONY: all clean clean2 clean-debug clean-release copyfiles \
-	debug default dist distclean makedirs \
+	debug default dist distclean installer makedirs \
 	release targets \
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES)

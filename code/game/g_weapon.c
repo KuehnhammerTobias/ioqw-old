@@ -502,7 +502,7 @@ void Weapon_Railgun_Fire(gentity_t *ent) {
 
 	damage = 100 * s_quadFactor;
 
-	VectorMA(muzzle, 262144, forward, end); // 8192
+	VectorMA(muzzle, 262144, forward, end);
 	// trace only against the solids, so the railgun will go through people
 	unlinked = 0;
 	hits = 0;

@@ -104,14 +104,14 @@ static SOCKET ip_socket = INVALID_SOCKET;
 static SOCKET ip6_socket = INVALID_SOCKET;
 static SOCKET socks_socket = INVALID_SOCKET;
 static SOCKET multicast6_socket = INVALID_SOCKET;
-// keep track of currently joined multicast group.
+// keep track of currently joined multicast group
 static struct ipv6_mreq curgroup;
 // and the currently bound address.
 static struct sockaddr_in6 boundto;
 #ifndef IF_NAMESIZE
 #define IF_NAMESIZE 16
 #endif
-// use an admin local address per default so that network admins can decide on how to handle Quake Wars traffic.
+// use an admin local address per default so that network admins can decide on how to handle Quake Wars traffic
 #define NET_MULTICAST_IP6 "ff04::696f:7175:616b:6533"
 #define MAX_IPS 32
 
@@ -1287,7 +1287,7 @@ static void NET_GetLocalAddress(void) {
 		Com_Printf("NET_GetLocalAddress: Unable to get list of network interfaces: %s\n", NET_ErrorString());
 	} else {
 		for (search = ifap; search; search = search->ifa_next) {
-			// only add interfaces that are up.
+			// only add interfaces that are up
 			if (ifap->ifa_flags & IFF_UP) {
 				NET_AddLocalAddress(search->ifa_name, search->ifa_addr, search->ifa_netmask);
 			}
@@ -1423,7 +1423,7 @@ NET_GetCvars
 static qboolean NET_GetCvars(void) {
 	int modified;
 #ifdef DEDICATED
-	// I want server owners to explicitly turn on ipv6 support.
+	// I want server owners to explicitly turn on ipv6 support
 	net_enabled = Cvar_Get("net_enabled", "1", CVAR_LATCH|CVAR_ARCHIVE);
 #else
 	// end users have it enabled so they can connect to ipv6-only hosts, but ipv4 will be used if available due to ping
@@ -1447,7 +1447,7 @@ static qboolean NET_GetCvars(void) {
 	net_port6 = Cvar_Get("net_port6", va("%i", PORT_SERVER), CVAR_LATCH);
 	modified += net_port6->modified;
 	net_port6->modified = qfalse;
-	// some cvars for configuring multicast options which facilitates scanning for servers on local subnets.
+	// some cvars for configuring multicast options which facilitates scanning for servers on local subnets
 	net_mcast6addr = Cvar_Get("net_mcast6addr", NET_MULTICAST_IP6, CVAR_LATCH|CVAR_ARCHIVE);
 	modified += net_mcast6addr->modified;
 	net_mcast6addr->modified = qfalse;

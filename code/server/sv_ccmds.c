@@ -701,7 +701,7 @@ static void SV_AddBanToList(qboolean isexception) {
 	banstring = Cmd_Argv(1);
 
 	if (strchr(banstring, '.') || strchr(banstring, ':')) {
-		// this is an ip address, not a client num.
+		// this is an ip address, not a client num
 		if (SV_ParseCIDRNotation(&ip, &mask, banstring)) {
 			Com_Printf("Error: Invalid address %s\n", banstring);
 			return;
@@ -904,7 +904,7 @@ static void SV_FlushBans_f(void) {
 	}
 
 	serverBansCount = 0;
-	// empty the ban file.
+	// empty the ban file
 	SV_WriteBans();
 	Com_Printf("All bans and exceptions have been deleted.\n");
 }

@@ -46,7 +46,6 @@ typedef enum {
 	qfalse,
 	qtrue
 } qboolean;
-
 #endif // SCREWUP
 #ifdef BOTLIB
 #include "../qcommon/q_shared.h"

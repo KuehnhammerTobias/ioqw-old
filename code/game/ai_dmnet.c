@@ -70,7 +70,7 @@ void BotDumpNodeSwitches(bot_state_t *bs) {
 	char netname[MAX_NETNAME];
 
 	ClientName(bs->client, netname, sizeof(netname));
-	BotAI_Print(PRT_MESSAGE, "%s at %1.1f switched more than %d AI nodes\n", netname, FloatTime(), MAX_NODESWITCHES);
+	BotAI_Print(PRT_MESSAGE, "%1.1f: %s switched more than %d AI nodes\n", FloatTime(), netname, MAX_NODESWITCHES);
 
 	for (i = 0; i < numnodeswitches; i++) {
 		BotAI_Print(PRT_MESSAGE, "%s", nodeswitch[i]);
@@ -107,9 +107,8 @@ int BotGetAirGoal(bot_state_t *bs, bot_goal_t *goal) {
 	vec3_t end, mins = {-15, -15, -2}, maxs = {15, 15, 2};
 	int areanum;
 
-	// trace up until we hit solid
 	VectorCopy(bs->origin, end);
-
+	// trace up until we hit solid
 	end[2] += 1000;
 
 	BotAI_Trace(&bsptrace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
@@ -196,7 +195,7 @@ int BotNearbyGoal(bot_state_t *bs, int tfl, bot_goal_t *ltg, float range) {
 		} else {
 			dist = 300;
 		}
-		// if the bot is just a few secs away from the base
+		// if the bot is just a few secs away from team goal area number
 		if (trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < dist) {
 			// make the range really small
 			range = 20;
@@ -261,7 +260,7 @@ int BotReachedGoal(bot_state_t *bs, bot_goal_t *goal) {
 			*/
 			return qtrue;
 		}
-		// if in the goal area and below or above the goal and not swimming
+		// if the bot is in the goal area and below or above the goal and not swimming
 		if (bs->areanum == goal->areanum) {
 			if (bs->origin[0] > goal->origin[0] + goal->mins[0] && bs->origin[0] < goal->origin[0] + goal->maxs[0]) {
 				if (bs->origin[1] > goal->origin[1] + goal->mins[1] && bs->origin[1] < goal->origin[1] + goal->maxs[1]) {
@@ -333,7 +332,7 @@ int BotGetItemLongTermGoal(bot_state_t *bs, int tfl, bot_goal_t *goal) {
 			// reset the avoid goals and the avoid reach
 			trap_BotResetAvoidGoals(bs->gs);
 			trap_BotResetAvoidReach(bs->ms);
-			// check blocked teammates
+			// check if the bot is blocking team mates
 			BotCheckBlockedTeammates(bs);
 		}
 		// get the goal at the top of the stack
@@ -357,8 +356,8 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 	int areanum, teammates;
 	float croucher;
 	aas_entityinfo_t entinfo;
-	bsp_trace_t bsptrace;
 	bot_waypoint_t *wp;
+	bsp_trace_t bsptrace;
 
 	if (bs->ltgtype == LTG_TEAMHELP && !retreat) {
 		// check for bot typing status message
@@ -386,7 +385,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 
 			if (VectorLengthSquared(dir) < Square(100)) {
 				trap_BotResetAvoidReach(bs->ms);
-				// check blocked teammates
+				// check if the bot is blocking team mates
 				BotCheckBlockedTeammates(bs);
 				return qfalse;
 			}
@@ -394,7 +393,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			// last time the bot was NOT visible
 			bs->teammatevisible_time = FloatTime();
 		}
-		// if the entity information is valid (entity in PVS)
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -461,13 +460,12 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 						bs->arrive_time = FloatTime();
 					// if the bot wants to crouch
 					} else if (bs->crouch_time > FloatTime()) {
-						// get the start point looking from
 						VectorCopy(bs->origin, start);
-
+						// get the crouch view height
 						start[2] += CROUCH_VIEWHEIGHT;
-						// only try to crouch if the teammate remains visible
+						// only try to crouch if the team mate remains visible
 						BotAI_Trace(&bsptrace, start, NULL, NULL, entinfo.origin, bs->client, MASK_SHOT);
-						// if the teammate is visible from the current position
+						// if the team mate remains visible from the predicted position
 						if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == bs->teammate) {
 							trap_EA_Crouch(bs->client);
 						}
@@ -505,11 +503,11 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			}
 
 			trap_BotResetAvoidReach(bs->ms);
-			// check blocked teammates
+			 check if the bot is blocking team mates
 			BotCheckBlockedTeammates(bs);
 			return qfalse;
 		}
-		// if the entity information is valid (entity in PVS)
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -717,7 +715,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			}
 			// FIXME: move around a bit
 			trap_BotResetAvoidReach(bs->ms);
-			// check blocked teammates
+			// check if the bot is blocking team mates
 			BotCheckBlockedTeammates(bs);
 			return qfalse;
 		}
@@ -941,7 +939,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teamgoal_time < FloatTime()) {
 				bs->ltgtype = 0;
 			}
-			// if touching the base flag the bot should loose the enemy flag
+			// if touching the base flag the bot should loose flag
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->ltgtype = 0;
 			}
@@ -974,7 +972,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teamgoal_time < FloatTime()) {
 				bs->ltgtype = 0;
 			}
-			// if touching the base flag the bot should loose the enemy flag
+			// if touching the base flag the bot should loose the flag
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->attackaway_time = FloatTime() + 2 + 5 * random();
 			}
@@ -1066,7 +1064,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				BotGoHarvest(bs);
 				return qfalse;
 			}
-			// if touching the base flag the bot should loose the enemy flag
+			// if touching the obelisk the bot should loose the skulls
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
 				BotGoHarvest(bs);
 				return qfalse;
@@ -1100,7 +1098,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teamgoal_time < FloatTime()) {
 				bs->ltgtype = 0;
 			}
-			// if touching the base flag the bot should loose the enemy flag
+			// if touching the goal
 			if (trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->attackaway_time = FloatTime() + 2 + 5 * random();
 			}
@@ -1164,7 +1162,7 @@ int BotLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) {
 		}
 		// get the entity information
 		BotEntityInfo(bs->lead_teammate, &entinfo);
-
+		// if the entity information is valid
 		if (entinfo.valid) {
 			areanum = BotPointAreaNum(entinfo.origin);
 
@@ -1488,7 +1486,6 @@ void BotClearPath(bot_state_t *bs, bot_moveresult_t *moveresult) {
 		}
 
 		if (bestmine != -1) {
-			//state->team == TEAM_RED || state->team == TEAM_BLUE
 			// deactivate prox mines in the bot's path by shooting rockets or plasma cells etc. at them
 			BotAI_GetEntityState(bs->proxmines[bestmine], &state);
 			VectorCopy(state.pos.trBase, target);
@@ -1769,7 +1766,7 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 			bs->activatestack->time = 0;
 		}
 	}
-
+	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, qtrue);
@@ -1783,10 +1780,12 @@ int AINode_Seek_ActivateEntity(bot_state_t *bs) {
 		if (!(moveresult.flags & MOVERESULT_MOVEMENTVIEW)) {
 			VectorSubtract(bs->activatestack->target, bs->eye, dir);
 			VectorToAngles(dir, moveresult.ideal_viewangles);
+			// set the movement view flag
 			moveresult.flags |= MOVERESULT_MOVEMENTVIEW;
 		}
 		// if there's no weapon yet used for the movement
 		if (!(moveresult.flags & MOVERESULT_MOVEMENTWEAPON)) {
+			// set the movement view flag
 			moveresult.flags |= MOVERESULT_MOVEMENTWEAPON;
 			bs->activatestack->weapon = BotSelectActivateWeapon(bs);
 
@@ -1912,7 +1911,7 @@ int AINode_Seek_NBG(bot_state_t *bs) {
 		// pop the current goal from the stack
 		trap_BotPopGoal(bs->gs);
 		// check for new nearby items right away
-		// NOTE: we canNOT reset the check_time to zero because it would create an endless loop of node switches
+		// NOTE: we can NOT reset the check_time to zero because it would create an endless loop of node switches
 		bs->check_time = FloatTime() + 0.05;
 		// go back to seek ltg
 		AIEnter_Seek_LTG(bs, "seek nbg: time out");
@@ -2116,7 +2115,7 @@ int AINode_Seek_LTG(bot_state_t *bs) {
 		//BotAI_Print(PRT_MESSAGE, "movement failure %d\n", moveresult.traveltype);
 		bs->ltg_time = 0;
 	}
-
+	// check if the bot has to deactivate obstacles
 	BotClearPath(bs, &moveresult);
 	// check if the bot is blocked
 	BotAIBlocked(bs, &moveresult, qtrue);
@@ -2573,8 +2572,9 @@ int AINode_Battle_Retreat(bot_state_t *bs) {
 	// update the last time the enemy was visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		bs->enemyvisible_time = FloatTime();
+
 		VectorCopy(entinfo.origin, target);
-		// if attacking an obelisk
+		// if not a player enemy
 		if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
 			target[2] += OBELISK_TARGET_HEIGHT;
 		}
@@ -2733,8 +2733,9 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	// update the last time the enemy was visible
 	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
 		bs->enemyvisible_time = FloatTime();
+
 		VectorCopy(entinfo.origin, target);
-		// if attacking an obelisk
+		// if not a player enemy
 		if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
 			target[2] += OBELISK_TARGET_HEIGHT;
 		}
@@ -2749,6 +2750,7 @@ int AINode_Battle_NBG(bot_state_t *bs) {
 	// if the bot has no goal or touches the current goal
 	if (!trap_BotGetTopGoal(bs->gs, &goal)) {
 		bs->nbg_time = 0;
+	// if the bot touches the current goal
 	} else if (BotReachedGoal(bs, &goal)) {
 		bs->nbg_time = 0;
 	}

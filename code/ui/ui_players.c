@@ -1038,7 +1038,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 
 	initialSurfaces = skin->numMeshes;
 	totalSurfaces = skin->numMeshes;
-	// load the fille
+	// load the file
 	len = trap_FS_FOpenFile(name, &f, FS_READ);
 
 	if (len <= 0) {
@@ -1077,7 +1077,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 			SkipRestOfLine(&text_p);
 			continue;
 		}
-		// skip RTCW / ET skin settings
+		// skip RTCW/ET skin settings
 		if (!Q_stricmpn(token, "md3_", 4) || !Q_stricmp(token, "playerscale")) {
 			SkipRestOfLine(&text_p);
 			continue;
@@ -1092,9 +1092,11 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 				}
 				// parse the shader name
 				token = COM_ParseExt2(&text_p, qfalse, ',');
+
 				Q_strncpyz(shaderName, token, sizeof(shaderName));
 
 				if (!token[0]) {
+					// end of line
 					break;
 				}
 
@@ -1110,7 +1112,7 @@ qboolean UI_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 	}
 
 	if (totalSurfaces > MAX_CG_SKIN_SURFACES) {
-		Com_Printf("WARNING: Ignoring excess surfaces(found %d, max is %d)in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
+		Com_Printf("WARNING: Ignoring excess surfaces (found %d, max is %d) in skin '%s'!\n", totalSurfaces - initialSurfaces, MAX_CG_SKIN_SURFACES - initialSurfaces, name);
 	}
 	// failed to load surfaces
 	if (!skin->numMeshes) {
@@ -1618,7 +1620,7 @@ void UI_PlayerInfo_SetInfo(playerInfo_t *pi, int legsAnim, int torsoAnim, vec3_t
 		}
 
 		pi->muzzleFlashTime = dp_realtime + UI_TIMER_MUZZLE_FLASH;
-		// FIXME play firing sound here
+		// FIXME: play firing sound here
 	}
 
 	currentAnim = pi->torsoAnim & ~ANIM_TOGGLEBIT;

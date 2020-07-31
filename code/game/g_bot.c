@@ -26,10 +26,8 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 static int g_numBots;
 static char *g_botInfos[MAX_BOTS];
-
 static int g_numTeamBots;
 static char *g_teamBotInfos[MAX_BOTS];
-
 int g_numArenas;
 static char *g_arenaInfos[MAX_ARENAS];
 

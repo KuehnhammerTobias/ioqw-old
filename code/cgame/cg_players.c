@@ -705,6 +705,7 @@ qboolean CG_RegisterSkin(const char *name, cgSkin_t *skin, qboolean append) {
 				Q_strncpyz(shaderName, token, sizeof(shaderName));
 
 				if (!token[0]) {
+					// end of line
 					break;
 				}
 
@@ -747,6 +748,7 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	legsSkin = torsoSkin = headSkin = qfalse;
 	/*
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%slower_%s.skin", modelName, teamName, skinName);
+
 	ci->legsSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->legsSkin) {
@@ -754,6 +756,7 @@ static qboolean CG_RegisterClientSkin(clientInfo_t *ci, const char *teamName, co
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/%supper_%s.skin", modelName, teamName, skinName);
+
 	ci->torsoSkin = trap_R_RegisterSkin(filename);
 
 	if (!ci->torsoSkin) {
@@ -808,6 +811,7 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/lower.md3", modelName);
+
 	ci->legsModel = trap_R_RegisterModel(filename);
 
 	if (!ci->legsModel) {
@@ -816,6 +820,7 @@ static qboolean CG_RegisterClientModelname(clientInfo_t *ci, const char *modelNa
 	}
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/upper.md3", modelName);
+
 	ci->torsoModel = trap_R_RegisterModel(filename);
 
 	if (!ci->torsoModel) {
@@ -1671,8 +1676,10 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 	vec3_t legsAngles, torsoAngles, headAngles;
 	float dest;
 	static int movementOffsets[8] = {0, 22, 45, -22, 0, 22, -45, -22};
+#ifndef BASEGAME
 	vec3_t velocity;
 	float speed;
+#endif
 	int dir, clientNum;
 	clientInfo_t *ci;
 
@@ -1732,7 +1739,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 			torsoAngles[PITCH] = 0.0f;
 		}
 	}
-
+#ifndef BASEGAME
 	// --------- roll -------------
 
 	// lean towards the direction of travel
@@ -1754,7 +1761,7 @@ static void CG_PlayerAngles(centity_t *cent, vec3_t legs[3], vec3_t torso[3], ve
 		side = speed * DotProduct(velocity, axis[0]);
 		legsAngles[PITCH] += side;
 	}
-
+#endif
 	clientNum = cent->currentState.clientNum;
 
 	if (clientNum >= 0 && clientNum < MAX_CLIENTS) {
@@ -2205,6 +2212,7 @@ static void CG_PlayerSprites(centity_t *cent, const refEntity_t *parent) {
 	vec3_t origin;
 
 	VectorCopy(parent->origin, origin);
+
 	origin[2] += 42;
 
 	if (cent->currentState.number == cg.snap->ps.clientNum) {
@@ -2705,7 +2713,6 @@ void CG_Player(centity_t *cent) {
 			AnglesToAxis(angles, skull.axis);
 			/*
 			dir[2] = 0;
-
 			VectorInverse(dir);
 			VectorCopy(dir, skull.axis[1]);
 			VectorNormalize(skull.axis[1]);

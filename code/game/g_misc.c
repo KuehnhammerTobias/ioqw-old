@@ -504,7 +504,7 @@ void SP_corona(gentity_t *ent) {
 	ent->dl_color[0] = ent->dl_color[0] * 255;
 	ent->dl_color[1] = ent->dl_color[1] * 255;
 	ent->dl_color[2] = ent->dl_color[2] * 255;
-	ent->s.dl_intensity = (int)ent->dl_color[0] |((int)ent->dl_color[1] << 8)|((int)ent->dl_color[2] << 16);
+	ent->s.dl_intensity = (int)ent->dl_color[0]|((int)ent->dl_color[1] << 8)|((int)ent->dl_color[2] << 16);
 
 	G_SpawnFloat("scale", "1", &scale);
 
@@ -550,7 +550,6 @@ void dlight_finish_spawning(gentity_t *ent) {
 }
 
 static int dlightstarttime = 0;
-
 /*QUAKED dlight (0 1 0) (-12 -12 -12) (12 12 12) FORCEACTIVE STARTOFF ONETIME
 "style": value is an int from 1-19 that contains a pre-defined 'flicker' string.
 "stylestring": set your own 'flicker' string (ex. "klmnmlk"). NOTE: this should be all lowercase

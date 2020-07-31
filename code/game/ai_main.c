@@ -916,7 +916,7 @@ void BotChangeViewAngles(bot_state_t *bs, float thinktime) {
 	if (bs->viewangles[PITCH] > 180) {
 		bs->viewangles[PITCH] -= 360;
 	}
-	// elementary action: view
+	// elementary action view
 	trap_EA_View(bs->client, bs->viewangles);
 }
 
@@ -1389,6 +1389,7 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 	bs->ms = trap_BotAllocMoveState();
 	bs->walker = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WALKER, 0, 1);
 	bs->revenge_enemy = -1;
+
 	numbots++;
 
 	if (trap_Cvar_VariableIntegerValue("bot_testichat")) {

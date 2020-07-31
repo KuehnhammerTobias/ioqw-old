@@ -290,10 +290,10 @@ void AAS_JumpReachRunStart(aas_reachability_t *reach, vec3_t runstart) {
 	start[2] += 1;
 	// get command movement
 	VectorScale(hordir, 400, cmdmove);
-
+	// movement prediction
 	AAS_PredictClientMovement(&move, -1, start, PRESENCE_NORMAL, qtrue, vec3_origin, cmdmove, 1, 2, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_GAP, 0, qfalse);
 	VectorCopy(move.endpos, runstart);
-	// don't enter slime or lava and don't fall from too high
+	// don't fall from too high, don't enter slime or lava and don't fall in gaps
 	if (move.stopevent & (SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE)) {
 		VectorCopy(start, runstart);
 	}
@@ -465,7 +465,6 @@ static qboolean AAS_ClipToBBox(aas_trace_t *trace, const vec3_t start, const vec
 
 	for (i = 0; i < 3; i++) {
 		if (fabsf(dir[i]) < 0.001f) { // this may cause denormalization or division by zero
-			//botimport.Print(PRT_MESSAGE, S_COLOR_BLUE "AAS_ClipToBBox: division by zero fix!\n");
 			continue;
 		}
 		// get plane to test collision with for the current axis direction
@@ -509,7 +508,7 @@ static qboolean AAS_ClipToBBox(aas_trace_t *trace, const vec3_t start, const vec
 		trace->fraction = frac;
 		trace->ent = 0;
 		trace->planenum = 0;
-		// ZTM: TODO: Use the plane of collision
+		// ZTM: TODO: use the plane of collision
 		trace->plane = aasworld.planes[trace->planenum];
 		trace->area = 0;
 		trace->lastarea = 0;
@@ -560,6 +559,7 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 	vec3_t up = {0, 0, 1};
 	aas_plane_t *plane, *plane2, *lplane;
 	aas_trace_t trace, steptrace;
+	aas_trace_t gaptrace;
 
 	if (frametime <= 0) {
 		frametime = 0.1f;
@@ -1012,8 +1012,6 @@ static int AAS_ClientMovementPrediction(aas_clientmove_t *move, int entnum, cons
 			move->frames = n;
 			return qtrue;
 		} else if (stopevent & SE_GAP) {
-			aas_trace_t gaptrace;
-
 			VectorCopy(org, start);
 
 			start[2] += 24;
@@ -1097,6 +1095,7 @@ void AAS_TestMovementPrediction(int entnum, vec3_t origin, vec3_t dir) {
 	cmdmove[2] = 224;
 
 	AAS_ClearShownDebugLines();
+	// movement prediction
 	AAS_PredictClientMovement(&move, entnum, origin, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 13, 13, 0.1f, SE_HITGROUND, 0, qtrue); //SE_LEAVEGROUND
 
 	if (move.stopevent & SE_LEAVEGROUND) {

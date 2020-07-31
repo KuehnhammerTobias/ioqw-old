@@ -64,7 +64,6 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define WINDOW_POPUP			0x00200000 // popup
 #define WINDOW_BACKCOLORSET		0x00400000 // backcolor was explicitly set
 #define WINDOW_TIMEDVISIBLE		0x00800000 // visibility timing (NOT implemented)
-
 // CGAME cursor type bits
 #define CURSOR_NONE		0x00000001
 #define CURSOR_ARROW	0x00000002
@@ -127,7 +126,6 @@ typedef enum {
 	PLACE_BOTTOM
 } screenPlacement_e;
 #endif
-
 typedef struct {
 	const char *command;
 	const char *args[MAX_SCRIPT_ARGS];
@@ -137,7 +135,7 @@ typedef struct {
 	float x; // horiz position
 	float y; // vert position
 	float w; // width
-	float h; // height;
+	float h; // height
 } rectDef_t;
 
 typedef rectDef_t Rectangle;

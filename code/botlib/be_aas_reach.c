@@ -59,10 +59,10 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 int reach_swim;			// swim
 int reach_equalfloor;	// walk on floors with equal height
 int reach_step;			// step up
-int reach_walk;			// walk of step
+int reach_walk;			// walk off step
 int reach_barrier;		// jump up to a barrier
 int reach_waterjump;	// jump out of water
-int reach_walkoffledge;	// walk of a ledge
+int reach_walkoffledge;	// walk off a ledge
 int reach_jump;			// jump
 int reach_ladder;		// climb or descent a ladder
 int reach_teleport;		// teleport
@@ -655,8 +655,6 @@ float AAS_MaxJumpHeight(float phys_jumpvel) {
 /*
 =======================================================================================================================================
 AAS_MaxJumpDistance
-
-Returns true if a player can only crouch in the area.
 =======================================================================================================================================
 */
 float AAS_MaxJumpDistance(float phys_jumpvel) {
@@ -942,7 +940,9 @@ int AAS_Reachability_Swim(int area1num, int area2num) {
 					//if (!(AAS_PointContents(start) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER))) lreach->traveltime += 500;
 					// link the reachability
 					lreach->next = areareachability[area1num];
+
 					areareachability[area1num] = lreach;
+					// we've got another swim reachability
 					reach_swim++;
 					return qtrue;
 				}
@@ -1288,7 +1288,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 					}
 					// if the two projected edge lines have no overlap
 					if (x2 <= x3 || x4 <= x1) {
-//						Log_Write("lines no overlap: from area %d to %d\r\n", area1num, area2num);
+						//Log_Write("lines no overlap: from area %d to %d\r\n", area1num, area2num);
 						continue;
 					}
 					// if the two lines fully overlap
@@ -1414,7 +1414,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 		// if area2 is higher but lower than the maximum step height
 		// NOTE: ground_bestdist >= 0 also catches equal floor reachabilities
 		if (ground_bestdist >= 0 && ground_bestdist < aassettings.phys_maxstep) {
-			// create walk reachability from area1 to area2
+			// create a walk reachability from area1 to area2
 			lreach = AAS_AllocReachability();
 
 			if (!lreach) {
@@ -1531,7 +1531,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 			if (!water_foundreach || (ground_bestdist - water_bestdist < 16)) {
 				// cannot perform a barrier jump towards or from a crouch area
 				if (!AAS_AreaCrouch(area1num) && !AAS_AreaCrouch(area2num)) {
-					// create barrier jump reachability from area1 to area2
+					// create a barrier jump reachability from area1 to area2
 					lreach = AAS_AllocReachability();
 
 					if (!lreach) {
@@ -1546,7 +1546,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 					VectorMA(ground_bestend, INSIDEUNITS_WALKEND, ground_bestnormal, lreach->end);
 
 					lreach->traveltype = TRAVEL_BARRIERJUMP;
-					lreach->traveltime = aassettings.rs_barrierjump; //AAS_BarrierJumpTravelTime();
+					lreach->traveltime = aassettings.rs_barrierjump;
 					lreach->next = areareachability[area1num];
 
 					areareachability[area1num] = lreach;
@@ -1582,7 +1582,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 	if (ground_foundreach) {
 		if (ground_bestdist < 0) {
 			if (ground_bestdist > -aassettings.phys_maxstep) {
-				// create walk reachability from area1 to area2
+				// create a walk reachability from area1 to area2
 				lreach = AAS_AllocReachability();
 
 				if (!lreach) {
@@ -1663,6 +1663,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 							lreach->next = areareachability[area1num];
 
 							areareachability[area1num] = lreach;
+							// we've got another walk off ledge reachability
 							reach_walkoffledge++;
 							// NOTE: don't create a weapon (rl, bfg) jump reachability here because it interferes with other reachabilities
 							// like the ladder reachability
@@ -2362,7 +2363,7 @@ int AAS_Reachability_Jump(int area1num, int area2num) {
 		VectorNormalize(dir);
 		CrossProduct(dir, up, sidewards);
 
-		stopevent = SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE;
+		stopevent = SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE; // Tobias NOTE: why does SE_GAP destroy q3dm6? Also, SE_HITGROUNDDAMAGE is questionable!
 
 		if (!AAS_AreaClusterPortal(area1num) && !AAS_AreaClusterPortal(area2num)) {
 			stopevent |= SE_TOUCHCLUSTERPORTAL;
@@ -2383,6 +2384,7 @@ int AAS_Reachability_Jump(int area1num, int area2num) {
 
 			VectorNormalize(dir);
 			VectorScale(dir, speed, velocity);
+			// movement prediction
 			AAS_PredictClientMovement(&move, -1, beststart, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 3, 30, 0.1f, stopevent, 0, qfalse);
 			// if prediction time wasn't enough to fully predict the movement
 			if (move.frames >= 30) {
@@ -2456,11 +2458,14 @@ int AAS_Reachability_Jump(int area1num, int area2num) {
 		}
 
 		lreach->next = areareachability[area1num];
+
 		areareachability[area1num] = lreach;
 
 		if ((traveltype & TRAVELTYPE_MASK) == TRAVEL_JUMP) {
+			// we've got another jump reachability
 			reach_jump++;
 		} else {
+			// we've got another walk off ledge reachability
 			reach_walkoffledge++;
 		}
 	}
@@ -2598,7 +2603,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 			lreach->next = areareachability[area1num];
 
 			areareachability[area1num] = lreach;
-
+			// we've got another ladder reachability
 			reach_ladder++;
 			// create a new reachability link
 			lreach = AAS_AllocReachability();
@@ -2620,12 +2625,12 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 			lreach->next = areareachability[area2num];
 
 			areareachability[area2num] = lreach;
-
+			// we've got another ladder reachability
 			reach_ladder++;
 			return qtrue;
 		}
 		// if the second ladder face is also a ground face
-		// create ladder end (just ladder) reachability and walk off a ladder (ledge) reachability
+		// create a ladder end (just ladder) reachability and a walk off a ladder (ledge) reachability
 		if (ladderface1vertical && (ladderface2->faceflags & FACE_GROUND)) {
 			// create a new reachability link
 			lreach = AAS_AllocReachability();
@@ -2650,7 +2655,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 			lreach->next = areareachability[area1num];
 
 			areareachability[area1num] = lreach;
-
+			// we've got another ladder reachability
 			reach_ladder++;
 			// create a new reachability link
 			lreach = AAS_AllocReachability();
@@ -2671,7 +2676,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 			lreach->next = areareachability[area2num];
 
 			areareachability[area2num] = lreach;
-
+			// we've got another walk off ledge reachability
 			reach_walkoffledge++;
 			return qtrue;
 		}
@@ -2746,8 +2751,9 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 					lreach->traveltype = TRAVEL_LADDER;
 					lreach->traveltime = 10;
 					lreach->next = areareachability[area1num];
-					areareachability[area1num] = lreach;
 
+					areareachability[area1num] = lreach;
+					// we've got another ladder reachability
 					reach_ladder++;
 					// create a new reachability link
 					lreach = AAS_AllocReachability();
@@ -2768,8 +2774,9 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 					lreach->traveltype = TRAVEL_JUMP;
 					lreach->traveltime = 10;
 					lreach->next = areareachability[area2num];
-					areareachability[area2num] = lreach;
 
+					areareachability[area2num] = lreach;
+					// we've got another jump reachability
 					reach_jump++;
 					return qtrue;
 #ifdef REACH_DEBUG
@@ -2833,7 +2840,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num) {
 					lreach->next = areareachability[area2num];
 
 					areareachability[area2num] = lreach;
-
+					// we've got another jump reachability
 					reach_jump++;
 
 					Log_Write("jump far to ladder reach between %d and %d\r\n", area2num, area1num);
@@ -3007,6 +3014,7 @@ void AAS_Reachability_Teleport(void) {
 				}
 
 				VectorClear(cmdmove);
+				// movement prediction
 				AAS_PredictClientMovement(&move, -1, destorigin, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 0, 30, 0.1f, SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER, 0, qfalse); //qtrue
 
 				area2num = AAS_PointAreaNum(move.endpos);
@@ -3062,8 +3070,9 @@ void AAS_Reachability_Teleport(void) {
 			lreach->traveltype |= AAS_TravelFlagsForTeam(ent);
 			lreach->traveltime = aassettings.rs_teleport;
 			lreach->next = areareachability[area1num];
-			areareachability[area1num] = lreach;
 
+			areareachability[area1num] = lreach;
+			// we've got another teleporter reachability
 			reach_teleport++;
 		}
 		// unlink the invalid entity
@@ -3330,6 +3339,7 @@ void AAS_Reachability_Elevator(void) {
 #ifdef REACH_DEBUG
 						Log_Write("elevator reach from %d to %d\r\n", area1num, area2num);
 #endif // REACH_DEBUG
+						// we've got another elevator reachability
 						reach_elevator++;
 					}
 				}
@@ -3706,7 +3716,7 @@ void AAS_Reachability_FuncBobbing(void) {
 					lreach->traveltype = TRAVEL_FUNCBOB;
 					lreach->traveltype |= AAS_TravelFlagsForTeam(ent);
 					lreach->traveltime = aassettings.rs_funcbob;
-
+					// we've got another func_bobbing reachability
 					reach_funcbob++;
 
 					lreach->next = areareachability[startreach->areanum];
@@ -3815,6 +3825,7 @@ void AAS_Reachability_JumpPad(void) {
 		}
 
 		areastart[2] += 0.125;
+
 		//AAS_DrawPermanentCross(origin, 4, 4);
 		// get the target entity
 		AAS_ValueForBSPEpairKey(ent, "target", target, MAX_EPAIRKEY);
@@ -3890,6 +3901,7 @@ void AAS_Reachability_JumpPad(void) {
 			area2num = 0;
 
 			for (i = 0; i < 20; i++) {
+				// movement prediction
 				AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 0, 30, 0.1f, SE_HITGROUND|SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER, 0, bot_visualizejumppads);
 
 				area2num = move.endarea;
@@ -3944,7 +3956,7 @@ void AAS_Reachability_JumpPad(void) {
 					lreach->next = areareachability[link->areanum];
 
 					areareachability[link->areanum] = lreach;
-
+					// we've got another jumppad reachability
 					reach_jumppad++;
 				}
 			}
@@ -4014,9 +4026,9 @@ void AAS_Reachability_JumpPad(void) {
 					{
 						// get command movement
 						VectorScale(dir, speed, cmdmove);
+						// movement prediction
 						AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qfalse, velocity, cmdmove, 30, 30, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER|SE_HITGROUNDAREA, area2num, visualize);
-						// if prediction time wasn't enough to fully predict the movement
-						// don't enter slime or lava and don't fall from too high
+						// if prediction time wasn't enough to fully predict the movement, don't fall from too high and don't enter slime or lava
 						if (move.frames < 30 && !(move.stopevent & (SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE)) && (move.stopevent & (SE_HITGROUNDAREA|SE_TOUCHJUMPPAD|SE_TOUCHTELEPORTER))) {
 							// never go back to the same jumppad
 							for (link = areas; link; link = link->next_area) {
@@ -4057,7 +4069,7 @@ void AAS_Reachability_JumpPad(void) {
 									lreach->next = areareachability[link->areanum];
 
 									areareachability[link->areanum] = lreach;
-
+									// we've got another jumppad reachability
 									reach_jumppad++;
 								}
 							}
@@ -4210,7 +4222,7 @@ int AAS_Reachability_WeaponJump(int area1num, int area2num) {
 		}
 		// NOTE: set to 2 to allow bfg jump reachabilities
 		for (n = 0; n < 1/*2*/; n++) {
-			// get the rocket jump z velocity
+			// get the weapon jump z velocity
 			if (n) {
 				zvel = AAS_BFGJumpZVelocity(areastart);
 			} else {
@@ -4224,50 +4236,47 @@ int AAS_Reachability_WeaponJump(int area1num, int area2num) {
 				VectorSubtract(facecenter, areastart, dir);
 
 				dir[2] = 0;
-				//hordist = VectorNormalize(dir);
+				// get command movement
+				VectorScale(dir, speed, cmdmove);
+				VectorSet(velocity, 0, 0, zvel);
+				/*
+				// get command movement
+				VectorScale(dir, speed, velocity);
+				velocity[2] = zvel;
+				VectorSet(cmdmove, 0, 0, 0);
+				*/
+				// movement prediction
+				AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 30, 30, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_HITGROUND|SE_HITGROUNDAREA, area2num, visualize);
+				// if prediction time wasn't enough to fully predict the movement, don't fall from too high, don't enter slime or lava and don't fall in gaps
+				if (move.frames < 30 && !(move.stopevent & (SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE)) && (move.stopevent & (SE_HITGROUNDAREA|SE_TOUCHJUMPPAD))) {
+					// create a rocket or bfg jump reachability from area1 to area2
+					lreach = AAS_AllocReachability();
 
-				//if (hordist < 1.6 * (facecenter[2] - areastart[2]))
-				{
-					// get command movement
-					VectorScale(dir, speed, cmdmove);
-					VectorSet(velocity, 0, 0, zvel);
-					/*
-					// get command movement
-					VectorScale(dir, speed, velocity);
-					velocity[2] = zvel;
-					VectorSet(cmdmove, 0, 0, 0);
-					*/
-					AAS_PredictClientMovement(&move, -1, areastart, PRESENCE_NORMAL, qtrue, velocity, cmdmove, 30, 30, 0.1f, SE_ENTERWATER|SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE|SE_TOUCHJUMPPAD|SE_HITGROUND|SE_HITGROUNDAREA, area2num, visualize);
-					// if prediction time wasn't enough to fully predict the movement
-					// don't enter slime or lava and don't fall from too high
-					if (move.frames < 30 && !(move.stopevent & (SE_ENTERSLIME|SE_ENTERLAVA|SE_HITGROUNDDAMAGE)) && (move.stopevent & (SE_HITGROUNDAREA|SE_TOUCHJUMPPAD))) {
-						// create a rocket or bfg jump reachability from area1 to area2
-						lreach = AAS_AllocReachability();
-
-						if (!lreach) {
-							return qfalse;
-						}
-
-						lreach->areanum = area2num;
-						lreach->facenum = 0;
-						lreach->edgenum = 0;
-
-						VectorCopy(areastart, lreach->start);
-						VectorCopy(facecenter, lreach->end);
-
-						if (n) {
-							lreach->traveltype = TRAVEL_BFGJUMP;
-							lreach->traveltime = aassettings.rs_bfgjump;
-						} else {
-							lreach->traveltype = TRAVEL_ROCKETJUMP;
-							lreach->traveltime = aassettings.rs_rocketjump;
-						}
-
-						lreach->next = areareachability[area1num];
-						areareachability[area1num] = lreach;
-						reach_rocketjump++;
-						return qtrue;
+					if (!lreach) {
+						return qfalse;
 					}
+
+					lreach->areanum = area2num;
+					lreach->facenum = 0;
+					lreach->edgenum = 0;
+
+					VectorCopy(areastart, lreach->start);
+					VectorCopy(facecenter, lreach->end);
+
+					if (n) {
+						lreach->traveltype = TRAVEL_BFGJUMP;
+						lreach->traveltime = aassettings.rs_bfgjump;
+					} else {
+						lreach->traveltype = TRAVEL_ROCKETJUMP;
+						lreach->traveltime = aassettings.rs_rocketjump;
+					}
+
+					lreach->next = areareachability[area1num];
+
+					areareachability[area1num] = lreach;
+					// we've got another rocketjump reachability
+					reach_rocketjump++;
+					return qtrue;
 				}
 			}
 		}
@@ -4521,23 +4530,23 @@ void AAS_StoreReachability(void) {
 =======================================================================================================================================
 AAS_ContinueInitReachability
 
- TRAVEL_WALK		100% equal floor height + steps
- TRAVEL_CROUCH		100%
- TRAVEL_BARRIERJUMP	100%
- TRAVEL_JUMP		 80%
- TRAVEL_LADDER		100% + fall down from ladder + jump up to ladder
- TRAVEL_WALKOFFLEDGE 90% walk off very steep walls?
- TRAVEL_SWIM		100%
- TRAVEL_WATERJUMP	100%
- TRAVEL_TELEPORT	100%
- TRAVEL_ELEVATOR	100%
- TRAVEL_DOUBLEJUMP	  0%
- TRAVEL_RAMPJUMP	  0%
- TRAVEL_STRAFEJUMP	  0%
- TRAVEL_ROCKETJUMP	100% (currently limited towards areas with items)
- TRAVEL_BFGJUMP		  0% (currently disabled)
- TRAVEL_JUMPPAD		100%
- TRAVEL_FUNCBOB		100%
+ TRAVEL_WALK			100% equal floor height + steps
+ TRAVEL_CROUCH			100%
+ TRAVEL_BARRIERJUMP		100%
+ TRAVEL_JUMP			 80%
+ TRAVEL_LADDER			100% + fall down from ladder + jump up to ladder
+ TRAVEL_WALKOFFLEDGE 	90% walk off very steep walls?
+ TRAVEL_SWIM			100%
+ TRAVEL_WATERJUMP		100%
+ TRAVEL_TELEPORT		100%
+ TRAVEL_ELEVATOR		100%
+ TRAVEL_DOUBLEJUMP			  0%
+ TRAVEL_RAMPJUMP		  0%
+ TRAVEL_STRAFEJUMP		  0%
+ TRAVEL_ROCKETJUMP		100% (currently limited towards areas with items)
+ TRAVEL_BFGJUMP			  0% (currently disabled)
+ TRAVEL_JUMPPAD			100%
+ TRAVEL_FUNCBOB			100%
 
 Returns: true if NOT finished.
 =======================================================================================================================================

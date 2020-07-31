@@ -219,12 +219,14 @@ void SCR_DrawStringExt(int x, int y, float size, const char *string, float *setC
 		}
 
 		SCR_DrawChar(xx + 2, y + 2, size, *s);
+
 		xx += size;
 		s++;
 	}
 	// draw the colored text
 	s = string;
 	xx = x;
+
 	re.SetColor(setColor);
 
 	while (*s) {
@@ -379,17 +381,17 @@ void SCR_DrawVoipMeter(void) {
 	int limit, i;
 
 	if (!cl_voipShowMeter->integer) {
-		return; // player doesn't want to show meter at all.
+		return; // player doesn't want to show meter at all
 	} else if (!cl_voipSend->integer) {
-		return; // not recording at the moment.
+		return; // not recording at the moment
 	} else if (clc.state != CA_ACTIVE) {
-		return; // not connected to a server.
+		return; // not connected to a server
 	} else if (!clc.voipEnabled) {
-		return; // server doesn't support VoIP.
+		return; // server doesn't support VoIP
 	} else if (clc.demoplaying) {
-		return; // playing back a demo.
+		return; // playing back a demo
 	} else if (!cl_voip->integer) {
-		return; // client has VoIP support disabled.
+		return; // client has VoIP support disabled
 	}
 
 	limit = (int)(clc.voipPower * 10.0f);

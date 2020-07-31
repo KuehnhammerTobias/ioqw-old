@@ -1163,6 +1163,7 @@ void CL_ParseBinding(int key, qboolean down, unsigned time) {
 			// button commands add keynum and time as parameters so that multiple sources can be discriminated and subframe corrected
 			if (allCommands || (allowUpCmds && !down)) {
 				char cmd[1024];
+
 				Com_sprintf(cmd, sizeof(cmd), "%c%s %d %d\n", (down) ? '+' : '-', p + 1, key, time);
 				Cbuf_AddText(cmd);
 			}

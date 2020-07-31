@@ -1229,7 +1229,7 @@ void CL_WritePacket(void) {
 			MSG_WriteShort(&buf, clc.voipOutgoingDataSize);
 			MSG_WriteData(&buf, clc.voipOutgoingData, clc.voipOutgoingDataSize);
 			// if we're recording a demo, we have to fake a server packet with this VoIP data so it gets to disk; the server doesn't send it
-			// back to us, and we might as well eliminate concerns about dropped and misordered packets here.
+			// back to us, and we might as well eliminate concerns about dropped and misordered packets here
 			if (clc.demorecording && !clc.demowaiting) {
 				const int voipSize = clc.voipOutgoingDataSize;
 				msg_t fakemsg;

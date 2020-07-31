@@ -1556,7 +1556,6 @@ static void UI_DrawMapCinematic(rectDef_t *rect, float scale, vec4_t color, qboo
 static qboolean updateModel = qtrue;
 static qboolean q3Model = qfalse;
 static qboolean updateModelColor = qtrue;
-
 /*
 =======================================================================================================================================
 UI_DrawPlayerModel
@@ -1793,7 +1792,7 @@ static const char *UI_AIFromName(const char *name) {
 			return uiInfo.characterList[j].name;
 		}
 	}
-	// name is listed in team list but not in alias or characters list.
+	// name is listed in team list but not in alias or characters list
 	Com_Printf(S_COLOR_YELLOW "WARNING: Unknown team character '%s'.\n", name);
 	return name;
 }
@@ -2265,7 +2264,6 @@ static void UI_BuildPlayerList(void) {
 
 	uiInfo.playerNumber = cs.clientNum;
 	uiInfo.teamLeader = atoi(Info_ValueForKey(info, "tl"));
-
 	team = atoi(Info_ValueForKey(info, "t"));
 
 	trap_GetConfigString(CS_SERVERINFO, info, sizeof(info));
@@ -3964,6 +3962,10 @@ static void UI_RunMenuScript(char **args) {
 				}
 			} else {
 				for (i = 0; i < PLAYERS_NOT_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_notteam%i", i + 1));
 
 					if (bot > 1) {
@@ -3979,8 +3981,6 @@ static void UI_RunMenuScript(char **args) {
 				}
 			}
 		} else if (Q_stricmp(name, "StartServerIngame") == 0) {
-// Tobias FIXME: 1: Changing the gametype from > GT_TOURNAMENT ->GT_FFA ->> GT_TOURNAMENT will switch teams for some connected players, and also displays the wrong HUD (Free for all HUD in team gametypes and vice versa, etc.)!
-//				 2: Waiting for too long before starting a new server will CRASH! Is this still the case?
 			int i, delay, clients, oldclients;
 			float skill;
 
@@ -3992,9 +3992,6 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cvar_Set("g_redTeam", UI_Cvar_VariableString("ui_opponentName"));
 			trap_Cvar_Set("g_blueTeam", UI_Cvar_VariableString("ui_teamName"));
 			trap_Cmd_ExecuteText(EXEC_APPEND, va("map %s\n", uiInfo.mapList[ui_currentNetMap.integer].mapLoadName));
-			// Tobias FIXME: this script will add bots and doesn't check if there are already enough bots, so we must kick already connected bots, otherwise bots are added to the existing ones continuously with each new map (FIXME?).
-			// Tobias NOTE: we must kick bots before executing the map command otherwise bots become 'invisible' (FIXME?).
-			// Tobias FIXME: unfortunately kicking bots AFTER map loading spawns some extra skulls again, https://github.com/ioquake/ioq3/commit/f7c3276fe803388bd613ab6bf6ad8e0a6647b740#diff-08c7587b3da3e294c50c64c1024339d7
 			trap_Cmd_ExecuteText(EXEC_APPEND, "kickbots\n");
 			// set max clients based on spots
 			oldclients = trap_Cvar_VariableValue("sv_maxClients");
@@ -4038,11 +4035,11 @@ static void UI_RunMenuScript(char **args) {
 			delay = 500;
 
 			if (ui_actualNetGameType.integer > GT_TOURNAMENT) {
-				// 0 - None
-				// 1 - Human
-				// 2 - Random Bot
-				// 3.. NumCharacters - Bot
 				for (i = 0; i < PLAYERS_PER_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_redteam%i", i + 1));
 
 					if (bot > 1) {
@@ -4075,6 +4072,10 @@ static void UI_RunMenuScript(char **args) {
 				}
 			} else {
 				for (i = 0; i < PLAYERS_NOT_TEAM; i++) {
+					// 0 - None
+					// 1 - Human
+					// 2 - Random Bot
+					// 3.. NumCharacters - Bot
 					int bot = trap_Cvar_VariableValue(va("ui_notteam%i", i + 1));
 
 					if (bot > 1) {
@@ -4091,7 +4092,6 @@ static void UI_RunMenuScript(char **args) {
 					}
 				}
 			}
-// Tobias END
 		} else if (Q_stricmp(name, "updateSPMenu") == 0) {
 			UI_SetCapFragLimits(qtrue);
 			UI_MapCountByGameType(qtrue);
@@ -5904,7 +5904,7 @@ static qboolean MapList_Parse(char **p) {
 			//mapList[mapCount].imageName = String_Alloc(va("levelshots/%s", mapList[mapCount].mapLoadName));
 
 			//if (uiInfo.mapCount == 0) {
-			//	only load the first cinematic, selection loads the others
+			// only load the first cinematic, selection loads the others
 			//	uiInfo.mapList[uiInfo.mapCount].cinematic = trap_CIN_PlayCinematic(va("%s.roq", uiInfo.mapList[uiInfo.mapCount].mapLoadName), qfalse, qfalse, qtrue, 0, 0, 0, 0);
 			//}
 
@@ -6252,6 +6252,7 @@ void _UI_Init(qboolean inGameLoad) {
 #endif
 	Menus_CloseAll();
 	trap_LAN_LoadCachedServers();
+
 	UI_LoadBestScores(uiInfo.mapList[ui_currentMap.integer].mapLoadName, uiInfo.gameTypes[ui_gameType.integer].gtEnum);
 	UI_BuildModel_List();
 	UI_LoadBots();
@@ -7035,9 +7036,9 @@ static void UI_StartServerRefresh(qboolean full, qboolean force) {
 	int lanSource;
 	qtime_t q;
 
-	// this function is called with force = qfalse when server browser menu opens or net source changes.
-	// automatically update local and favorite servers.
-	// only auto update master server list if there is no server info cache.
+	// this function is called with force = qfalse when server browser menu opens or net source changes
+	// automatically update local and favorite servers
+	// only auto update master server list if there is no server info cache
 	if (!force && (ui_netSource.integer >= UIAS_GLOBAL0 && ui_netSource.integer <= UIAS_GLOBAL5)) {
 		if (trap_LAN_GetServerCount(UI_SourceForLAN()) > 0) {
 			return; // have cached list

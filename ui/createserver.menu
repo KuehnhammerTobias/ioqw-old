@@ -650,7 +650,7 @@
 			style 0
 			ownerdraw UI_BLUETEAM1
 			rect 450 100 128 20
-			text "1."
+			text " 1."
 			textalign ITEM_ALIGN_LEFT
 			textalignx 0
 			textaligny 18
@@ -686,7 +686,7 @@
 			textalign ITEM_ALIGN_LEFT
 			textalignx 0
 			textaligny 18
-			text "2."
+			text " 2."
 			textscale .25
 			forecolor 1 1 1 1
 			border 0
@@ -714,7 +714,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "3."
+			text " 3."
 			ownerdraw UI_BLUETEAM3
 			rect 450 134 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -747,7 +747,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "4."
+			text " 4."
 			ownerdraw UI_BLUETEAM4
 			rect 450 151 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -780,7 +780,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "5."
+			text " 5."
 			ownerdraw UI_BLUETEAM5
 			rect 450 168 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -813,7 +813,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "6."
+			text " 6."
 			ownerdraw UI_BLUETEAM6
 			rect 450 185 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -846,7 +846,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "7."
+			text " 7."
 			ownerdraw UI_BLUETEAM7
 			rect 450 202 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -912,7 +912,7 @@
 			name gametypefield
 			style 0
 			ownerdraw UI_REDTEAM1
-			text "1."
+			text " 1."
 			rect 450 280 128 20
 			textalign ITEM_ALIGN_LEFT
 			textalignx 0
@@ -944,7 +944,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "2."
+			text " 2."
 			ownerdraw UI_REDTEAM2
 			rect 450 297 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -977,7 +977,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "3."
+			text " 3."
 			ownerdraw UI_REDTEAM3
 			rect 450 314 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -1010,7 +1010,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "4."
+			text " 4."
 			ownerdraw UI_REDTEAM4
 			rect 450 331 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -1043,7 +1043,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "5."
+			text " 5."
 			ownerdraw UI_REDTEAM5
 			rect 450 348 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -1076,7 +1076,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "6."
+			text " 6."
 			ownerdraw UI_REDTEAM6
 			rect 450 365 128 20
 			textalign ITEM_ALIGN_LEFT
@@ -1109,7 +1109,7 @@
 		itemDef {
 			name gametypefield
 			style 0
-			text "7."
+			text " 7."
 			ownerdraw UI_REDTEAM7
 			rect 450 382 128 20
 			textalign ITEM_ALIGN_LEFT

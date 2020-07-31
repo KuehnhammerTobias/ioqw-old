@@ -531,7 +531,7 @@ void SP_worldspawn(void) {
 	// map specific view distance used for maps with global fog (hypotenuse of 65535 x 65535 is 92680.48581012078)
 	G_SpawnString("_farplanedist", "100000", &s);
 	trap_Cvar_Set("bot_visualrange", s);
-#if 0 // ZTM: Currently game doesn't need the tracemap
+#if 0 // ZTM: currently game doesn't need the tracemap
 	level.mapcoordsValid = qfalse;
 	// top left/bottom right
 	if (G_SpawnVector2D("mapcoordsmins", "-128 128", level.mapcoordsMins) && G_SpawnVector2D("mapcoordsmaxs", "128 -128", level.mapcoordsMaxs)) {

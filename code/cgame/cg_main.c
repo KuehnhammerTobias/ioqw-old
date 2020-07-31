@@ -455,7 +455,6 @@ void QDECL CG_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Print(text);
 }
 
@@ -471,7 +470,6 @@ void QDECL CG_Error(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Error(text);
 }
 
@@ -487,7 +485,6 @@ void QDECL Com_Error(int level, const char *error, ...) {
 	va_start(argptr, error);
 	Q_vsnprintf(text, sizeof(text), error, argptr);
 	va_end(argptr);
-
 	trap_Error(text);
 }
 
@@ -503,7 +500,6 @@ void QDECL Com_Printf(const char *msg, ...) {
 	va_start(argptr, msg);
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
-
 	trap_Print(text);
 }
 
@@ -525,11 +521,9 @@ CG_SetupDlightstyles
 =======================================================================================================================================
 */
 void CG_SetupDlightstyles(void) {
-	int i, j;
-	char *str;
-	char *token;
-	int entnum;
 	centity_t *cent;
+	int i, j, entnum;
+	char *str, *token;
 
 	cg.lightstylesInited = qtrue;
 
@@ -1155,7 +1149,7 @@ static void CG_RegisterGraphics(void) {
 		}
 	}
 	// can be used by HUD so always load it
-	CG_RegisterItemVisuals(3 /*item_health_large*/);
+	CG_RegisterItemVisuals(3/*item_health_large*/);
 	// wall marks
 	cgs.media.bulletMarkShader = trap_R_RegisterShader("gfx/damage/bullet_mrk");
 	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
@@ -1168,7 +1162,7 @@ static void CG_RegisterGraphics(void) {
 	cgs.numInlineModels = trap_CM_NumInlineModels();
 
 	if (cgs.numInlineModels > MAX_SUBMODELS) {
-		CG_Error("MAX_SUBMODELS(%d)exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
+		CG_Error("MAX_SUBMODELS (%d) exceeded by %d", MAX_SUBMODELS, cgs.numInlineModels - MAX_SUBMODELS);
 	}
 
 	for (i = 1; i < cgs.numInlineModels; i++) {
@@ -2097,8 +2091,8 @@ void CG_HudMenuHacks(void) {
 	if (menu && !menu->forceScreenPlacement) {
 		Menu_SetScreenPlacement(menu, PLACE_LEFT, PLACE_TOP);
 	}
-	// make vertical power up area stick to the left or right side in widescreen
-	// Team Arena has it on the right side but also handle custom huds that use left side
+	// make vertical power up area stick to the left or right side in widescreen. Team Arena has it on the right side but also handle
+	// custom huds that use left side
 	menu = Menus_FindByName("powerup area");
 
 	if (menu && !menu->forceScreenPlacement) {

@@ -80,9 +80,9 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #define FEEDER_BLUETEAM_LIST	0x06 // blue team members
 #define FEEDER_PLAYER_LIST		0x07 // players
 #define FEEDER_TEAM_LIST		0x08 // team members for team voting
-#define FEEDER_MODS				0x09 // team members for team voting
-#define FEEDER_DEMOS			0x0a // team members for team voting
-#define FEEDER_SCOREBOARD		0x0b // team members for team voting
+#define FEEDER_MODS				0x09
+#define FEEDER_DEMOS			0x0a
+#define FEEDER_SCOREBOARD		0x0b
 #define FEEDER_Q3HEADS			0x0c // model heads
 #define FEEDER_SERVERSTATUS		0x0d // server status
 #define FEEDER_FINDPLAYER		0x0e // find player
