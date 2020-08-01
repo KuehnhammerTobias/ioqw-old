@@ -1169,6 +1169,7 @@ static void PM_CrashLand(void) {
 	if (delta < 1) {
 		return;
 	}
+	// create a local entity event to play the sound
 	// SURF_NODAMAGE is used for bounce pads where you don't want to take full damage or play a crunch sound
 	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE)) {
 		// create a local entity event to play the sound

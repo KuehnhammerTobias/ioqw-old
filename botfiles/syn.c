@@ -148,17 +148,17 @@ CONTEXT_NORMAL
 	// have
 	[("I have", 1), ("I've", 0)]
 	[("you have", 1), ("you've", 0)]
-// 	[("he has", 1), ("he's", 1)] // conflicting with "he is"
-// 	[("she has", 1), ("she's", 1)] // conflicting with "she is"
-// 	[("it has", 1), ("it's", 1)] // conflicting with "it is"
+//	[("he has", 1), ("he's", 1)] // conflicting with "he is"
+//	[("she has", 1), ("she's", 1)] // conflicting with "she is"
+//	[("it has", 1), ("it's", 1)] // conflicting with "it is"
 	[("they have", 1), ("they've", 1)]
 	[("we have", 1), ("we've", 1)]
-// 	[("I had", 1), ("I'd", 1), ("Id")] // conflicting with "I would"
-// 	[("you had", 1), ("you'd", 1), ("youd", 1)] // conflicting with "you would"
-// 	[("he had", 1), ("he'd", 1), ("hed", 1)] // conflicting with "he would"
-// 	[("she had", 1), ("she'd", 1)] // conflicting with "she would"
-// 	[("it had", 1), ("it'd", 1)] // conflicting with "it would"
-// 	[("we had", 1), ("we'd", 1)] // conflicting with "we would"
+//	[("I had", 1), ("I'd", 1), ("Id")] // conflicting with "I would"
+//	[("you had", 1), ("you'd", 1), ("youd", 1)] // conflicting with "you would"
+//	[("he had", 1), ("he'd", 1), ("hed", 1)] // conflicting with "he would"
+//	[("she had", 1), ("she'd", 1)] // conflicting with "she would"
+//	[("it had", 1), ("it'd", 1)] // conflicting with "it would"
+//	[("we had", 1), ("we'd", 1)] // conflicting with "we would"
 	// ing chops
 	[("being", 1), ("bein", 0)]
 	[("going", 1), ("goin", 0)]

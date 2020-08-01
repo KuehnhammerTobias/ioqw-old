@@ -194,7 +194,7 @@ qboolean EntityIsDead(aas_entityinfo_t *entinfo) {
 
 	// if attacking an obelisk
 	if (entinfo->number >= MAX_CLIENTS && (entinfo->number == redobelisk.entitynum || entinfo->number == blueobelisk.entitynum)) {
-		// if obelisk is respawning return
+		// if the obelisk is respawning
 		if (g_entities[entinfo->number].activator && g_entities[entinfo->number].activator->s.frame == 2) {
 			return qtrue;
 		}
@@ -2062,7 +2062,7 @@ qboolean BotWantsToUseKamikaze(bot_state_t *bs) {
 
 	if (gametype == GT_OBELISK) {
 		// if the bot is low on health and recently hurt
-		if (bs->inventory[INVENTORY_HEALTH] < 60 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) {
+		if (bs->inventory[INVENTORY_HEALTH] < 60 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) { // Tobias NOTE: exclude falling damage
 			return qtrue;
 		}
 		// if the bot has the ammoregen powerup
@@ -2119,7 +2119,7 @@ qboolean BotWantsToUseKamikaze(bot_state_t *bs) {
 		}
 	} else {
 		// if the bot is low on health and recently hurt
-		if (bs->inventory[INVENTORY_HEALTH] < 80 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) {
+		if (bs->inventory[INVENTORY_HEALTH] < 80 && g_entities[bs->entitynum].client->lasthurt_time > level.time - 1000) { // Tobias NOTE: exclude falling damage
 			return qtrue;
 		}
 	}
@@ -2546,10 +2546,6 @@ qboolean BotCanCamp(bot_state_t *bs) {
 /*
 =======================================================================================================================================
 BotAggression
-
-qfalse -> bots want to retreat (not affected if the bot is carrying a flag or the enemy is carrying a flag).
-qtrue  -> bots want to chase (not affected if the bot is carrying a flag or the enemy is carrying a flag).
-qtrue  -> bots can decide what to do.
 =======================================================================================================================================
 */
 qboolean BotAggression(bot_state_t *bs) {
@@ -2727,11 +2723,6 @@ qboolean BotAggression(bot_state_t *bs) {
 /*
 =======================================================================================================================================
 BotFeelingBad
-
-Used for collecting items and obelisk attack rules.
-
-qfalse -> bots do not collect items when they are in a hurry (carrying flag etc.).
-qtrue  -> bots no longer want to attack the obelisk.
 =======================================================================================================================================
 */
 qboolean BotFeelingBad(bot_state_t *bs) {
@@ -3978,7 +3969,6 @@ static qboolean BotEntityIndirectlyVisible(bot_state_t *bs, int ent) {
 		entityVisStatusNextCheck[teammate][ent] = level.time + 1000 + rand() % 2000;
 
 		if (vis) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "Entity is indirect visible!\n");
 			return qtrue;
 		}
 	}
@@ -5989,7 +5979,7 @@ int BotGoForActivateGoal(bot_state_t *bs, bot_activategoal_t *activategoal) {
 
 	if (BotPushOntoActivateGoalStack(bs, activategoal)) {
 		// enter the activate entity AI node
-		AIEnter_Seek_ActivateEntity(bs, "BotGoForActivateGoal");
+		AIEnter_Seek_ActivateEntity(bs, "BotGoForActivateGoal: entering activate ent.");
 		return qtrue;
 	} else {
 		// enable any routing areas that were disabled

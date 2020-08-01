@@ -569,8 +569,11 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 				if (!victim->client) {
 					VectorCopy(ent->r.currentOrigin, start);
 					VectorCopy(ent->r.currentOrigin, stop);
+
 					stop[2] -= 4;
+
 					trap_Trace(&tr, start, NULL, NULL, stop, ent->s.number, MASK_SHOT);
+
 					victim = &level.gentities[tr.entityNum];
 				}
 
@@ -611,6 +614,7 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 						}
 						// no normal pain sound
 						ent->pain_debounce_time = level.time + 200;
+
 						G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 					}
 		
@@ -640,6 +644,7 @@ void ClientEvents(gentity_t *ent, int oldEventSequence) {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/world/debris1.wav"));
 					// faller has a soft landing
 					damage *= 0.95f;
+
 					G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 				} else {
 					G_AddEvent(victim, EV_GENERAL_SOUND, G_SoundIndex("sound/player/land_hurt.wav"));
