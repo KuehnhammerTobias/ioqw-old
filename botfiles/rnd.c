@@ -264,7 +264,7 @@ D_PRAISE4 = {
 	"~You aren't making this easy for me ",0,".";
 	"... and the nominee for best shot is ",0,".";
 	"Very Cool!";
-	"Was that a hot shot?", affirmative;
+	"Was that a hot shot? ",affirmative;
 	"Nice shootin' ",friendname,"!";
 	"Nice shootin' ",0,"!";
 }
@@ -2726,7 +2726,7 @@ liquidmeasures = { // Klansman's dramatic measurements of liquid
 	"raging tides";
 }
 
-operation1 = { // Ranger's Mission Statements, part one
+operation1 = { // Ranger's mission statements, part one
 	"Ambivalent";
 	"Benignant";
 	"Blasphemous";
@@ -2766,7 +2766,7 @@ operation1 = { // Ranger's Mission Statements, part one
 	"Vibrant";
 }
 
-operation2 = {// Ranger's Mission Statements, part two
+operation2 = { // Ranger's mission statements, part two
 	"Argument";
 	"Bosom";
 	"Breakfast";

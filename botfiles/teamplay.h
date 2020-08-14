@@ -96,17 +96,17 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	// stop accompanying
 	type "accompany_stop"
 	{
-		"I'm going my own way now ",0,".", teamchat_01;
-		"I've had enough of this follow the leader stuff, ",0,".", teamchat_01;
+		"I'm going my own way now ",0,". ",teamchat_01;
+		"I've had enough of this follow the leader stuff, ",0,". ",teamchat_01;
 		"~Being your companion has been nice while it lasted ",0,". :)";
-		"I've got other things to do ",0,".", teamchat_01;
+		"I've got other things to do ",0,". ",teamchat_01;
 	}
 	// cannot find companion
 	type "accompany_cannotfind"
 	{
-		"I can't find you ",0,".", teamchat_02;
+		"I can't find you ",0,". ",teamchat_02;
 		teamchat_02," I can't find you ",0,".";
-		"Where are you hiding, ",0,"?", teamchat_02;
+		"Where are you hiding, ",0,"? ",teamchat_02;
 	}
 	// arrived at companion
 	type "accompany_arrive"
@@ -147,10 +147,10 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	type "defend_stop"
 	{
 		"I'll stop defending the ",0,".";
-		"I've had enough of defending the ",0,".", teamchat_02;
+		"I've had enough of defending the ",0,". ",teamchat_02;
 		"I'm through guarding the stinking ",0,".";
 		"I've been defending the ",0," for long enough now.";
-		"~Have someone else defend the ",0,".", teamchat_02;
+		"~Have someone else defend the ",0,". ",teamchat_02;
 	}
 	// start getting an item
 	type "getitem_start"
@@ -204,17 +204,17 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	{
 		"I've had enough of camping here.";
 		"I'm through camping here.";
-		"I'm bored with camping.", teamchat_02;
+		"I'm bored with camping. ",teamchat_02;
 		"I've been camping here long anough now.";
 		"I hate camping here I'm off.";
-		"I'm not a happy camper any more.", teamchat_02;
+		"I'm not a happy camper any more. ",teamchat_02;
 	}
 	// in camp position
 	type "camp_arrive" // 0 = one that ordered the bot to camp
 	{
 		"I'm in position ",0,".";
 		"I'll take care of the enemy from here ",0,".";
-		"I'm ready, ",0,".", teamchat_03;
+		"I'm ready, ",0,". ",teamchat_03;
 	}
 	// start patrolling
 	type "patrol_start" // 0 = locations
@@ -227,9 +227,9 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	type "patrol_stop"
 	{
 		"I'm through with patrolling.";
-		"My patrol is over.", teamchat_02;
+		"My patrol is over. ",teamchat_02;
 		"No more patrolling for me.";
-		"I'm done with this patrol.", teamchat_02;
+		"I'm done with this patrol. ",teamchat_02;
 	}
 	// start trying to capture the enemy flag
 	type "captureflag_start"
