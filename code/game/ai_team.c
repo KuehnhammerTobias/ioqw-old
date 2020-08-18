@@ -55,6 +55,23 @@ bot_ctftaskpreference_t ctftaskpreferences[MAX_CLIENTS];
 
 /*
 =======================================================================================================================================
+BotSetTeamCampDist
+=======================================================================================================================================
+*/
+int BotSetTeamCampDist(bot_state_t *bs) {
+	int teammates;
+
+	teammates = BotCountAllTeamMates(bs, 256);
+
+	if (teammates > 1) {
+		return 64 + (teammates * 64);
+	}
+
+	return 64;
+}
+
+/*
+=======================================================================================================================================
 BotSetTeamFormationDist
 =======================================================================================================================================
 */
@@ -264,7 +281,7 @@ int BotClientTravelTimeToGoal(int client, bot_goal_t *goal) {
 	int areanum;
 
 	if (BotAI_GetClientState(client, &ps)) {
-		areanum = BotPointAreaNum(ps.origin);
+		areanum = BotPointAreaNum(client, ps.origin);
 	} else {
 		areanum = 0;
 	}

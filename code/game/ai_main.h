@@ -280,6 +280,7 @@ typedef struct bot_state_s {
 	int visteammates[MAX_SUBTEAM_SIZE];		// the visible teammates
 	char subteam[32];						// sub team name
 	float formation_dist;					// formation team mate intervening space
+	int camp_dist;							// dynamically computed space for camping teammates
 	bot_activategoal_t *activatestack;		// first activate goal on the stack
 	bot_activategoal_t activategoalheap[MAX_ACTIVATESTACK];	// activate goal heap
 	bot_waypoint_t *checkpoints;			// check points
