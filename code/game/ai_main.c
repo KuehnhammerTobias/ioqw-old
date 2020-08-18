@@ -299,7 +299,7 @@ void BotTestAAS(vec3_t origin) {
 			return;
 		}
 
-		areanum = BotPointAreaNum(origin);
+		areanum = BotPointAreaNum(0, origin);
 
 		if (areanum) {
 			BotAI_Print(PRT_MESSAGE, "\rEmpty area.");
@@ -311,7 +311,7 @@ void BotTestAAS(vec3_t origin) {
 			return;
 		}
 
-		areanum = BotPointAreaNum(origin);
+		areanum = BotPointAreaNum(0, origin);
 
 		if (!areanum) {
 			BotAI_Print(PRT_MESSAGE, "\r^1Solid!");
@@ -941,7 +941,7 @@ void BotChangeViewAngles(bot_state_t *bs, float thinktime) {
 			bs->viewanglespeed[i] *= 0.45 * (1 - factor);
 		}
 
-		//BotAI_Print(PRT_MESSAGE, "ideal_angles %f %f\n", bs->ideal_viewangles[0], bs->ideal_viewangles[1], bs->ideal_viewangles[2]);
+		//BotAI_Print(PRT_MESSAGE, "ideal_angles %f %f %f\n", bs->ideal_viewangles[0], bs->ideal_viewangles[1], bs->ideal_viewangles[2]);
 		//bs->viewangles[i] = bs->ideal_viewangles[i];
 	}
 
@@ -1214,7 +1214,7 @@ int BotAI(int client, float thinktime) {
 
 	bs->eye[2] += bs->cur_ps.viewheight;
 	// get the area the bot is in
-	bs->areanum = BotPointAreaNum(bs->origin);
+	bs->areanum = BotPointAreaNum(bs->client, bs->origin);
 	// the real AI
 	BotDeathmatchAI(bs, thinktime);
 	// set the weapon selection every AI frame

@@ -76,6 +76,8 @@ int red_numaltroutegoals;
 aas_altroutegoal_t blue_altroutegoals[MAX_ALTROUTEGOALS];
 int blue_numaltroutegoals;
 
+byte botCheckedAreas[65536];
+
 /*
 =======================================================================================================================================
 BotSetUserInfo
@@ -670,7 +672,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 					// get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
-					bs->formation_dist = 128;
+					bs->formation_dist = BotSetTeamFormationDist(bs);
 
 					BotSetTeamStatus(bs);
 
@@ -741,7 +743,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 					// get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
-					bs->formation_dist = 128;
+					bs->formation_dist = BotSetTeamFormationDist(bs);
 
 					BotSetTeamStatus(bs);
 
@@ -948,7 +950,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 					// get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
-					bs->formation_dist = 128;
+					bs->formation_dist = BotSetTeamFormationDist(bs);
 
 					BotSetTeamStatus(bs);
 
@@ -1350,7 +1352,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 			// get the team goal time
 			bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 			bs->ltgtype = LTG_TEAMACCOMPANY;
-			bs->formation_dist = 128;
+			bs->formation_dist = BotSetTeamFormationDist(bs);
 
 			BotSetTeamStatus(bs);
 			return;
@@ -1461,46 +1463,270 @@ void BotTeamGoals(bot_state_t *bs, int retreat) {
 	// reset the order time which is used to see if we decided to refuse an order
 	bs->order_time = 0;
 }
+/*
+=======================================================================================================================================
+BotFirstReachabilityArea
+=======================================================================================================================================
+*/
+int BotFirstReachabilityArea(int entnum, vec3_t origin, int *areas, int numareas, qboolean distCheck) {
+	int i, best;
+	vec3_t center;
+	float bestDist, dist;
+	bsp_trace_t trace;
+	vec3_t mins, maxs;
 
-#define BOTAREA_JIGGLE_DIST 32
+	best = 0;
+	bestDist = 999999;
+
+	if (entnum >= 0 && entnum < level.maxclients) {
+		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
+		mins[2] += STEPSIZE;
+	} else {
+		VectorCopy(vec3_origin, mins);
+		VectorCopy(vec3_origin, maxs);
+	}
+
+	for (i = 0; i < numareas; i++) {
+		if (botCheckedAreas[areas[i]]) {
+			continue;
+		}
+
+		botCheckedAreas[areas[i]] = 1;
+
+		if (trap_AAS_AreaReachability(areas[i])) {
+			// make sure this area is visible
+			//if (!trap_AAS_AreaWaypoint(areas[i], center)) {
+				trap_AAS_AreaCenter(areas[i], center);
+			//}
+
+			if (distCheck) {
+				dist = VectorDistance(center, origin);
+
+				if (center[2] > origin[2]) {
+					dist += 32 * (center[2] - origin[2]);
+				}
+
+				if (dist < bestDist) {
+					trap_Trace(&trace, origin, mins, maxs, center, -1, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
+					// if no solids were found
+					if (!trace.startsolid && !trace.allsolid && trace.fraction >= 1.0f) {
+						bestDist = dist;
+						best = areas[i];
+						break;
+					}
+				}
+			} else {
+				trap_Trace(&trace, origin, mins, maxs, center, -1, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP);
+				// if no solids were found
+				if (!trace.startsolid && !trace.allsolid && trace.fraction >= 1.0f) {
+					best = areas[i];
+					break;
+				}
+			}
+		}
+	}
+
+	return best;
+}
+
 /*
 =======================================================================================================================================
 BotPointAreaNum
 =======================================================================================================================================
 */
-int BotPointAreaNum(vec3_t origin) {
-	int areanum, numareas, areas[1];
-	vec3_t end, ofs;
+int BotPointAreaNum(int entnum, vec3_t origin) {
+	int areanum, numareas, areas[50], bestarea, i;
+	vec3_t end, start, ofs, mins, maxs;
+	float f;
+	gentity_t *ent;
 
-	areanum = trap_AAS_PointAreaNum(origin);
+	bestarea = 0;
 
-	if (areanum) {
-		return areanum;
+	if (entnum >= 0 && VectorCompare(origin, g_entities[entnum].botAreaPos)) {
+		return g_entities[entnum].botAreaNum;
 	}
 
-	VectorCopy(origin, end);
+	memset(botCheckedAreas, 0, sizeof(botCheckedAreas));
 
-	end[2] += 10;
-	numareas = trap_AAS_TraceAreas(origin, end, areas, NULL, 1);
+	ent = NULL;
 
-	if (numareas > 0) {
-		return areas[0];
-	}
-	// jiggle them around to look for a fuzzy area, helps LARGE characters reach destinations that are against walls
-	ofs[2] = 10;
+	if (entnum >= 0) {
+		ent = &g_entities[entnum];
+	}/*
+	// if this is a bot, and it's touching a ladder, do special handling
+	if (ent && ent->client && ent->client->ps.pm_flags & PMF_LADDER) {
+		// use the point only if its a ladder area
+		areanum = trap_AAS_PointAreaNum(origin);
 
-	for (ofs[0] = -BOTAREA_JIGGLE_DIST; ofs[0] <= BOTAREA_JIGGLE_DIST; ofs[0] += BOTAREA_JIGGLE_DIST * 2) {
-		for (ofs[1] = -BOTAREA_JIGGLE_DIST; ofs[1] <= BOTAREA_JIGGLE_DIST; ofs[1] += BOTAREA_JIGGLE_DIST * 2) {
-			VectorAdd(origin, ofs, end);
-			numareas = trap_AAS_TraceAreas(origin, end, areas, NULL, 1);
+		if (areanum && !trap_AAS_AreaLadder(areanum)) {
+			areanum = 0;
+		}
 
-			if (numareas > 0) {
-				return areas[0];
+		if (areanum) {
+			bestarea = areanum;
+
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
 			}
+
+			return bestarea;
+		}
+		// try a small box, and take a ladder area as preference
+		maxs[0] = 8;
+		maxs[1] = 8;
+		maxs[2] = 4;
+
+		VectorSubtract(origin, maxs, mins);
+		VectorAdd(origin, maxs, maxs);
+
+		numareas = trap_AAS_BBoxAreas(mins, maxs, areas, 50);
+
+		if (numareas > 0) {
+			bestarea = BotFirstLadderArea(entnum, areas, numareas);
+		}
+
+		if (bestarea) {
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+		// try the actual point
+		areanum = trap_AAS_PointAreaNum(origin);
+
+		if (areanum && !trap_AAS_AreaReachability(areanum)) {
+			areanum = 0;
+		}
+
+		if (areanum) {
+			bestarea = areanum;
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+	} else */{
+		areanum = trap_AAS_PointAreaNum(origin);
+
+		if (areanum && !trap_AAS_AreaReachability(areanum)) {
+			areanum = 0;
+		}
+
+		if (areanum) {
+			bestarea = areanum;
+
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+		// trace a line from below us, upwards, finding the first area the line touches
+		VectorCopy(origin, start);
+		VectorCopy(origin, end);
+
+		start[2] -= 30;
+
+		if (entnum >= 0 && g_entities[entnum].inuse && g_entities[entnum].client) {
+			end[2] += g_entities[entnum].client->ps.viewheight;
+		}
+
+		numareas = trap_AAS_TraceAreas(start, end, areas, NULL, 50);
+
+		if (numareas > 0) {
+			bestarea = BotFirstReachabilityArea(entnum, origin, areas, numareas, qfalse);
+		}
+
+		if (bestarea) {
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+		// try a small box around the origin
+		maxs[0] = 4;
+		maxs[1] = 4;
+		maxs[2] = 4;
+
+		VectorSubtract(origin, maxs, mins);
+		VectorAdd(origin, maxs, maxs);
+
+		numareas = trap_AAS_BBoxAreas(mins, maxs, areas, 50);
+
+		if (numareas > 0) {
+			bestarea = BotFirstReachabilityArea(entnum, origin, areas, numareas, qtrue);
+		}
+
+		if (bestarea) {
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+	}
+	// try using the players bounding box
+	if (entnum >= 0 && g_entities[entnum].inuse && g_entities[entnum].client) {
+		numareas = trap_AAS_BBoxAreas(g_entities[entnum].r.absmin, g_entities[entnum].r.absmax, areas, 50);
+
+		if (numareas > 0) {
+			bestarea = BotFirstReachabilityArea(entnum, origin, areas, numareas, qtrue);
+		}
+
+		if (bestarea) {
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
+		}
+	}
+	// TODO: the following code seems to often cause bogus areanums to be returned. They are offset from the real areas, and this causes all sorts of bot stickiness
+	// try half size first
+	for (f = 0.1f; f <= 1.0f; f += 0.45f) {
+		VectorCopy(origin, end);
+
+		end[2] += 80;
+
+		VectorCopy(origin, ofs);
+
+		ofs[2] -= 60;
+
+		for (i = 0; i < 2; i++) {
+			end[i] += BOTAREA_BOX_DIST * f;
+		}
+
+		for (i = 0; i < 2; i++) {
+			ofs[i] -= BOTAREA_BOX_DIST * f;
+		}
+
+		numareas = trap_AAS_BBoxAreas(ofs, end, areas, 50);
+
+		if (numareas > 0) {
+			bestarea = BotFirstReachabilityArea(entnum, origin, areas, numareas, qtrue);
+		}
+
+		if (bestarea) {
+			if (entnum >= 0) {
+				VectorCopy(origin, g_entities[entnum].botAreaPos);
+				g_entities[entnum].botAreaNum = bestarea;
+			}
+
+			return bestarea;
 		}
 	}
 
-	return 0;
+	return bestarea;
 }
 
 /*
@@ -1828,11 +2054,11 @@ BotWantsToWalk
 =======================================================================================================================================
 */
 qboolean BotWantsToWalk(bot_state_t *bs) {
-//#ifdef DEBUG
+
 	if (bot_nowalk.integer) {
 		return qfalse;
 	}
-//#endif
+
 	if (bs->walker < 0.1f) {
 		return qfalse;
 	}
@@ -2320,7 +2546,7 @@ void BotUseKamikaze(bot_state_t *bs) {
 			// don't use the kamikaze as long as it isn't really needed
 			if (VectorLengthSquared(dir) < Square(KAMIKAZE_DIST * 0.7) && BotWantsToUseKamikaze(bs)) {
 				BotAI_Trace(&trace, bs->eye, NULL, NULL, target, bs->client, CONTENTS_SOLID);
-
+				// if a full trace or the hitent is hit
 				if (trace.fraction >= 1 || trace.entityNum == goal->entitynum) {
 					trap_EA_Use(bs->client);
 					return;

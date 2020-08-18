@@ -552,6 +552,9 @@ intptr_t SV_GameSystemCalls(intptr_t *args) {
 			return botlib_export->aas.AAS_BBoxAreas(VMA(1), VMA(2), VMA(3), args[4]);
 		case BOTLIB_AAS_TRACE_AREAS:
 			return botlib_export->aas.AAS_TraceAreas(VMA(1), VMA(2), VMA(3), VMA(4), args[5]);
+		case BOTLIB_AAS_AREA_CENTER:
+			botlib_export->aas.AAS_AreaCenter(args[1], VMA(2));
+			return 0;
 		case BOTLIB_AAS_POINT_AREA_NUM:
 			return botlib_export->aas.AAS_PointAreaNum(VMA(1));
 		case BOTLIB_AAS_POINT_CONTENTS:

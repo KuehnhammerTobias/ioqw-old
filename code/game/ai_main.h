@@ -92,6 +92,8 @@ typedef struct bot_waypoint_s {
 #define MAX_ACTIVATESTACK 8
 #define MAX_ACTIVATEAREAS 32
 
+#define BOTAREA_BOX_DIST 256
+
 struct bot_state_s;
 typedef void (*bot_aienter_t)(struct bot_state_s *bs, char *s);
 

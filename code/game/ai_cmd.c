@@ -652,7 +652,7 @@ void BotMatch_HelpAccompany(bot_state_t *bs, bot_match_t *match) {
 			bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 		}
 
-		bs->formation_dist = 128;
+		bs->formation_dist = BotSetTeamFormationDist(bs);
 		bs->arrive_time = 0;
 
 		BotSetTeamStatus(bs);
@@ -1374,8 +1374,8 @@ void BotMatch_FormationSpace(bot_state_t *bs, bot_match_t *match) {
 		space = 32 * atof(buf);
 	}
 	// check if the formation intervening space is valid
-	if (space < 48 || space > 500) {
-		space = 128;
+	if (space < 48 || space > 4096) {
+		space = BotSetTeamFormationDist(bs);
 	}
 
 	bs->formation_dist = space;
