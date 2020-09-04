@@ -2574,166 +2574,169 @@ qboolean BotAggression(bot_state_t *bs) {
 
 	aggression = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AGGRESSION, 0, 1);
 	selfpreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_SELFPRESERVATION, 0, 1);
-	// if the enemy is located way higher than the bot
-	if (bs->inventory[ENEMY_HEIGHT] > 200) {
-		return qfalse;
-	}
-	// if the bot is using the napalmlauncher
-	if (bs->weaponnum == WP_NAPALMLAUNCHER) {
-		return qfalse;
-	}
-	// if the bot is using the grenadelauncher
-	if (bs->weaponnum == WP_GRENADELAUNCHER) {
-		return qfalse;
-	}
-	// if the bot is using the proxylauncher
-	if (bs->weaponnum == WP_PROXLAUNCHER) {
-		return qfalse;
-	}
-	// current enemy
-	if (bs->enemy >= 0) {
-		// get the entity information
-		BotEntityInfo(bs->enemy, &entinfo);
-		// if the entity information is valid
-		if (entinfo.valid) {
-			// if the bot is using the gauntlet
-			if (bs->weaponnum == WP_GAUNTLET) {
-				// if attacking an obelisk
-				if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
-					return qfalse;
+
+	if (!bot_alt_aggressive.integer) {
+		// if the enemy is located way higher than the bot
+		if (bs->inventory[ENEMY_HEIGHT] > 200) {
+			return 0;
+		}
+		// if the bot is using the napalmlauncher
+		if (bs->weaponnum == WP_NAPALMLAUNCHER) {
+			return 0;
+		}
+		// if the bot is using the grenadelauncher
+		if (bs->weaponnum == WP_GRENADELAUNCHER) {
+			return 0;
+		}
+		// if the bot is using the proxylauncher
+		if (bs->weaponnum == WP_PROXLAUNCHER) {
+			return 0;
+		}
+		// current enemy
+		if (bs->enemy >= 0) {
+			// get the entity information
+			BotEntityInfo(bs->enemy, &entinfo);
+			// if the entity information is valid
+			if (entinfo.valid) {
+				// if the bot is using the gauntlet
+				if (bs->weaponnum == WP_GAUNTLET) {
+					// if attacking an obelisk
+					if (bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) {
+						return 0;
+					}
+					// if the enemy is located higher than the bot can jump on
+					if (bs->inventory[ENEMY_HEIGHT] > 42) {
+						return 0;
+					}
+					// an extremely aggressive bot will less likely retreat
+					if (aggression > 0.9) {
+						return 100;
+					}
+					// if the enemy is really near
+					if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+						return 100;
+					}
+					// if the enemy is far away, check if we can attack the enemy from behind
+					if (aggression > 0.5 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 500) {
+						VectorSubtract(bs->origin, entinfo.origin, dir);
+						VectorToAngles(dir, angles);
+						// if not in the enemy's field of vision, attack!
+						if (!InFieldOfVision(entinfo.angles, 180, angles)) {
+							return 100;
+						}
+					}
+					// if currently using the gauntlet, retreat!
+					return 0;
 				}
-				// if the enemy is located higher than the bot can jump on
-				if (bs->inventory[ENEMY_HEIGHT] > 42) {
-					return qfalse;
+				// if the enemy is using the gauntlet
+				if (entinfo.weapon == WP_GAUNTLET) {
+					return 100;
 				}
 				// an extremely aggressive bot will less likely retreat
-				if (aggression > 0.9) {
-					return qtrue;
+				if (aggression > 0.9 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
+					return 100;
 				}
-				// if the enemy is really near
-				if (bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
-					return qtrue;
+				// if the enemy is using the bfg
+				if (entinfo.weapon == WP_BFG) {
+					return 0;
 				}
-				// if the enemy is far away, check if we can attack the enemy from behind
-				if (aggression > 0.5 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 500) {
-					VectorSubtract(bs->origin, entinfo.origin, dir);
-					VectorToAngles(dir, angles);
-					// if not in the enemy's field of vision, attack!
-					if (!InFieldOfVision(entinfo.angles, 180, angles)) {
-						return qtrue;
-					}
+				// if the enemy is using the napalmlauncher
+				if (entinfo.weapon == WP_NAPALMLAUNCHER) {
+					return 0;
 				}
-				// if currently using the gauntlet, retreat!
-				return qfalse;
-			}
-			// if the enemy is using the gauntlet
-			if (entinfo.weapon == WP_GAUNTLET) {
-				return qtrue;
-			}
-			// an extremely aggressive bot will less likely retreat
-			if (aggression > 0.9 && bs->inventory[ENEMY_HORIZONTAL_DIST] < 200) {
-				return qtrue;
-			}
-			// if the enemy is using the bfg
-			if (entinfo.weapon == WP_BFG) {
-				return qfalse;
-			}
-			// if the enemy is using the napalmlauncher
-			if (entinfo.weapon == WP_NAPALMLAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy is using the grenadelauncher
-			if (entinfo.weapon == WP_GRENADELAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy is using the proxylauncher
-			if (entinfo.weapon == WP_PROXLAUNCHER) {
-				return qfalse;
-			}
-			// if the enemy has the quad damage
-			if (entinfo.powerups & (1 << PW_QUAD)) {
-				return qfalse;
-			}
-			// if the bot is out for revenge
-			if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
-				return qtrue;
+				// if the enemy is using the grenadelauncher
+				if (entinfo.weapon == WP_GRENADELAUNCHER) {
+					return 0;
+				}
+				// if the enemy is using the proxylauncher
+				if (entinfo.weapon == WP_PROXLAUNCHER) {
+					return 0;
+				}
+				// if the enemy has the quad damage
+				if (entinfo.powerups & (1 << PW_QUAD)) {
+					return 0;
+				}
+				// if the bot is out for revenge
+				if (bs->enemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+					return 100;
+				}
 			}
 		}
-	}
-	// if the bot has the quad damage powerup
-	if (bs->inventory[INVENTORY_QUAD]) {
-		return qtrue;
-	}
-	// if the bot has the invisibility powerup
-	if (bs->inventory[INVENTORY_INVISIBILITY]) {
-		return qtrue;
-	}
-	// if the bot has the regeneration powerup
-	if (bs->inventory[INVENTORY_REGEN]) {
-		return qtrue;
-	}
-	// if the bot has the guard powerup
-	if (bs->inventory[INVENTORY_GUARD]) {
-		return qtrue;
-	}
-	// if the bot is very low on health
-	if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation) {
-		return qfalse;
-	}
-	// if the bot is low on health
-	if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation + 20) {
-		// if the bot has insufficient armor
-		if (bs->inventory[INVENTORY_ARMOR] < 40) {
-			return qfalse;
+		// if the bot has the quad damage powerup
+		if (bs->inventory[INVENTORY_QUAD]) {
+			return 100;
 		}
-	}
-	// if the bot has the ammoregen powerup
-	if (bs->inventory[INVENTORY_AMMOREGEN]) {
-		return qtrue;
-	}
-	// if the bot has the doubler powerup
-	if (bs->inventory[INVENTORY_DOUBLER]) {
-		return qtrue;
-	}
-	// if the bot has the scout powerup
-	if (bs->inventory[INVENTORY_SCOUT]) {
-		return qtrue;
-	}
-	// if the bot can use the machine gun
-	if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
-		return qtrue;
-	}
-	// if the bot can use the chain gun
-	if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
-		return qtrue;
-	}
-	// if the bot can use the shot gun
-	if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the nail gun
-	if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the rocket launcher
-	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
-		return qtrue;
-	}
-	// if the bot can use the beam gun
-	if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
-		return qtrue;
-	}
-	// if the bot can use the railgun
-	if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
-		return qtrue;
-	}
-	// if the bot can use the plasma gun
-	if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
-		return qtrue;
-	}
-	// if the bot can use the bfg
-	if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
-		return qtrue;
+		// if the bot has the invisibility powerup
+		if (bs->inventory[INVENTORY_INVISIBILITY]) {
+			return 100;
+		}
+		// if the bot has the regeneration powerup
+		if (bs->inventory[INVENTORY_REGEN]) {
+			return 100;
+		}
+		// if the bot has the guard powerup
+		if (bs->inventory[INVENTORY_GUARD]) {
+			return 100;
+		}
+		// if the bot is very low on health
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation) {
+			return 0;
+		}
+		// if the bot is low on health
+		if (bs->inventory[INVENTORY_HEALTH] < 100 * selfpreservation + 20) {
+			// if the bot has insufficient armor
+			if (bs->inventory[INVENTORY_ARMOR] < 40) {
+				return 0;
+			}
+		}
+		// if the bot has the ammoregen powerup
+		if (bs->inventory[INVENTORY_AMMOREGEN]) {
+			return 100;
+		}
+		// if the bot has the doubler powerup
+		if (bs->inventory[INVENTORY_DOUBLER]) {
+			return 100;
+		}
+		// if the bot has the scout powerup
+		if (bs->inventory[INVENTORY_SCOUT]) {
+			return 100;
+		}
+		// if the bot can use the machine gun
+		if (bs->inventory[INVENTORY_MACHINEGUN] > 0 && bs->inventory[INVENTORY_BULLETS] > 40) {
+			return 100;
+		}
+		// if the bot can use the chain gun
+		if (bs->inventory[INVENTORY_CHAINGUN] > 0 && bs->inventory[INVENTORY_BELT] > 50) {
+			return 100;
+		}
+		// if the bot can use the shot gun
+		if (bs->inventory[INVENTORY_SHOTGUN] > 0 && bs->inventory[INVENTORY_SHELLS] > 5) {
+			return 100;
+		}
+		// if the bot can use the nail gun
+		if (bs->inventory[INVENTORY_NAILGUN] > 0 && bs->inventory[INVENTORY_NAILS] > 5) {
+			return 100;
+		}
+		// if the bot can use the rocket launcher
+		if (bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 5) {
+			return 100;
+		}
+		// if the bot can use the beam gun
+		if (bs->inventory[INVENTORY_BEAMGUN] > 0 && bs->inventory[INVENTORY_BEAMGUN_AMMO] > 50) {
+			return 100;
+		}
+		// if the bot can use the railgun
+		if (bs->inventory[INVENTORY_RAILGUN] > 0 && bs->inventory[INVENTORY_SLUGS] > 3) {
+			return 100;
+		}
+		// if the bot can use the plasma gun
+		if (bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 40) {
+			return 100;
+		}
+		// if the bot can use the bfg
+		if (bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFG_AMMO] > 5) {
+			return 100;
+		}
 	}
 	// otherwise the bot is not feeling too good
 	return qfalse;
@@ -2821,7 +2824,11 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 	playerState_t ps;
 	vec3_t dir, angles, v1;
 	aas_entityinfo_t entinfo;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	if (gametype < GT_TEAM) {
 		return qfalse;
 	}
@@ -3046,6 +3053,12 @@ int BotWantsToRetreat(bot_state_t *bs) {
 	if (BotInLavaOrSlime(bs)) {
 		return qtrue;
 	}
+	// not enough air, so retreat
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		if (bs->lastair_time < FloatTime() - 15) {
+			return qtrue;
+		}
+	}
 
 	if (bs->enemy >= 0) {
 		// get the entity information
@@ -3112,12 +3125,6 @@ int BotWantsToRetreat(bot_state_t *bs) {
 		default:
 			break;
 	}
-	// not enough air, so retreat
-	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
-		if (bs->lastair_time < FloatTime() - 15) {
-			return qtrue;
-		}
-	}
 
 	if (!BotAggression(bs)) {
 		return qtrue;
@@ -3137,6 +3144,12 @@ int BotWantsToChase(bot_state_t *bs) {
 	// don't chase if in lava or slime
 	if (BotInLavaOrSlime(bs)) {
 		return qfalse;
+	}
+	// don't chase if not enough air
+	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
+		if (bs->lastair_time < FloatTime() - 15) {
+			return qfalse;
+		}
 	}
 
 	if (bs->enemy >= 0) {
@@ -3204,12 +3217,6 @@ int BotWantsToChase(bot_state_t *bs) {
 		default:
 			break;
 	}
-	// enough air, so go chasing
-	if (trap_AAS_PointContents(bs->eye) & CONTENTS_WATER) {
-		if (bs->lastair_time > FloatTime() - 15) {
-			return qtrue;
-		}
-	}
 
 	if (BotAggression(bs)) {
 		return qtrue;
@@ -3235,6 +3242,10 @@ BotCanAndWantsToRocketJump
 int BotCanAndWantsToRocketJump(bot_state_t *bs) {
 	float rocketjumper;
 
+	// if rocket jumping is disabled
+	if (!bot_rocketjump.integer) {
+		return qfalse;
+	}
 	// if no rocket launcher
 	if (bs->inventory[INVENTORY_ROCKETLAUNCHER] <= 0) {
 		return qfalse;
@@ -3263,6 +3274,21 @@ int BotCanAndWantsToRocketJump(bot_state_t *bs) {
 	rocketjumper = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WEAPONJUMPING, 0, 1);
 
 	if (rocketjumper < 0.5) {
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+/*
+=======================================================================================================================================
+BotHasScout
+=======================================================================================================================================
+*/
+int BotHasScout(bot_state_t *bs) {
+
+	// if no scout powerup
+	if (!bs->inventory[INVENTORY_SCOUT]) {
 		return qfalse;
 	}
 
@@ -4126,7 +4152,7 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			}
 		}
 		// less aggressive bots will immediatly stop firing if the enemy is dead
-		if (EntityIsDead(&curenemyinfo) && aggression < 0.2) {
+		if (EntityIsDead(&curenemyinfo) && aggression < 0.5) {
 			bs->enemy = -1;
 			curenemy = -1;
 			cursquaredist = 0;
@@ -4622,14 +4648,13 @@ BotAimAtEnemy
 void BotAimAtEnemy(bot_state_t *bs) {
 	int i;
 	float dist, f, aim_skill, aim_accuracy, speed, reactiontime;
-	vec3_t origin, dir, bestorigin, end, start, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
+	vec3_t origin, dir, bestorigin, end, start, target, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
 	vec3_t mins = {-4, -4, -4}, maxs = {4, 4, 4};
 	weaponinfo_t wi;
 	aas_entityinfo_t entinfo;
 	aas_clientmove_t move;
 	bot_goal_t goal;
 	bsp_trace_t trace;
-	vec3_t target;
 #ifdef DEBUG
 	char netname[MAX_NETNAME];
 
@@ -4912,7 +4937,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 					dir[2] = 0;
 					speed = VectorNormalize(dir) / entinfo.update_time;
 #ifdef DEBUG
-					BotAI_Print(PRT_MESSAGE, "%s: Speed = %f, wi->speed = %f.\n", netname, speed, wi->speed);
+					BotAI_Print(PRT_MESSAGE, "%s: Speed = %f, wi->speed = %f.\n", netname, speed, wi.speed);
 #endif
 					// best spot to aim at
 					VectorMA(entinfo.origin, (dist / wi.speed) * speed, dir, bestorigin);
@@ -4953,7 +4978,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 							// if the projectile will not be blocked
 							if (trace.fraction >= 1.0f) {
 #ifdef DEBUG
-								BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Aiming at ground.\n", netname, AAS_Time());
+								BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Aiming at ground.\n", netname, FloatTime());
 #endif
 								VectorCopy(groundtarget, bestorigin);
 							}
@@ -5026,7 +5051,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 		// trace from start to middle, check if the projectile will be blocked by something
 		BotAI_Trace(&trace, start, mins, maxs, topOfArc, entinfo.number, MASK_SHOT);
 		// if the projectile will not be blocked
-		if (trace.fraction >= 1) {
+		if (trace.fraction >= 1.0f) {
 			// get the end point (the projectiles impact point), for safety sake take overhead ledges into account (so we trace along the highest point of the arc, from middle to end)
 			VectorCopy(entinfo.origin, end);
 
@@ -5034,7 +5059,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 			// trace from middle to end, check if the projectile will be blocked by something
 			BotAI_Trace(&trace, topOfArc, mins, maxs, end, entinfo.number, MASK_SHOT);
 			// if the projectile will not be blocked
-			if (trace.fraction >= 1) {
+			if (trace.fraction >= 1.0f) {
 				// take projectile speed, gravity and enemy height into account
 				bestorigin[2] += (dist * dist / wi.speed * wi.proj.gravity) + (bs->inventory[ENEMY_HEIGHT] > 0 ? bs->inventory[ENEMY_HEIGHT] * 0.1 : 0);
 			}
@@ -5050,24 +5075,24 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 	// get aim direction
 	VectorSubtract(bestorigin, bs->eye, dir);
 
-	if (BotUsesInstantHitWeapon(bs)) {
-		// distance towards the enemy
-		dist = VectorLength(dir);
+		if (BotUsesInstantHitWeapon(bs)) {
+			// distance towards the enemy
+			dist = VectorLength(dir);
 
-		if (dist > 150) {
-			dist = 150;
+			if (dist > 150) {
+				dist = 150;
+			}
+
+			f = 0.6f + dist / 150 * 0.4f;
+			aim_accuracy *= f;
 		}
+		// add some random stuff to the aim direction depending on the aim accuracy
+		if (aim_accuracy < 0.8f) {
+			VectorNormalize(dir);
 
-		f = 0.6 + dist / 150 * 0.4;
-		aim_accuracy *= f;
-	}
-	// add some random stuff to the aim direction depending on the aim accuracy
-	if (aim_accuracy < 0.8) {
-		VectorNormalize(dir);
-
-		for (i = 0; i < 3; i++) {
-			dir[i] += 0.3 * crandom() * (1 - aim_accuracy);
-		}
+			for (i = 0; i < 3; i++) {
+				dir[i] += 0.3f * crandom() * (1 - aim_accuracy);
+			}
 	}
 	// set the ideal view angles
 	VectorToAngles(dir, bs->ideal_viewangles);
@@ -5079,7 +5104,7 @@ WARNING 2: Bots will also throw grenades through windows even from distance, so 
 	// if the bots should be really challenging
 	if (bot_challenge.integer) {
 		// if the bot is really accurate and has the enemy in view for some time
-		if (aim_accuracy > 0.9 && bs->enemysight_time < FloatTime() - 1) {
+		if (aim_accuracy > 0.9f && bs->enemysight_time < FloatTime() - 1) {
 			// set the view angles directly
 			if (bs->ideal_viewangles[PITCH] > 180) {
 				bs->ideal_viewangles[PITCH] -= 360;
