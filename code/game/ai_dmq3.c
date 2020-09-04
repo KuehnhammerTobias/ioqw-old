@@ -498,6 +498,8 @@ BotSetLastOrderedTask
 =======================================================================================================================================
 */
 int BotSetLastOrderedTask(bot_state_t *bs) {
+	bot_goal_t *tb, *eb;
+	int tt, et;
 
 	if (gametype == GT_CTF) {
 		// don't go back to returning the flag if it's at the base
@@ -515,22 +517,19 @@ int BotSetLastOrderedTask(bot_state_t *bs) {
 	}
 
 	if (bs->lastgoal_ltgtype) {
+		memcpy(&bs->teamgoal, &bs->lastgoal_teamgoal, sizeof(bot_goal_t));
+		// the teammate
+		bs->teammate = bs->lastgoal_teammate;
+		// the teammate who ordered
 		bs->decisionmaker = bs->lastgoal_decisionmaker;
 		bs->ordered = qtrue;
+		// set the ltg type
 		bs->ltgtype = bs->lastgoal_ltgtype;
-
-		memcpy(&bs->teamgoal, &bs->lastgoal_teamgoal, sizeof(bot_goal_t));
-
-		bs->teammate = bs->lastgoal_teammate;
+		// set the team goal time
 		bs->teamgoal_time = FloatTime() + 300;
-
-		BotSetTeamStatus(bs);
-
+		// get an alternate route in ctf
 		if (gametype == GT_CTF) {
 			if (bs->ltgtype == LTG_GETFLAG) {
-				bot_goal_t *tb, *eb;
-				int tt, et;
-
 				tb = BotTeamFlag(bs);
 				eb = BotEnemyFlag(bs);
 				tt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, tb->areanum, TFL_DEFAULT);
@@ -542,6 +541,8 @@ int BotSetLastOrderedTask(bot_state_t *bs) {
 				}
 			}
 		}
+		// set the team status (offense, defense etc.)
+		BotSetTeamStatus(bs);
 
 		return qtrue;
 	}
@@ -561,9 +562,9 @@ void BotRefuseOrder(bot_state_t *bs) {
 	}
 	// if the bot was ordered to do something
 	if (bs->order_time && bs->order_time > FloatTime() - 10) {
+		bs->order_time = 0;
 		trap_EA_Action(bs->client, ACTION_NEGATIVE);
 		BotVoiceChat(bs, bs->decisionmaker, VOICECHAT_NO);
-		bs->order_time = 0;
 	}
 }
 
@@ -583,11 +584,15 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 		// if not already rushing to the base
 		if (bs->ltgtype != LTG_RUSHBASE) {
 			BotRefuseOrder(bs);
-			bs->ltgtype = LTG_RUSHBASE;
-			bs->teamgoal_time = FloatTime() + CTF_RUSHBASE_TIME;
-			bs->rushbaseaway_time = 0;
+			// the bot made its own decision
 			bs->decisionmaker = bs->client;
 			bs->ordered = qfalse;
+			// set the ltg type
+			bs->ltgtype = LTG_RUSHBASE;
+			// set the team goal time
+			bs->teamgoal_time = FloatTime() + TEAM_RUSHBASE_TIME;
+			// away from rushing to base
+			bs->rushbaseaway_time = 0;
 
 			switch (BotTeam(bs)) {
 				case TEAM_RED:
@@ -619,6 +624,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 			}
 			// if the flag is back
 			if (flagstatus == 0) {
+				// away from rushing to base
 				bs->rushbaseaway_time = 0;
 			}
 		}
@@ -629,7 +635,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 	if (bs->ltgtype == LTG_TEAMACCOMPANY && !bs->ordered) {
 		// get the entity information
 		BotEntityInfo(bs->teammate, &entinfo);
-		// if the team mate being accompanied no longer carries the flag
+		// if the teammate being accompanied no longer carries the flag
 		if (!EntityCarriesFlag(&entinfo)) {
 			bs->ltgtype = 0;
 		}
@@ -645,31 +651,33 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 		if (bs->owndecision_time < FloatTime()) {
 			// if not defending the base already
 			if (!(bs->ltgtype == LTG_DEFENDKEYAREA && (bs->teamgoal.number == ctf_redflag.number || bs->teamgoal.number == ctf_blueflag.number))) {
-				// if there is a visible team mate flag carrier
+				// if there is a visible teammate flag carrier
 				c = BotTeamFlagCarrierVisible(bs);
-				// if not already following the team mate flag carrier
+				// if not already following the teammate flag carrier
 				if (c >= 0 && (bs->ltgtype != LTG_TEAMACCOMPANY || bs->teammate != c)) {
 					BotRefuseOrder(bs);
-					// follow the flag carrier
+					// the teammate
+					bs->teammate = c;
+					// the bot made its own decision
 					bs->decisionmaker = bs->client;
 					bs->ordered = qfalse;
-					// the team mate
-					bs->teammate = c;
-					// last time the team mate was visible
+					// set the ltg type
+					bs->ltgtype = LTG_TEAMACCOMPANY;
+					// set the team goal time
+					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
+					// last time the teammate was visible
 					bs->teammatevisible_time = FloatTime();
-					// no message
-					bs->teammessage_time = 0;
 					// no arrive message
 					bs->arrive_time = 1;
-
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
-					// get the team goal time
-					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
-					bs->ltgtype = LTG_TEAMACCOMPANY;
+					// set the formation intervening space
 					bs->formation_dist = 128;
-
+					// set the team status (offense, defense etc.)
 					BotSetTeamStatus(bs);
-
+					// follow the flag carrier
+					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
+					// no message
+					bs->teammessage_time = 0;
+					// time the bot made its own decision
 					bs->owndecision_time = FloatTime() + 5;
 				}
 			}
@@ -688,35 +696,36 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 			// if not already doing something important
 			if (bs->ltgtype != LTG_GETFLAG && bs->ltgtype != LTG_RETURNFLAG && bs->ltgtype != LTG_TEAMHELP && bs->ltgtype != LTG_TEAMACCOMPANY && bs->ltgtype != LTG_CAMPORDER && bs->ltgtype != LTG_PATROL && bs->ltgtype != LTG_GETITEM) {
 				BotRefuseOrder(bs);
-
+				// the bot made its own decision
 				bs->decisionmaker = bs->client;
 				bs->ordered = qfalse;
-
+				// set the ltg type
 				if (random() < 0.5) {
 					// go for the enemy flag
 					bs->ltgtype = LTG_GETFLAG;
 				} else {
 					bs->ltgtype = LTG_RETURNFLAG;
 				}
-				// no team message
-				bs->teammessage_time = 0;
 				// set the time the bot will stop getting the flag
-				bs->teamgoal_time = FloatTime() + CTF_GETFLAG_TIME;
+				bs->teamgoal_time = FloatTime() + TEAM_GETFLAG_TIME;
 				// get an alternative route goal towards the enemy base
 				BotGetAlternateRouteGoal(bs, BotOppositeTeam(bs));
+				// set the team status (offense, defense etc.)
 				BotSetTeamStatus(bs);
-
+				// no team message
+				bs->teammessage_time = 0;
+				// time the bot made its own decision
 				bs->owndecision_time = FloatTime() + 5;
 			}
 		}
 
 		return;
-	// if both flags Not at their bases
+	// if both flags not at their bases
 	} else if (flagstatus == 3) {
 		if (bs->owndecision_time < FloatTime()) {
 			// if not trying to return the flag and not following the team flag carrier
 			if (bs->ltgtype != LTG_RETURNFLAG && bs->ltgtype != LTG_TEAMACCOMPANY) {
-				// if there is a visible team mate flag carrier
+				// if there is a visible teammate flag carrier
 				c = BotTeamFlagCarrierVisible(bs);
 
 				if (c >= 0) {
@@ -724,9 +733,9 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 					// follow the flag carrier
 					bs->decisionmaker = bs->client;
 					bs->ordered = qfalse;
-					// the team mate
+					// the teammate
 					bs->teammate = c;
-					// last time the team mate was visible
+					// last time the teammate was visible
 					bs->teammatevisible_time = FloatTime();
 					// no message
 					bs->teammessage_time = 0;
@@ -796,7 +805,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 	if (!BotAggression(bs)) {
 		return;
 	}
-	// set the time to send a message to the team mates
+	// set the time to send a message to the teammates
 	bs->teammessage_time = FloatTime() + 2 * random();
 
 	if (bs->teamtaskpreference & (TEAMTP_ATTACKER|TEAMTP_DEFENDER)) {
@@ -910,7 +919,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 	if (bs->ltgtype == LTG_TEAMACCOMPANY && !bs->ordered) {
 		// get the entity information
 		BotEntityInfo(bs->teammate, &entinfo);
-		// if the team mate being accompanied no longer carries the flag
+		// if the teammate being accompanied no longer carries the flag
 		if (!EntityCarriesFlag(&entinfo)) {
 			bs->ltgtype = 0;
 		}
@@ -920,7 +929,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 		if (bs->owndecision_time < FloatTime()) {
 			// if not already following someone
 			if (bs->ltgtype != LTG_TEAMACCOMPANY) {
-				// if there is a visible team mate flag carrier
+				// if there is a visible teammate flag carrier
 				c = BotTeamFlagCarrierVisible(bs);
 
 				if (c >= 0) {
@@ -928,9 +937,9 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 					// follow the flag carrier
 					bs->decisionmaker = bs->client;
 					bs->ordered = qfalse;
-					// the team mate
+					// the teammate
 					bs->teammate = c;
-					// last time the team mate was visible
+					// last time the teammate was visible
 					bs->teammatevisible_time = FloatTime();
 					// no message
 					bs->teammessage_time = 0;
@@ -1047,7 +1056,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 	if (!BotAggression(bs)) {
 		return;
 	}
-	// set the time to send a message to the team mates
+	// set the time to send a message to the teammates
 	bs->teammessage_time = FloatTime() + 2 * random();
 
 	if (bs->teamtaskpreference & (TEAMTP_ATTACKER|TEAMTP_DEFENDER)) {
@@ -1160,7 +1169,7 @@ void BotObeliskSeekGoals(bot_state_t *bs) {
 	if (!BotAggression(bs)) {
 		return;
 	}
-	// set the time to send a message to the team mates
+	// set the time to send a message to the teammates
 	bs->teammessage_time = FloatTime() + 2 * random();
 
 	if (bs->teamtaskpreference & (TEAMTP_ATTACKER|TEAMTP_DEFENDER)) {
@@ -1285,7 +1294,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 	if (bs->ltgtype == LTG_TEAMACCOMPANY && !bs->ordered) {
 		// get the entity information
 		BotEntityInfo(bs->teammate, &entinfo);
-		// if the team mate being accompanied no longer carries the flag
+		// if the teammate being accompanied no longer carries the flag
 		if (!EntityCarriesCubes(&entinfo)) {
 			bs->ltgtype = 0;
 		}
@@ -1310,7 +1319,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 	if (!BotAggression(bs)) {
 		return;
 	}
-	// set the time to send a message to the team mates
+	// set the time to send a message to the teammates
 	bs->teammessage_time = FloatTime() + 2 * random();
 	c = BotEnemyCubeCarrierVisible(bs);
 
@@ -1319,16 +1328,16 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 	}
 
 	if (bs->ltgtype != LTG_TEAMACCOMPANY) {
-		// if there is a visible team mate carrying cubes
+		// if there is a visible teammate carrying cubes
 		c = BotTeamCubeCarrierVisible(bs);
 
 		if (c >= 0) {
-			// follow the team mate carrying cubes
+			// follow the teammate carrying cubes
 			bs->decisionmaker = bs->client;
 			bs->ordered = qfalse;
-			// the team mate
+			// the teammate
 			bs->teammate = c;
-			// last time the team mate was visible
+			// last time the teammate was visible
 			bs->teammatevisible_time = FloatTime();
 			// no message
 			bs->teammessage_time = 0;
@@ -1719,6 +1728,7 @@ static qboolean BotUsesMidRangeWeapon(bot_state_t *bs) {
 	switch (bs->weaponnum) {
 		case WP_MACHINEGUN:
 		case WP_CHAINGUN:
+		case WP_NAPALMLAUNCHER:
 		case WP_ROCKETLAUNCHER:
 		case WP_BEAMGUN:
 		case WP_RAILGUN:
@@ -1927,11 +1937,15 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 				if (BotTeamLeader(bs)) {
 					// tell the leader we want to be on offence
 					BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
+					//BotAI_BotInitialChat(bs, "wantoffence", NULL);
+					//trap_BotEnterChat(bs->cs, leader, CHAT_TELL);
 				} else if (g_spSkill.integer <= 3) {
 					if (bs->ltgtype != LTG_GETFLAG && bs->ltgtype != LTG_ATTACKENEMYBASE && bs->ltgtype != LTG_HARVEST) {
 						if ((gametype != GT_CTF || (bs->redflagstatus == 0 && bs->blueflagstatus == 0)) && (gametype != GT_1FCTF || bs->neutralflagstatus == 0)) {
 							// tell the leader we want to be on offence
 							BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
+							//BotAI_BotInitialChat(bs, "wantoffence", NULL);
+							//trap_BotEnterChat(bs->cs, leader, CHAT_TELL);
 						}
 					}
 				}
@@ -1946,11 +1960,15 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 				if (BotTeamLeader(bs)) {
 					// tell the leader we want to be on defense
 					BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
+					//BotAI_BotInitialChat(bs, "wantdefence", NULL);
+					//trap_BotEnterChat(bs->cs, leader, CHAT_TELL);
 				} else if (g_spSkill.integer <= 3) {
 					if (bs->ltgtype != LTG_DEFENDKEYAREA) {
 						if ((gametype != GT_CTF || (bs->redflagstatus == 0 && bs->blueflagstatus == 0)) && (gametype != GT_1FCTF || bs->neutralflagstatus == 0)) {
 							// tell the leader we want to be on defense
 							BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
+							//BotAI_BotInitialChat(bs, "wantdefence", NULL);
+							//trap_BotEnterChat(bs->cs, leader, CHAT_TELL);
 						}
 					}
 				}
@@ -2050,7 +2068,7 @@ void BotUpdateBattleInventory(bot_state_t *bs, int enemy) {
 	dir[2] = 0;
 	bs->inventory[ENEMY_HORIZONTAL_DIST] = (int)VectorLength(dir);
 	bs->inventory[ENTITY_IS_AN_OBELISK] = (int)(bs->enemy >= MAX_CLIENTS && (bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum)) ? 1 : 0;
-	// FIXME: add num visible enemies and num visible team mates to the inventory
+	// FIXME: add num visible enemies and num visible teammates to the inventory
 }
 
 /*
@@ -2266,8 +2284,8 @@ void BotUseKamikaze(bot_state_t *bs) {
 			// don't use the kamikaze as long as it isn't really needed
 			if (VectorLengthSquared(dir) < Square(KAMIKAZE_DIST * 0.7) && BotWantsToUseKamikaze(bs)) {
 				BotAI_Trace(&trace, bs->eye, NULL, NULL, target, bs->client, CONTENTS_SOLID);
-
-				if (trace.fraction >= 1 || trace.entityNum == goal->entitynum) {
+				// if a full trace or the hitent is hit
+				if (trace.fraction >= 1.0f || trace.entityNum == goal->entitynum) {
 					trap_EA_Use(bs->client);
 					return;
 				}
@@ -2279,7 +2297,7 @@ void BotUseKamikaze(bot_state_t *bs) {
 			if (BotHarvesterCarryingCubes(bs)) {
 				return;
 			}
-			// never use the kamikaze if a team mate carrying cubes is visible
+			// never use the kamikaze if a teammate carrying cubes is visible
 			c = BotTeamCubeCarrierVisible(bs);
 
 			if (c >= 0) {
@@ -2419,6 +2437,7 @@ bot_waypoint_t *BotCreateWayPoint(char *name, vec3_t origin, int areanum) {
 	wp = botai_freewaypoints;
 
 	if (!wp) {
+		BotAI_Print(PRT_WARNING, "BotCreateWayPoint: Out of waypoints\n");
 		return NULL;
 	}
 
@@ -2744,43 +2763,43 @@ qboolean BotFeelingBad(bot_state_t *bs) {
 
 /*
 =======================================================================================================================================
-BotPlayerInDanger
+BotTeammateNeedsNBG
 
-NOTE: this function takes information into account that a human player can't derive from his display. I justify this by assuming that
-an endangered player screams for help and tells the needed information.
+NOTE: This function takes information into account a human player can't derive from his display. I justify this by assuming that an
+endangered player screams for help and tells the needed information.
 =======================================================================================================================================
 */
-qboolean BotPlayerInDanger(const playerState_t *ps) {
+qboolean BotTeammateNeedsNBG(const playerState_t *ps) {
 
 	// a dead player is not in danger :)
 	if (ps->stats[STAT_HEALTH] <= 0) {
 		return qfalse;
 	}
-	// a player carrying a flag feels very easily endangered
+	// a teammate carrying a flag should be preferred
 	if (ps->powerups[PW_REDFLAG] || ps->powerups[PW_BLUEFLAG] || ps->powerups[PW_NEUTRALFLAG]) {
 		return qtrue;
 	}
-	// if the player has the chaingun with some ammo
+	// if the teammate has the chaingun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_CHAINGUN)) && ps->ammo[WP_CHAINGUN] >= 50) {
 		return qfalse;
 	}
-	// if the player has the nailgun with some ammo
+	// if the teammate has the nailgun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_NAILGUN)) && ps->ammo[WP_NAILGUN] >= 5) {
 		return qfalse;
 	}
-	// if the player has the rocketlauncher with some ammo
+	// if the teammate has the rocketlauncher with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_ROCKETLAUNCHER)) && ps->ammo[WP_ROCKETLAUNCHER] >= 5) {
 		return qfalse;
 	}
-	// if the player has the railgun with some ammo
+	// if the teammate has the railgun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_RAILGUN)) && ps->ammo[WP_RAILGUN] >= 5) {
 		return qfalse;
 	}
-	// if the player has the plasmagun with some ammo
+	// if the teammate has the plasmagun with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_PLASMAGUN)) && ps->ammo[WP_PLASMAGUN] >= 15) {
 		return qfalse;
 	}
-	// if the player has the bfg with some ammo
+	// if the teammate has the bfg with some ammo
 	if ((ps->stats[STAT_WEAPONS] & (1 << WP_BFG)) && ps->ammo[WP_BFG] >= 5) {
 		return qfalse;
 	}
@@ -2816,7 +2835,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 	}
 	// always pick up team items
 	if (g_entities[goal->entitynum].item->giType == IT_TEAM) {
-		//BotAI_Print(PRT_MESSAGE, S_COLOR_RED "Picking up a team goal!\n");
+		//BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Picking up a team goal!\n", netname);
 		return qfalse;
 	}
 
@@ -2826,13 +2845,13 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 		if (i == bs->client) {
 			continue;
 		}
-		// ignore enemies
+		// if on the same team
 		if (!BotSameTeam(bs, i)) {
 			continue;
 		}
 		// get the entity information
 		BotEntityInfo(i, &entinfo);
-		// if this player is active
+		// if the entity information is valid
 		if (!entinfo.valid) {
 			continue;
 		}
@@ -2865,7 +2884,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 			}
 		} else {
 			// always pick up items if using the machinegun
-			if (bs->weaponnum == WP_MACHINEGUN) {
+			if (bs->weaponnum == WP_MACHINEGUN) { // Tobias NOTE: move this up (outside 'for')
 				continue;
 			}
 			// always pick up items if using the proxylauncher
@@ -2881,24 +2900,24 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 				continue;
 			}
 		}
-		// always pick up health if the health is lower than the one from the team mate
+		// always pick up health if the health is lower than the one from the teammate
 		if (g_entities[goal->entitynum].item->giType == IT_HEALTH && ent->client->ps.stats[STAT_HEALTH] > bs->inventory[INVENTORY_HEALTH]) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "Picking up Health. Own health: %i, Health of team mate: %i.\n", bs->inventory[INVENTORY_HEALTH], ent->client->ps.stats[STAT_HEALTH]);
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Picking up Health. Own health: %i, Health of teammate: %i.\n", netname, bs->inventory[INVENTORY_HEALTH], ent->client->ps.stats[STAT_HEALTH]);
 			continue;
 		}
-		// always pick up armor if the armor is lower than the one from the team mate
+		// always pick up armor if the armor is lower than the one from the teammate
 		if (g_entities[goal->entitynum].item->giType == IT_ARMOR && ent->client->ps.stats[STAT_ARMOR] > bs->inventory[INVENTORY_ARMOR]) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "Picking up Armor. Own armor: %i, Armor of team mate: %i.\n", bs->inventory[INVENTORY_ARMOR], ent->client->ps.stats[STAT_ARMOR]);
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Picking up Armor. Own armor: %i, Armor of teammate: %i.\n", netname, bs->inventory[INVENTORY_ARMOR], ent->client->ps.stats[STAT_ARMOR]);
 			continue;
 		}
-		// always pick up holdable items if the team mate already has one
+		// always pick up holdable items if the teammate already has one
 		if (g_entities[goal->entitynum].item->giType == IT_HOLDABLE && ent->client->ps.stats[STAT_HOLDABLE_ITEM] > 0) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "Picking up a holdable item. The team mate already has one.\n");
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: Picking up a holdable item. The teammate already has one.\n", netname);
 			continue;
 		}
-		// always pick up persistant powerups if the team mate already has one
+		// always pick up persistant powerups if the teammate already has one
 		if (g_entities[goal->entitynum].item->giType == IT_PERSISTANT_POWERUP && ent->client->ps.stats[STAT_PERSISTANT_POWERUP] > 0) {
-			//BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "Picking up a persistant powerup. The team mate already has one.\n");
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "%s: Picking up a persistant powerup. The teammate already has one.\n", netname);
 			continue;
 		}
 
@@ -2914,7 +2933,7 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 			}
 		}
 		// if the teammate is in danger
-		if (BotAI_GetClientState(i, &ps) && BotPlayerInDanger(&ps)) {
+		if (BotAI_GetClientState(i, &ps) && BotTeammateNeedsNBG(&ps)) {
 			return qtrue;
 		}
 	}
@@ -2924,16 +2943,16 @@ qboolean BotAvoidItemPickup(bot_state_t *bs, bot_goal_t *goal) {
 
 /*
 =======================================================================================================================================
-BotCanWait
+BotAIWaiting
 =======================================================================================================================================
 */
-qboolean BotCanWait(bot_state_t *bs, bot_goal_t *goal) {
+qboolean BotAIWaiting(bot_state_t *bs, bot_goal_t *goal) {
 
 	// never wait if there is an enemy
 	if (bs->enemy >= 0) {
 		return qfalse;
 	}
-	// and never wait when the health is decreasing
+	// never wait when the health is decreasing
 	if (level.clients[bs->client].lasthurt_time > level.time - 1000) {
 		return qfalse;
 	}
@@ -2950,6 +2969,16 @@ qboolean BotCanWait(bot_state_t *bs, bot_goal_t *goal) {
 /*
 =======================================================================================================================================
 BotHasEmergencyGoal
+
+The bot is in hurry sometimes, he shouldn't pick up every single item on it's way.
+
+1.DONE: If the bot carries the enmemy CTF flag and the own flag is at base.
+1.DONE: If the bot is trying to get the enemy CTF flag and the own flag is NOT at base.
+3.DONE: If the bot carries the 1CTF flag.
+4.DONE: If the bot carries cubes.
+
+TODO: If the bot is rushing the enemy base and the bot isn't in the fov of an enemy (or no enemy at their home base).
+TODO: If the enemy obelsik (GT_OBELISK) is seriously damaged and will explode very likely.
 =======================================================================================================================================
 */
 qboolean BotHasEmergencyGoal(bot_state_t *bs) {
@@ -3306,16 +3335,17 @@ BotGoCamp
 void BotGoCamp(bot_state_t *bs, bot_goal_t *goal) {
 	float camper;
 
+	// the teammate that requested the camping
+	bs->teammate = 0;
+	// the bot made its own decision
 	bs->decisionmaker = bs->client;
-	// set message time to zero so bot will NOT show any message
-	bs->teammessage_time = 0;
 	// set the ltg type
 	bs->ltgtype = LTG_CAMP;
 	// set the team goal
 	memcpy(&bs->teamgoal, goal, sizeof(bot_goal_t));
-	// get the team goal time
-	camper = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CAMPER, 0, 1);
 
+	camper = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CAMPER, 0, 1);
+	// set the team goal time
 	if (camper > 0.99) {
 		bs->teamgoal_time = FloatTime() + 99999;
 	} else {
@@ -3323,10 +3353,10 @@ void BotGoCamp(bot_state_t *bs, bot_goal_t *goal) {
 	}
 	// set the last time the bot started camping
 	bs->camp_time = FloatTime();
-	// the teammate that requested the camping
-	bs->teammate = 0;
 	// do NOT type arrive message
 	bs->arrive_time = 1;
+	// set message time to zero so bot will NOT show any message
+	bs->teammessage_time = 0;
 }
 
 /*
@@ -3344,8 +3374,8 @@ int BotWantsToCamp(bot_state_t *bs) {
 	if (camper < 0.1) {
 		return qfalse;
 	}
-	// if the bot has a team goal
-	if (bs->ltgtype == LTG_TEAMHELP || bs->ltgtype == LTG_TEAMACCOMPANY || bs->ltgtype == LTG_DEFENDKEYAREA || bs->ltgtype == LTG_GETFLAG || bs->ltgtype == LTG_RUSHBASE || bs->ltgtype == LTG_CAMP || bs->ltgtype == LTG_CAMPORDER || bs->ltgtype == LTG_PATROL) {
+	// if the bot already has a CTF or team goal
+	if (bs->ltgtype == LTG_GETFLAG || bs->ltgtype == LTG_ATTACKENEMYBASE || bs->ltgtype == LTG_HARVEST || bs->ltgtype == LTG_DEFENDKEYAREA || bs->ltgtype == LTG_RUSHBASE || bs->ltgtype == LTG_RETURNFLAG || bs->ltgtype == LTG_TEAMHELP || bs->ltgtype == LTG_TEAMACCOMPANY || bs->ltgtype == LTG_CAMP || bs->ltgtype == LTG_CAMPORDER || bs->ltgtype == LTG_PATROL || bs->ltgtype == LTG_GETITEM || bs->ltgtype == LTG_KILL) {
 		return qfalse;
 	}
 	// if camped recently
@@ -3532,7 +3562,7 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 	}
 	// if the bot is really stupid
 	if (attack_skill < 0.2) {
-		// check if the bot is blocking team mates
+		// check if the bot is blocking teammates
 		BotCheckBlockedTeammates(bs);
 		return moveresult;
 	}
@@ -3548,9 +3578,9 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 	movetype = MOVE_WALK;
 	// for long range attacks the bots should crouch more often
 	if (dist > 2048) {
-		croucher += 0.5;
+		croucher += 0.5f;
 	} else if (BotWantsToRetreat(bs)) {
-		croucher = 0;
+		croucher = 0.0f;
 	}
 	// don't jump if the enemy is quite far away
 	if (dist > 1024) {
@@ -3578,7 +3608,7 @@ bot_moveresult_t BotAttackMove(bot_state_t *bs, int tfl) {
 		// only try to crouch if the enemy remains visible
 		BotAI_Trace(&bsptrace, start, mins, maxs, entinfo.origin, bs->client, MASK_SHOT);
 		// if the enemy remains visible from the predicted position
-		if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == attackentity) {
+		if (bsptrace.fraction >= 1.0f || bsptrace.entityNum == attackentity) {
 			movetype = MOVE_CROUCH;
 		}
 	}
@@ -3846,7 +3876,7 @@ qboolean BotEntityVisible(playerState_t *ps, float fov, int ent) {
 		// trace from start to end
 		BotAI_Trace(&trace, start, NULL, NULL, end, passent, contents_mask);
 		// if a full trace or the hitent was hit
-		if (trace.fraction >= 1 || trace.entityNum == hitent) {
+		if (trace.fraction >= 1.0f || trace.entityNum == hitent) {
 			// check for fog, assuming there's only one fog brush where either the viewer or the entity is in or both are in
 			if (infog && otherinfog) {
 				VectorSubtract(trace.endpos, eye, dir);
@@ -3884,7 +3914,7 @@ qboolean BotEntityVisible(playerState_t *ps, float fov, int ent) {
 		} else if (i == 1) {
 			middle[2] += entinfo.maxs[2] - entinfo.mins[2];
 		} else if (i == 2) { // right side
-			middle[2] -= (entinfo.maxs[2] - entinfo.mins[2]) / 2.0;
+			middle[2] -= (entinfo.maxs[2] - entinfo.mins[2]) * 0.5;
 			VectorMA(eye, entinfo.maxs[0] - 0.5, right, eye);
 		} else if (i == 3) { // left side
 			VectorMA(eye, -2.0 * (entinfo.maxs[0] - 0.5), right, eye);
@@ -3969,6 +3999,7 @@ static qboolean BotEntityIndirectlyVisible(bot_state_t *bs, int ent) {
 		entityVisStatusNextCheck[teammate][ent] = level.time + 1000 + rand() % 2000;
 
 		if (vis) {
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "Entity is indirect visible!\n");
 			return qtrue;
 		}
 	}
@@ -3987,7 +4018,15 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 	aas_entityinfo_t entinfo, curenemyinfo, curbotinfo;
 	vec3_t dir, angles;
 	qboolean foundEnemy;
+#ifdef DEBUG
+	//int curdist, dist;
+	char netname1[MAX_NETNAME];
+	char netname2[MAX_NETNAME];
+	char netname3[MAX_NETNAME];
 
+	ClientName(bs->client, netname1, sizeof(netname1));
+#endif
+	//alertness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ALERTNESS, 0, 1);
 	enemypreference = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_ENEMY_PREFERENCE, 0, 1);
 	easyfragger = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_EASY_FRAGGER, 0, 1);
 	aggression = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AGGRESSION, 0, 1);
@@ -4012,8 +4051,8 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		target[2] += 1;
 
 		BotAI_Trace(&trace, bs->eye, NULL, NULL, target, bs->client, CONTENTS_SOLID);
-
-		if (trace.fraction >= 1 || trace.entityNum == goal->entitynum) {
+		// if a full trace or the hitent is hit
+		if (trace.fraction >= 1.0f || trace.entityNum == goal->entitynum) {
 			if (goal->entitynum == bs->enemy) {
 				return qfalse;
 			}
@@ -4032,24 +4071,37 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		BotEntityInfo(curenemy, &curenemyinfo);
 		// only concentrate on flag carrier if not carrying a flag
 		if (EntityCarriesFlag(&curenemyinfo) && !BotCTFCarryingFlag(bs)) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy (%s) is carrying a flag.\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// only concentrate on cube carrier if not carrying cubes
 		if (EntityCarriesCubes(&curenemyinfo) && !BotHarvesterCarryingCubes(bs)) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy (%s) is carrying cubes.\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// looking for revenge
 		if (curenemy == bs->revenge_enemy && bs->revenge_kills > 0) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Found revenge enemy (%s).\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// stupid bots don't accept new enemies at all
 		if (enemypreference < 0.2) {
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: I already have an enemy (%s).\n", netname1, ClientName(curenemy, netname2, sizeof(netname2)));
+#endif
 			return qfalse;
 		}
 		// calculate the distance towards the enemy
 		VectorSubtract(curenemyinfo.origin, bs->origin, dir);
-
+#ifdef DEBUG
 		curdist = VectorLength(dir);
+#endif
 		// if this enemy is not too far away and the bot has a precise weapon and if the enemy is weaker than the bot itself
 		if (enemypreference > 0.4 && curdist < 650 && BotUsesMidRangeWeapon(bs) && bs->lasthealth - 40 > g_entities[curenemy].health) {
 			// if the enemy is standing still, or is just moving slowly (could be a camper)
@@ -4078,6 +4130,9 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			bs->enemy = -1;
 			curenemy = -1;
 			cursquaredist = 0;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Enemy dead! Immediately check for another enemy.\n", netname1);
+#endif
 		} else {
 			VectorSubtract(curenemyinfo.origin, bs->origin, dir);
 			cursquaredist = VectorLengthSquared(dir);
@@ -4108,6 +4163,7 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 		BotEntityInfo(i, &entinfo);
 		// if the entity information is valid
 		if (!entinfo.valid) {
+			//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotFindEnemy: !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 			continue;
 		}
 		// if the entity isn't the bot self
@@ -4216,10 +4272,10 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 			bs->enemysight_time = FloatTime();
 		}
 
-		bs->enemysuicide = qfalse;
-		bs->enemydeath_time = 0;
 		bs->enemy = curenemy;
 		bs->enemyvisible_time = FloatTime();
+		bs->enemydeath_time = 0;
+		bs->enemysuicide = qfalse;
 
 		VectorCopy(entinfo.origin, bs->lastenemyorigin);
 
@@ -4227,6 +4283,82 @@ int BotFindEnemy(bot_state_t *bs, int curenemy) {
 	}
 
 	return foundEnemy;
+}
+
+/*
+=======================================================================================================================================
+BotTeamCubeCarrierVisible
+=======================================================================================================================================
+*/
+int BotTeamCubeCarrierVisible(bot_state_t *bs) {
+	int i;
+	aas_entityinfo_t entinfo;
+
+	for (i = 0; i < level.maxclients; i++) {
+		if (i == bs->client) {
+			continue;
+		}
+		// if the cube carrier is not on the same team
+		if (!BotSameTeam(bs, i)) {
+			continue;
+		}
+		// get the entity information
+		BotEntityInfo(i, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			continue;
+		}
+		// if this player is carrying cubes
+		if (!EntityCarriesCubes(&entinfo)) {
+			continue;
+		}
+		// if the cube carrier is not visible
+		if (!BotEntityVisible(&bs->cur_ps, 360, i)) {
+			continue;
+		}
+
+		return i;
+	}
+
+	return -1;
+}
+
+/*
+=======================================================================================================================================
+BotEnemyCubeCarrierVisible
+=======================================================================================================================================
+*/
+int BotEnemyCubeCarrierVisible(bot_state_t *bs) {
+	int i;
+	aas_entityinfo_t entinfo;
+
+	for (i = 0; i < level.maxclients; i++) {
+		if (i == bs->client) {
+			continue;
+		}
+		// if the cube carrier is on the same team
+		if (BotSameTeam(bs, i)) {
+			continue;
+		}
+		// get the entity information
+		BotEntityInfo(i, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			continue;
+		}
+		// if this player is carrying cubes
+		if (!EntityCarriesCubes(&entinfo)) {
+			continue;
+		}
+		// if the cube carrier is not visible
+		if (!BotEntityVisible(&bs->cur_ps, 360, i)) {
+			continue;
+		}
+
+		return i;
+	}
+
+	return -1;
 }
 
 /*
@@ -4484,96 +4616,25 @@ int BotCountAllTeamMates(bot_state_t *bs, float range) {
 
 /*
 =======================================================================================================================================
-BotTeamCubeCarrierVisible
-=======================================================================================================================================
-*/
-int BotTeamCubeCarrierVisible(bot_state_t *bs) {
-	int i;
-	aas_entityinfo_t entinfo;
-
-	for (i = 0; i < level.maxclients; i++) {
-		if (i == bs->client) {
-			continue;
-		}
-		// if the cube carrier is not on the same team
-		if (!BotSameTeam(bs, i)) {
-			continue;
-		}
-		// get the entity information
-		BotEntityInfo(i, &entinfo);
-		// if the entity information is valid
-		if (!entinfo.valid) {
-			continue;
-		}
-		// if this player is carrying cubes
-		if (!EntityCarriesCubes(&entinfo)) {
-			continue;
-		}
-		// if the cube carrier is not visible
-		if (!BotEntityVisible(&bs->cur_ps, 360, i)) {
-			continue;
-		}
-
-		return i;
-	}
-
-	return -1;
-}
-
-/*
-=======================================================================================================================================
-BotEnemyCubeCarrierVisible
-=======================================================================================================================================
-*/
-int BotEnemyCubeCarrierVisible(bot_state_t *bs) {
-	int i;
-	aas_entityinfo_t entinfo;
-
-	for (i = 0; i < level.maxclients; i++) {
-		if (i == bs->client) {
-			continue;
-		}
-		// if the cube carrier is on the same team
-		if (BotSameTeam(bs, i)) {
-			continue;
-		}
-		// get the entity information
-		BotEntityInfo(i, &entinfo);
-		// if the entity information is valid
-		if (!entinfo.valid) {
-			continue;
-		}
-		// if this player is carrying cubes
-		if (!EntityCarriesCubes(&entinfo)) {
-			continue;
-		}
-		// if the cube carrier is not visible
-		if (!BotEntityVisible(&bs->cur_ps, 360, i)) {
-			continue;
-		}
-
-		return i;
-	}
-
-	return -1;
-}
-
-/*
-=======================================================================================================================================
 BotAimAtEnemy
 =======================================================================================================================================
 */
 void BotAimAtEnemy(bot_state_t *bs) {
 	int i;
 	float dist, f, aim_skill, aim_accuracy, speed, reactiontime;
-	vec3_t dir, bestorigin, end, start, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
+	vec3_t origin, dir, bestorigin, end, start, groundtarget, cmdmove, enemyvelocity, middleOfArc, topOfArc;
 	vec3_t mins = {-4, -4, -4}, maxs = {4, 4, 4};
 	weaponinfo_t wi;
 	aas_entityinfo_t entinfo;
+	aas_clientmove_t move;
 	bot_goal_t goal;
 	bsp_trace_t trace;
 	vec3_t target;
+#ifdef DEBUG
+	char netname[MAX_NETNAME];
 
+	ClientName(bs->client, netname, sizeof(netname));
+#endif
 	// if the bot has no enemy
 	if (bs->enemy < 0) {
 		return;
@@ -4600,6 +4661,7 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		return;
 	}
 
+	//BotAI_Print(PRT_MESSAGE, "%s: Aiming at client %d.\n", netname, bs->enemy);
 	aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL, 0, 1);
 	aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY, 0, 1);
 	reactiontime = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
@@ -4652,10 +4714,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		default:
 			break;
 	}
-
+// Tobias FIXME: this is nonsense, if reactiontime is 0 than this has no effect (0.5 * 0 = 0)
+/*
 	if (aim_skill > 0.95) {
 		// don't aim too early
-		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 1);
+		reactiontime = 0.5 * trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_REACTIONTIME, 0, 5);
 
 		if (bs->enemysight_time > FloatTime() - reactiontime) {
 			return;
@@ -4665,7 +4728,8 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			return;
 		}
 	}
-
+*/
+// Tobias END
 	VectorSubtract(entinfo.origin, entinfo.lastvisorigin, enemyvelocity);
 	VectorScale(enemyvelocity, 1 / entinfo.update_time, enemyvelocity);
 	// enemy origin and velocity is remembered every 0.5 seconds
@@ -4683,6 +4747,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			if (DotProduct(bs->enemyvelocity, enemyvelocity) < 0) {
 				// aim accuracy should be worse now
 				aim_accuracy *= 0.7f;
+#ifdef DEBUG
+				BotAI_Print(PRT_MESSAGE, "%s: Enemy changed direction (*0.7): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 			}
 		}
 	}
@@ -4690,59 +4757,118 @@ void BotAimAtEnemy(bot_state_t *bs) {
 	if (EntityIsInvisible(&entinfo)) {
 		if (random() > 0.1) {
 			aim_accuracy *= 0.4f;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, "%s: Enemy invisible (*0.4): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 		}
 	}
-	// keep a minimum accuracy
-	if (aim_accuracy <= 0) {
-		aim_accuracy = 0.0001f;
+	// Tobias TODO: add prone ~ + 0.2f;
+	// if the bot is crouching
+	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
+		aim_accuracy += 0.2f;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "%s: Crouching (+0.1): aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	}
 	// if the bot is standing still
 	if (VectorLengthSquared(bs->cur_ps.velocity) <= 0) {
-		aim_accuracy += 0.2;
+		aim_accuracy += 0.3f;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_GREEN "%s: Standing still (+0.2): aim accuracy: %f, vel: %i.\n", netname, aim_accuracy, (int)VectorLengthSquared(bs->cur_ps.velocity));
+#endif
 	}
-	// if the bot is crouching
-	if (bs->cur_ps.pm_flags & PMF_DUCKED) {
-		aim_accuracy += 0.1;
-	}
-	// Tobias TODO: add prone ~ + 0.2;
 	// if the enemy is standing still
 	f = VectorLength(bs->enemyvelocity);
 
-	if (f > 200) {
-		f = 200;
+	if (f > 200.0f) {
+		f = 200.0f;
 	}
 
-	aim_accuracy += 0.2 * (0.5 - (f / 200.0));
+	aim_accuracy += 0.2f * (0.5f - (f / 200.0f));
+#ifdef DEBUG
+	if (f <= 0) {
+		BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy standing still (+0.2): aim accuracy: %f, Enemy speed: %i.\n", netname, aim_accuracy, (int)f);
+	}
+#endif
 	// if the bot needs some time to react on the enemy, aiming gets better with time
-	if (reactiontime > 1.75) {
+	if (reactiontime > 1.75f) {
 		f = FloatTime() - bs->enemysight_time;
 
-		if (f > 2.0) {
-			f = 2.0;
+		if (f > 2.0f) {
+			f = 2.0f;
 		}
 
-		aim_accuracy += 0.2 * f / 2.0;
+		aim_accuracy += 0.1f * f;
+#ifdef DEBUG
+		BotAI_Print(PRT_MESSAGE, S_COLOR_MAGENTA "%s: Time based aim accuracy: %f.\n", netname, aim_accuracy);
+#endif
 	}
-	// maximum accuracy
-	if (aim_accuracy > 1.0) {
-		aim_accuracy = 1.0;
+	// keep a minimum accuracy
+	if (aim_accuracy <= 0.0f) {
+		aim_accuracy = 0.0001f;
 	}
-	// if the enemy is visible
-	if (BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
-		VectorCopy(entinfo.origin, bestorigin);
+	// also set a maximum accuracy
+	if (aim_accuracy > 1.0f) {
+		aim_accuracy = 1.0f;
+	}
+//#ifdef DEBUG
+	if (bot_challenge.integer) {
+		aim_accuracy = 1.0f;
+	}
+//#endif
+	// if the enemy is NOT visible
+	if (!BotEntityVisible(&bs->cur_ps, 360, bs->enemy)) {
+		VectorCopy(bs->lastenemyorigin, bestorigin);
 
 		bestorigin[2] += 8;
+		// if the bot is skilled enough
+		if (aim_skill > 0.5) {
+			// do prediction shots around corners
+			if (!BotUsesInstantHitWeapon(bs)) {
+				// create the chase goal
+				goal.entitynum = bs->client;
+				goal.areanum = bs->areanum;
+
+				VectorCopy(bs->eye, goal.origin);
+				VectorSet(goal.mins, -8, -8, -8);
+				VectorSet(goal.maxs, 8, 8, 8);
+
+				if (trap_BotPredictVisiblePosition(bs->lastenemyorigin, bs->lastenemyareanum, &goal, TFL_DEFAULT, target)) {
+					VectorSubtract(target, bs->eye, dir);
+					// if the hitpoint is far enough from the bot
+					if (VectorLengthSquared(dir) > Square(80)) {
+						VectorCopy(target, bestorigin);
+						// if the projectile does large radial damage try to aim at the ground in front of the enemy
+						if (wi.proj.damagetype & DAMAGETYPE_RADIAL) {
+							bestorigin[2] -= 20;
+						}
+					}
+				}
+
+				aim_accuracy = 1;
+			}
+		}
+	// if the enemy is visible
+	} else {
 		// get the start point shooting from
 		// NOTE: the x and y projectile start offsets are ignored
 		VectorCopy(bs->origin, start);
 
 		start[2] += bs->cur_ps.viewheight;
 		start[2] += wi.offset[2];
+		// get the end point aiming at
+		VectorCopy(entinfo.origin, bestorigin);
+		// try to aim at the head
+		bestorigin[2] += 8;
 
-		BotAI_Trace(&trace, start, mins, maxs, bestorigin, bs->entitynum, MASK_SHOT);
+		BotAI_Trace(&trace, start, mins, maxs, bestorigin, bs->entitynum, mask);
 		// if the enemy is NOT hit
-		if (trace.fraction <= 1 && trace.entityNum != entinfo.number) {
+		if (trace.fraction < 1.0f && trace.entityNum != entinfo.number) {
+			// aim a bit higher
 			bestorigin[2] += 16;
+#ifdef DEBUG
+			BotAI_Print(PRT_MESSAGE, S_COLOR_RED "%s: Enemy NOT hit. Aiming higher!\n", netname);
+#endif
 		}
 		// if it is not an instant hit weapon the bot might want to predict the enemy
 		if (!BotUsesInstantHitWeapon(bs)) {
@@ -4756,9 +4882,6 @@ void BotAimAtEnemy(bot_state_t *bs) {
 			if (!(dist > 100 && VectorLengthSquared(dir) < Square(32))) {
 				// if skilled enough and if the weapon is ready to fire, do exact prediction
 				if (aim_skill > 0.8 && bs->cur_ps.weaponstate == WEAPON_READY) {
-					aas_clientmove_t move;
-					vec3_t origin;
-
 					VectorSubtract(entinfo.origin, bs->origin, dir);
 					// distance towards the enemy
 					dist = VectorLength(dir);
@@ -4770,9 +4893,13 @@ void BotAimAtEnemy(bot_state_t *bs) {
 					origin[2] += 1;
 
 					VectorClear(cmdmove);
+					//AAS_ClearShownDebugLines();
 					// movement prediction
-					trap_AAS_PredictClientMovement(&move, bs->enemy, origin, PRESENCE_CROUCH, qfalse, dir, cmdmove, 0, dist * 10 / wi.speed, 0.1f, 0, 0, qfalse);
+					trap_AAS_PredictClientMovement(&move, bs->enemy, origin, PRESENCE_CROUCH, qfalse, qfalse, dir, cmdmove, 0, dist * 10 / wi.speed, 0.1f, 0, 0, qfalse);
 					VectorCopy(move.endpos, bestorigin);
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Predicted speed = %f, Frames = %f.\n", netname, FloatTime(), VectorLength(dir), dist * 10 / wi.speed);
+#endif
 				// if not that skilled do linear prediction
 				} else if (aim_skill > 0.4) {
 					// direction towards the enemy
@@ -4784,6 +4911,9 @@ void BotAimAtEnemy(bot_state_t *bs) {
 
 					dir[2] = 0;
 					speed = VectorNormalize(dir) / entinfo.update_time;
+#ifdef DEBUG
+					BotAI_Print(PRT_MESSAGE, "%s: Speed = %f, wi->speed = %f.\n", netname, speed, wi->speed);
+#endif
 					// best spot to aim at
 					VectorMA(entinfo.origin, (dist / wi.speed) * speed, dir, bestorigin);
 				}
@@ -4820,9 +4950,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 							trace.endpos[2] += 1;
 
 							BotAI_Trace(&trace, trace.endpos, NULL, NULL, entinfo.origin, entinfo.number, MASK_SHOT);
-
-							if (trace.fraction >= 1) {
-								//botimport.Print(PRT_MESSAGE, "%1.1f aiming at ground\n", AAS_Time());
+							// if the projectile will not be blocked
+							if (trace.fraction >= 1.0f) {
+#ifdef DEBUG
+								BotAI_Print(PRT_MESSAGE, "%s: Time = %1.1f Aiming at ground.\n", netname, AAS_Time());
+#endif
 								VectorCopy(groundtarget, bestorigin);
 							}
 						}
@@ -4830,43 +4962,53 @@ void BotAimAtEnemy(bot_state_t *bs) {
 				}
 			}
 		}
-
-		bestorigin[0] += 20 * crandom() * (1 - aim_accuracy);
-		bestorigin[1] += 20 * crandom() * (1 - aim_accuracy);
-		bestorigin[2] += 10 * crandom() * (1 - aim_accuracy);
-	} else {
-		VectorCopy(bs->lastenemyorigin, bestorigin);
-
-		bestorigin[2] += 8;
-		// if the bot is skilled enough
-		if (aim_skill > 0.5) {
-			// do prediction shots around corners
-			if (!BotUsesInstantHitWeapon(bs)) {
-				// create the chase goal
-				goal.entitynum = bs->client;
-				goal.areanum = bs->areanum;
-
-				VectorCopy(bs->eye, goal.origin);
-				VectorSet(goal.mins, -8, -8, -8);
-				VectorSet(goal.maxs, 8, 8, 8);
-
-				if (trap_BotPredictVisiblePosition(bs->lastenemyorigin, bs->lastenemyareanum, &goal, TFL_DEFAULT, target)) {
-					VectorSubtract(target, bs->eye, dir);
-					// if the hitpoint is far enough from the bot
-					if (VectorLengthSquared(dir) > Square(80)) {
-						VectorCopy(target, bestorigin);
-						// if the projectile does large radial damage try to aim at the ground in front of the enemy
-						if (wi.proj.damagetype & DAMAGETYPE_RADIAL) {
-							bestorigin[2] -= 20;
-						}
-					}
-				}
-
-				aim_accuracy = 1;
-			}
+//#ifdef DEBUG
+		if (!bot_challenge.integer) {
+//#endif
+			bestorigin[0] += 20 * crandom() * (1 - aim_accuracy);
+			bestorigin[1] += 20 * crandom() * (1 - aim_accuracy);
+			bestorigin[2] += 10 * crandom() * (1 - aim_accuracy);
+//#ifdef DEBUG
 		}
+//#endif
 	}
+// Tobias NOTE: for developers...
+/*
+		(o = botai trace line)
+		(* = projectile travel line)
+                                                                                        o  <---- topOfArc[2] trace
+                                                                                  o
+                                                                            o
+                                                                       o                *  <---- grenade arc is always below trace!
+                                                                  o   *
+                                                             o *
+                                                        o*
+                                                   o *
+                                               o *
+                                          o   *
+                                     o     *
+             trace start ----> o        *
+                                      *
+                            _______ *
+                           |      *
+                           |     * |
+                           |    *  |
+        projectile start --|-> *   |
+                           |       |
+                           |       |
+                           |       |
+                           |       |
+NOTE: 1. We can't trace a parabola. That's why we trace a bit above the real arc of travel in straight line. If the projectile will hit some overhead ledge, the bot will fire the projectile straight ahead!
+NOTE: 2. wi.proj.gravity, was never set in the botfiles, it MUST be set to make this work properly (an alternate would be to completely do all this without the need of weaponinfo). Without modified botfiles everything works as normally.
+NOTE: 3. wi.proj.gravity is a simple configurable (pseudo)multiplier, this seems to be the fastest way to compute 100% accurate ballistics (e.g: projectile speed 700 -> gravity 0.3, projectile speed 10000 -> gravity 0.04, etc.).
+NOTE: 4. It doesn't really make sense to use DEFAULT_GRAVITY or g_gravity (projectiles are not influenced by g_gravity at all in Q3a).
+NOTE: 5. Although my method of computing the ballistics looks like magic, it is the simplest and fastest way I could think of (correct but slow math: -> https://en.wikipedia.org/wiki/Parabola)
+         Computing the ballistics this way takes configurable projectile speed, configurable projectile gravity, dynamic enemy height and dynamic enemy distance into account.
+NOTE: 6. This code becomes more precise the faster the projectile moves. Grenades are too slow in Q3a! Fix this: average H-Gren.: bolt speed 1300, = ~60 meters. (gravity 0.35)
 
+WARNING 1: Accuracy is nearly 100% even with very fast projectiled weapons (e.g.: speed 20000 etc.), this means bots will always hit their opponents, even with a bow (eventually decrease the bots individual aim_accuracy)
+WARNING 2: Bots will also throw grenades through windows even from distance, so be careful!
+*/
 	if (BotUsesGravityAffectedProjectileWeapon(bs)) {
 		// direction towards the enemy
 		VectorSubtract(bestorigin, bs->origin, dir);
@@ -4974,21 +5116,22 @@ static qboolean BotMayRadiusDamageTeamMate(bot_state_t *bs, vec3_t origin, float
 	}
 
 	for (i = 0; i < 3; i++) {
-		mins[i]= origin[i] - radius;
-		maxs[i]= origin[i] + radius;
+		mins[i] = origin[i] - radius;
+		maxs[i] = origin[i] + radius;
 	}
 
-	team = g_entities[bs->entitynum].client->sess.sessionTeam;
 	numListedEntities = trap_EntitiesInBox(mins, maxs, entityList, MAX_GENTITIES);
 	selfpreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_SELFPRESERVATION, 0, 1);
+	team = g_entities[bs->entitynum].client->sess.sessionTeam;
 	teampreservation = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_TEAMPRESERVATION, 0, 1);
 
 	for (e = 0; e < numListedEntities; e++) {
-		ent = &g_entities[entityList[e]];
 		// if this is the bot self
 		if (e == bs->client && selfpreservation < 1) {
 			continue;
 		}
+
+		ent = &g_entities[entityList[e]];
 
 		if (!ent->takedamage) {
 			continue;
@@ -5223,6 +5366,7 @@ void BotMapScripts(bot_state_t *bs) {
 			BotEntityInfo(i, &entinfo);
 			// if the entity information is valid
 			if (!entinfo.valid) {
+				//BotAI_Print(PRT_MESSAGE, S_COLOR_YELLOW "BotMapScripts -> !entinfo.valid\n"); // Tobias CHECK: shouldn't happen?
 				continue;
 			}
 			// if the entity isn't the bot self
@@ -5237,7 +5381,7 @@ void BotMapScripts(bot_state_t *bs) {
 			if (entinfo.origin[0] > mins[0] && entinfo.origin[0] < maxs[0]) {
 				if (entinfo.origin[1] > mins[1] && entinfo.origin[1] < maxs[1]) {
 					if (entinfo.origin[2] > mins[2] && entinfo.origin[2] < maxs[2]) {
-						// if there's a team mate below the crusher
+						// if there's a teammate below the crusher
 						if (BotSameTeam(bs, i)) {
 							shootbutton = qfalse;
 							break;
@@ -5266,26 +5410,6 @@ void BotMapScripts(bot_state_t *bs) {
 				trap_EA_Attack(bs->client);
 			}
 		}
-	}
-}
-
-static vec3_t VEC_UP = {0, -1, 0};
-static vec3_t MOVEDIR_UP = {0, 0, 1};
-static vec3_t VEC_DOWN = {0, -2, 0};
-static vec3_t MOVEDIR_DOWN = {0, 0, -1};
-/*
-=======================================================================================================================================
-BotSetMovedir
-=======================================================================================================================================
-*/
-void BotSetMovedir(vec3_t angles, vec3_t movedir) {
-
-	if (VectorCompare(angles, VEC_UP)) {
-		VectorCopy(MOVEDIR_UP, movedir);
-	} else if (VectorCompare(angles, VEC_DOWN)) {
-		VectorCopy(MOVEDIR_DOWN, movedir);
-	} else {
-		AngleVectorsForward(angles, movedir);
 	}
 }
 
@@ -5379,7 +5503,7 @@ int BotFuncButtonActivateGoal(bot_state_t *bs, int bspent, bot_activategoal_t *a
 	// get the move direction from the angle
 	trap_AAS_FloatForBSPEpairKey(bspent, "angle", &angle);
 	VectorSet(angles, 0, angle, 0);
-	BotSetMovedir(angles, movedir);
+	SetMovedir(angles, movedir);
 	// button size
 	VectorSubtract(maxs, mins, size);
 	// button origin
@@ -5399,7 +5523,7 @@ int BotFuncButtonActivateGoal(bot_state_t *bs, int bspent, bot_activategoal_t *a
 
 		BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, goalorigin, bs->entitynum, MASK_SHOT);
 		// if the button is visible from the current position
-		if (bsptrace.fraction >= 1.0 || bsptrace.entityNum == entitynum) {
+		if (bsptrace.fraction >= 1.0f || bsptrace.entityNum == entitynum) {
 			activategoal->goal.entitynum = entitynum; // NOTE: this is the entity number of the shootable button
 			activategoal->goal.number = 0;
 			activategoal->goal.flags = 0;
@@ -6040,146 +6164,6 @@ void BotRandomMove(bot_state_t *bs, bot_moveresult_t *moveresult, float speed) {
 
 /*
 =======================================================================================================================================
-BotCheckBlockedTeammates
-=======================================================================================================================================
-*/
-void BotCheckBlockedTeammates(bot_state_t *bs) {
-	bot_moveresult_t moveresult;
-	int movetype, i, mindist;
-	aas_entityinfo_t entinfo;
-	gentity_t *ent;
-	float speed, obtrusiveness;
-	vec3_t mins, maxs, end, v3, v2, v1, sideward, angles, up = {0, 0, 1};
-	bsp_trace_t trace;
-
-	if (gametype < GT_TEAM) {
-		return;
-	}
-
-	if (BotCTFCarryingFlag(bs)) {
-		return;
-	}
-
-	if (Bot1FCTFCarryingFlag(bs)) {
-		return;
-	}
-
-	if (BotHarvesterCarryingCubes(bs)) {
-		return;
-	}
-
-	obtrusiveness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_OBTRUSIVENESS, 0, 1);
-
-	VectorSet(bs->notblocked_dir, 0, 0, 0);
-
-	for (i = 0; i < level.maxclients; i++) {
-		if (i == bs->client) {
-			continue;
-		}
-		// ignore enemies
-		if (!BotSameTeam(bs, i)) {
-			continue;
-		}
-		// get the entity information
-		BotEntityInfo(i, &entinfo);
-		// if this player is active
-		if (!entinfo.valid) {
-			continue;
-		}
-		// if the entity isn't the bot self
-		if (entinfo.number == bs->entitynum) {
-			continue;
-		}
-		// if the entity isn't dead
-		if (EntityIsDead(&entinfo)) {
-			continue;
-		}
-
-		ent = &g_entities[i];
-/*
-		if (VectorLengthSquared(ent->client->ps.velocity) <= 0) {
-			continue;
-		}
-*/
-		// set some movement parameters
-		movetype = MOVE_WALK;
-		mindist = 8;
-		speed = 200;
-		// human players and facing teammates need more space
-		if (!(ent->r.svFlags & SVF_BOT) || BotEntityVisible(&bs->cur_ps, 90, i)) {
-			mindist = 32;
-		}
-		// teammates with an important item needs even more space, and stay away from dangerous teammates (mined/burning players).
-		if (EntityCarriesFlag(&entinfo) || EntityCarriesCubes(&entinfo) || bs->inventory[INVENTORY_SCOUT] || (entinfo.flags & EF_TICKING)) {
-			mindist = 128;
-			speed = 400;
-		}
-
-		mindist += 128 - (128 * obtrusiveness);
-		// safety check, don't force to reach the goal
-		if (mindist >= bs->formation_dist) {
-			bs->formation_dist = mindist;
-		}
-		// calculate the direction towards the teammate
-		v2[2] = 0;
-
-		VectorSubtract(entinfo.origin, bs->origin, v2);
-		VectorNormalize(v2);
-		// now check if the teammate is blocked, increase the distance accordingly
-		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
-		VectorMA(bs->origin, mindist, v2, end);
-		BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
-		// if the teammate is too close (blocked)
-		if (trace.entityNum == i && (trace.startsolid || trace.fraction < 1.0)) {
-			// stop crouching to gain speed
-			bs->crouch_time = FloatTime() - 1;
-			// look into the direction of the blocked teammate
-			VectorToAngles(v2, bs->ideal_viewangles);
-			// get the sideward vector
-			CrossProduct(up, v2, sideward);
-			// get the direction the blocked player is moving
-			v1[2] = 0;
-
-			VectorNormalize2(ent->client->ps.velocity, v1);
-			VectorCopy(ent->client->ps.velocity, v1);
-			// the blocked player is moving to his left side, so move to his right side (and vice versa)
-			if (DotProduct(v1, sideward) > -50.0f) {
-				// flip the direction
-				VectorNegate(sideward, sideward);
-			}
-			// also go backwards a little
-			VectorMA(sideward, -1, v2, sideward);
-			// move sidwards
-			if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
-				// flip the direction
-				VectorNegate(sideward, sideward);
-				// move in the other direction
-				if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
-					// try to step back
-					if (!trap_BotMoveInDirection(bs->ms, v2, speed, movetype)) {
-						if (DotProduct(bs->notblocked_dir, bs->notblocked_dir) < 0.1) {
-							VectorSet(angles, 0, 360 * random(), 0);
-							AngleVectorsForward(angles, v3);
-						} else {
-							VectorCopy(bs->notblocked_dir, v3);
-						}
-
-						if (!trap_BotMoveInDirection(bs->ms, v3, speed, movetype)) {
-							VectorSet(bs->notblocked_dir, 0, 0, 0);
-							// move in a random direction in the hope to get out
-							BotRandomMove(bs, &moveresult, speed);
-						} else {
-							VectorCopy(v3, bs->notblocked_dir);
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-/*
-=======================================================================================================================================
 BotAIBlocked
 
 Very basic handling of bots being blocked by other entities. Check what kind of entity is blocking the bot and try to activate it.
@@ -6476,6 +6460,149 @@ void BotCheckConsoleMessages(bot_state_t *bs) {
 
 /*
 =======================================================================================================================================
+BotCheckBlockedTeammates
+
+
+TODO: 1# better check for desired speed instead of actual speed :\
+=======================================================================================================================================
+*/
+void BotCheckBlockedTeammates(bot_state_t *bs) {
+	bot_moveresult_t moveresult;
+	int movetype, i, mindist;
+	aas_entityinfo_t entinfo;
+	gentity_t *ent;
+	float speed, obtrusiveness;
+	vec3_t mins, maxs, end, v3, v2, v1, sideward, angles, up = {0, 0, 1};
+	bsp_trace_t trace;
+
+	if (gametype < GT_TEAM) {
+		return;
+	}
+
+	if (BotCTFCarryingFlag(bs)) {
+		return;
+	}
+
+	if (Bot1FCTFCarryingFlag(bs)) {
+		return;
+	}
+
+	if (BotHarvesterCarryingCubes(bs)) {
+		return;
+	}
+
+	obtrusiveness = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_OBTRUSIVENESS, 0, 1);
+
+	VectorSet(bs->notblocked_dir, 0, 0, 0);
+
+	for (i = 0; i < level.maxclients; i++) {
+		if (i == bs->client) {
+			continue;
+		}
+		// if on the same team
+		if (!BotSameTeam(bs, i)) {
+			continue;
+		}
+		// get the entity information
+		BotEntityInfo(i, &entinfo);
+		// if the entity information is valid
+		if (!entinfo.valid) {
+			continue;
+		}
+		// if the entity isn't the bot self
+		if (entinfo.number == bs->entitynum) {
+			continue;
+		}
+		// if the entity isn't dead
+		if (EntityIsDead(&entinfo)) {
+			continue;
+		}
+
+		ent = &g_entities[i];
+/*
+		if (VectorLengthSquared(ent->client->ps.velocity) <= 0) {
+			continue;
+		}
+*/
+		// set some movement parameters
+		movetype = MOVE_WALK;
+		mindist = 8;
+		speed = 200;
+		// human players and facing teammates need more space
+		if (!(ent->r.svFlags & SVF_BOT) || BotEntityVisible(&bs->cur_ps, 90, i)) {
+			mindist = 32;
+		}
+		// teammates with an important item needs even more space, and stay away from dangerous teammates (mined/burning players).
+		if (EntityCarriesFlag(&entinfo) || EntityCarriesCubes(&entinfo) || bs->inventory[INVENTORY_SCOUT] || (entinfo.flags & EF_TICKING)) {
+			mindist = 128;
+			speed = 400;
+		}
+
+		mindist += 128 - (128 * obtrusiveness);
+		// safety check, don't force to reach the goal
+		if (mindist >= bs->formation_dist) {
+			bs->formation_dist = mindist;
+		}
+		// calculate the direction towards the teammate
+		v2[2] = 0;
+
+		VectorSubtract(entinfo.origin, bs->origin, v2);
+		VectorNormalize(v2);
+		// now check if the teammate is blocked, increase the distance accordingly
+		trap_AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, mins, maxs);
+		VectorMA(bs->origin, mindist, v2, end);
+		BotAI_TraceEntities(&trace, bs->origin, mins, maxs, end, bs->entitynum, CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BOTCLIP|CONTENTS_BODY|CONTENTS_CORPSE);
+		// if the teammate is too close (blocked)
+		if (trace.entityNum == i && (trace.startsolid || trace.fraction < 1.0f)) {
+			// stop crouching to gain speed
+			bs->crouch_time = FloatTime() - 1;
+			// look into the direction of the blocked teammate
+			VectorToAngles(v2, bs->ideal_viewangles);
+			// get the sideward vector
+			CrossProduct(up, v2, sideward);
+			// get the direction the blocked player is moving
+			v1[2] = 0;
+
+			VectorNormalize2(ent->client->ps.velocity, v1);
+			VectorCopy(ent->client->ps.velocity, v1);
+			// the blocked player is moving to his left side, so move to his right side (and vice versa)
+			if (DotProduct(v1, sideward) > -50.0f) {
+				// flip the direction
+				VectorNegate(sideward, sideward);
+			}
+			// also go backwards a little
+			VectorMA(sideward, -1, v2, sideward);
+			// move sidwards
+			if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
+				// flip the direction
+				VectorNegate(sideward, sideward);
+				// move in the other direction
+				if (!trap_BotMoveInDirection(bs->ms, sideward, speed, movetype)) {
+					// try to step back
+					if (!trap_BotMoveInDirection(bs->ms, v2, speed, movetype)) {
+						if (DotProduct(bs->notblocked_dir, bs->notblocked_dir) < 0.1) {
+							VectorSet(angles, 0, 360 * random(), 0);
+							AngleVectorsForward(angles, v3);
+						} else {
+							VectorCopy(bs->notblocked_dir, v3);
+						}
+
+						if (!trap_BotMoveInDirection(bs->ms, v3, speed, movetype)) {
+							VectorSet(bs->notblocked_dir, 0, 0, 0);
+							// move in a random direction in the hope to get out
+							BotRandomMove(bs, &moveresult, speed);
+						} else {
+							VectorCopy(v3, bs->notblocked_dir);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+/*
+=======================================================================================================================================
 BotCheckForGrenades
 =======================================================================================================================================
 */
@@ -6592,7 +6719,17 @@ void BotCheckEvents(bot_state_t *bs, entityState_t *state) {
 			}
 
 			trap_GetConfigstring(CS_SOUNDS + state->eventParm, buf, sizeof(buf));
-
+			/*
+			if (!strcmp(buf, "snd/m/flagret_red.wav")) {
+				// red flag is returned
+				bs->redflagstatus = 0;
+				bs->flagstatuschanged = qtrue;
+			} else if (!strcmp(buf, "snd/m/flagret_blu.wav")) {
+				// blue flag is returned
+				bs->blueflagstatus = 0;
+				bs->flagstatuschanged = qtrue;
+			} else
+			*/
 			if (!strcmp(buf, "snd/i/kam_sp.wav")) {
 				// the kamikaze respawned so don't avoid it
 				BotDontAvoid(bs, "Kamikaze");
@@ -6899,6 +7036,7 @@ bot_goal_t *BotAlternateRoute(bot_state_t *bs, bot_goal_t *goal) {
 		t = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->altroutegoal.areanum, bs->tfl);
 
 		if (t && t < 20) {
+			//BotAI_Print(PRT_MESSAGE, "reached alternate route goal\n");
 			bs->reachedaltroutegoal_time = FloatTime();
 		}
 

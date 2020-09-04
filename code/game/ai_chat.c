@@ -235,7 +235,7 @@ char *BotRandomOpponentName(bot_state_t *bs) {
 		if (atoi(Info_ValueForKey(buf, "t")) == TEAM_SPECTATOR) {
 			continue;
 		}
-		// skip team mates
+		// skip teammates
 		if (BotSameTeam(bs, i)) {
 			continue;
 		}
@@ -1022,7 +1022,7 @@ int BotChat_Random(bot_state_t *bs) {
 		return qfalse;
 	}
 	// don't chat when doing something important :)
-	if (bs->ltgtype == LTG_TEAMHELP || bs->ltgtype == LTG_TEAMACCOMPANY || bs->ltgtype == LTG_RUSHBASE) {
+	if (bs->ltgtype == LTG_RUSHBASE || bs->ltgtype == LTG_TEAMHELP || bs->ltgtype == LTG_TEAMACCOMPANY) {
 		return qfalse;
 	}
 
@@ -1076,18 +1076,6 @@ int BotChat_Random(bot_state_t *bs) {
 	bs->lastchat_time = FloatTime();
 	bs->chatto = CHAT_ALL;
 	return qtrue;
-}
-
-/*
-=======================================================================================================================================
-BotChatTime
-=======================================================================================================================================
-*/
-float BotChatTime(bot_state_t *bs) {
-	//int cpm;
-
-	//cpm = trap_Characteristic_BInteger(bs->character, CHARACTERISTIC_CHAT_CPM, 1, 4000);
-	return 2.0; //(float)trap_BotChatLength(bs->cs) * 30 / cpm;
 }
 
 /*

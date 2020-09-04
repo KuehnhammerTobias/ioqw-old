@@ -27,7 +27,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	{
 		"Who is ",0,"?";
 		"Who uses the name ",0,"?";
-		"I don't know of any team mate named ",0,".";
+		"I don't know of any teammate named ",0,".";
 		"Never heard of ",0,". A friend of yours?";
 	}
 	// the bot doesn't know where someone is hanging out
@@ -444,14 +444,14 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	// ==========================
 	// teamplay chats
 	// ==========================
-	// team mate killed the bot
+	// teammate killed the bot
 	type "death_teammate"
 	{
 		"Why are you shooting at me ",0,"?";
 		"Watch your fire ",0,"!";
 		"I'm on your team ",0,"!!";
 	}
-	// killed by a team mate
+	// the bot killed a teammate
 	type "kill_teammate"
 	{
 		"Sorry ",0,"!";
@@ -460,32 +460,32 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 	// ==========================
 	// CTF useless chats
 	// ==========================
-	// team mate got the enemy flag
+	// teammate got the enemy flag
 	type "ctf_gotflag"
 	{
 		"Now bring the flag home ",0,"!";
 		"Go go go ",0," bring it home!";
 	}
-	// team mate gets the enemy flag to the base
+	// teammate gets the enemy flag to the base
 	type "ctf_captureflag"
 	{
 		"Good work ",0,".";
 	}
-	// team mate returns the base flag
+	// teammate returns the base flag
 	type "ctf_returnflag"
 	{
 	}
-	// team mate defends the base
+	// teammate defends the base
 	type "ctf_defendbase"
 	{
 		"Yes ",0," keep them out of our base!";
 	}
-	// team mate carrying the enemy flag dies
+	// teammate carrying the enemy flag dies
 	type "ctf_flagcarrierdeath"
 	{
 		"Someone get that flag!";
 	}
-	// team mate kills enemy with base flag
+	// teammate kills enemy with base flag
 	type "ctf_flagcarrierkill"
 	{
 		"Return that flag ",0,"!";

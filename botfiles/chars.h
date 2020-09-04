@@ -89,11 +89,11 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 // attack range (added/substracted to/from attack distance)
 #define CHARACTERISTIC_ATTACK_RANGE					25 // int [1, 1000]
 // attack skill
-// >  0.0 && < 0.2 = don't move
-// >  0.3 && < 1.0 = aim at enemy during retreat
-// >  0.0 && < 0.4 = only move forward/backward
-// >= 0.4 && < 1.0 = circle strafing
-// >  0.7 && < 1.0 = random strafe direction change
+// >  0.0 && <  0.2 = don't move
+// >  0.3 && <  1.0 = aim at enemy during retreat
+// >  0.0 && <  0.4 = only move forward/backward
+// >= 0.4 && <= 1.0 = circle strafing
+// >  0.7 && <= 1.0 = random strafe direction change
 #define CHARACTERISTIC_ATTACK_SKILL					26 // float [0, 1]
 //=====================================================================================================================================
 // WEAPON

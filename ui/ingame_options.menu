@@ -210,7 +210,13 @@
 			cvar "bot_teamredstrategy"
 
 			cvarFloatList {
-				"Default" 0 "Max. Defenders" 1 "Extra Defensive" 2 "Defensive" 3 "Offensive" 4 "Extra Offensive" 5 "Max. Offenders" 6
+				"Default" 0
+				"Max. Defenders" 1
+				"Extra Defensive" 2
+				"Defensive" 3
+				"Offensive" 4
+				"Extra Offensive" 5
+				"Max. Offenders" 6
 			}
 
 			rect 0 71 200 20
