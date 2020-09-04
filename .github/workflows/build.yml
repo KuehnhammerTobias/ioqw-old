@@ -19,13 +19,13 @@ jobs:
         path: build/*.zip
   windows:
     name: Windows
-    runs-on: windows-2019
+    runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: sudo apt install gcc-mingw-w64-x86-64
     - name: Compile
-      run: |
-        choco install zip
-        make release
+      run: make release PLATFORM=mingw32
       env:
         ARCHIVE: 1
     - uses: actions/upload-artifact@v2
