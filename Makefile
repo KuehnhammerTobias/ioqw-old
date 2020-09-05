@@ -1205,7 +1205,7 @@ define DO_REF_STR
 $(echo_cmd) "REF_STR $<"
 $(Q)rm -f $@
 $(Q)echo "const char *fallbackShader_$(notdir $(basename $<)) =" >> $@
-$(Q)cat $< | sed -e 's/^\(.*\)$$/\"\1\"/' >> $@
+$(Q)cat $< | sed -e 's/^\(.*\)$$/\"\1\\n\"/' | tr -d '\r' >> $@
 $(Q)echo ";" >> $@
 endef
 
