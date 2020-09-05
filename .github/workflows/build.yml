@@ -8,7 +8,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: sudo apt install libsdl2-dev
+      run: |
+        sudo apt update
+        sudo apt install libsdl2-dev
     - name: Compile
       run: make release
       env:
@@ -19,13 +21,16 @@ jobs:
         path: build/*.zip
   windows:
     name: Windows
-    runs-on: ubuntu-16.04
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
-    - name: Install Dependencies
-      run: sudo apt install gcc-mingw-w64-x86-64
+    - uses: msys2/setup-msys2@v2
+      with:
+        release: false
+        install: git zip make mingw-w64-x86_64-gcc
     - name: Compile
-      run: make release PLATFORM=mingw32
+      shell: msys2 {0}
+      run: make release
       env:
         ARCHIVE: 1
     - uses: actions/upload-artifact@v2
